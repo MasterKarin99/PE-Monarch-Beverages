@@ -141,6 +141,15 @@ body.portal-mode nav.tabs, body.portal-mode header.top .period, body.portal-mode
 .issues.hscroll li .lvl{align-self:flex-start}
 .issues.hscroll li .msg{font-size:13.5px}
 .issues.hscroll li .where{margin-top:auto}
+.issues.hscroll li.rich{flex-basis:min(400px,90%)}
+.issues .det{font-size:13px;color:var(--ink);opacity:.85}
+.issues .fix{font-size:12.5px}
+.issues .fix{display:flex;flex-direction:column;gap:4px}
+.issues .fx{position:relative;padding-left:14px}
+.issues .fx::before{content:"→";position:absolute;left:0;color:var(--muted)}
+.issues .acts{display:flex;flex-wrap:wrap;gap:6px}
+mark.hl{background:transparent;color:inherit;font-weight:700;text-decoration:underline;text-decoration-color:var(--err);text-decoration-thickness:2px;text-underline-offset:3px;padding:0}
+.issues li:not(.lv-error) mark.hl{text-decoration-color:var(--muted)}
 .remarks summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;padding:4px 0}
 .remarks[open] summary{margin-bottom:6px}
 tbody.plain tr{cursor:default} tbody.plain tr:hover{background:transparent}
@@ -924,14 +933,14 @@ select[multiple]{padding:4px}
   // contacts: { [code]: { brands:[], lang, to:[], cc:[] } }
   function checkCountry(entry, ctx) {
     const issues = [];
-    const add = (level, msg, where) => issues.push({ level, msg, where: where || '' });
+    const add = (level, msg, where, extra) => issues.push(Object.assign({ level, msg, where: where || '' }, extra || {}));
     const code = entry.country, contact = ctx.contacts && ctx.contacts[code];
     const lang = (contact && contact.lang) || (COUNTRIES[code] && COUNTRIES[code].lang) || 'fr';
     const month = ctx.month || entry.month;
 
-    if (!code) add('error', "Pays non reconnu dans le nom du fichier : choisissez-le manuellement.");
-    if (code && !contact) add('error', 'Aucun contact enregistré pour ce pays.');
-    if (contact && !(contact.to || []).length) add('error', 'Aucun destinataire principal pour ce pays.');
+    if (!code) add('error', 'Pays non reconnu', '', { short: 'Pays non reconnu', detail: "Le nom du fichier ne contient pas de code pays (CIV, NG, BF…), la plateforme ne sait pas à qui l'envoyer.", fix: ['Choisissez le pays dans la liste « Ce fichier concerne » en bas de cet onglet.'] });
+    if (code && !contact) add('error', `Aucun contact pour ${(COUNTRIES[code] || {}).name || code}`, '', { short: 'Aucun contact', hl: [(COUNTRIES[code] || {}).name || code], detail: "Sans contact, la plateforme ne peut ni préparer l'email ni connaître les marques distribuées dans ce pays.", fix: ['Ajoutez le pays et ses destinataires dans l\'onglet Contacts.'], actions: [{ type: 'goto', hash: '#contacts', label: 'Ouvrir les Contacts' }] });
+    if (contact && !(contact.to || []).length) add('error', 'Aucun destinataire principal', '', { short: 'Aucun destinataire', detail: `Personne n'est indiqué en destinataire principal pour ${(COUNTRIES[code] || {}).name || code} : l'email ne peut pas être préparé.`, fix: ['Ajoutez au moins une adresse dans « Destinataires principaux » de l\'onglet Contacts.'], actions: [{ type: 'goto', hash: '#contacts', label: 'Ouvrir les Contacts' }] });
     if (entry.duplicateOf && entry.duplicateOf.length) add('info', `Fichier identique à celui de ${entry.duplicateOf.join(', ')} (copie renommée) : normal si ces pays partagent le même planning ce mois-ci.`);
 
     // Marques (référentiel par pays)
@@ -939,13 +948,39 @@ select[multiple]{padding:4px}
     const got = all.map(s => s.brandKey);
     const included = entry.sheets.map(s => s.brandKey);
     const cname = (COUNTRIES[code] || {}).name || code;
+    const AU = ['CM', 'CG', 'ML', 'SN', 'TD', 'NG', 'GH', 'BF', 'VU'];
+    const inC = (AU.includes(code) ? 'au ' : 'en ') + cname;
     if (contact && contact.brands && contact.brands.length) {
       const exp = contact.brands.map(b => brandKey(b));
-      for (const e of exp) if (!got.includes(e)) add('error', `Marque distribuée en ${cname} absente du planning : ${BRANDS[e] ? BRANDS[e].label : titleCase(e)}.`);
-      for (const g of got) if (!exp.includes(g)) {
-        const lbl = BRANDS[g] ? BRANDS[g].label : titleCase(g);
-        if (included.includes(g)) add('info', `${lbl} n'est pas prévue pour ${cname} dans les contacts, mais vous l'avez incluse dans le fichier envoyé.`);
-        else add('info', `${lbl} n'est pas prévue pour ${cname} dans les contacts : onglet exclu du fichier envoyé (vous pouvez l'inclure).`);
+      const lbl = k => BRANDS[k] ? BRANDS[k].label : titleCase(k);
+      const waived = entry.waived || [];
+      const missing = exp.filter(e => !got.includes(e));
+      const extra = got.filter(g => !exp.includes(g));
+      const nPosts = k => { const sh = all.find(x => x.brandKey === k); return sh ? sh.posts.length : 0; };
+      // Une marque livrée à la place d'une autre (ex. Rush au lieu de Reaktor)
+      const pairs = [];
+      for (const m of missing) { const i = extra.findIndex(x => !pairs.some(p => p[1] === x)); if (i >= 0) pairs.push([m, extra[i]]); }
+      for (const [m, x] of pairs) {
+        if (waived.includes(m)) { add('info', `${lbl(m)} absent ce mois-ci : accepté pour ${cname}.`, '', { hl: [lbl(m)] }); continue; }
+        add('error', `${lbl(x)} livré à la place de ${lbl(m)}`, '', {
+          short: `${lbl(x)} au lieu de ${lbl(m)}`, hl: [lbl(x), lbl(m)],
+          detail: `Le planning contient un onglet ${lbl(x)} (${nPosts(x)} publication${nPosts(x) > 1 ? 's' : ''}), mais pas d'onglet ${lbl(m)}, qui est la marque distribuée ${inC} selon les Contacts. ${included.includes(x) ? `${lbl(x)} est inclus dans le fichier envoyé.` : `${lbl(x)} est donc exclu du fichier envoyé.`}`,
+          fix: [`Si ${lbl(x)} remplace ${lbl(m)} ${inC} : mettez à jour les marques distribuées (bouton ci-dessous), ${lbl(x)} sera alors envoyé.`, `Sinon : demandez le planning ${lbl(m)} à l'agence et ajoutez-le dans 1 · Mise en forme.`],
+          actions: [{ type: 'swapBrand', from: lbl(m), to: lbl(x), label: `${lbl(x)} remplace ${lbl(m)} ${inC}` }, { type: 'waive', brand: m, label: `Envoyer sans ${lbl(m)} ce mois-ci` }],
+        });
+      }
+      for (const m of missing.filter(m => !pairs.some(p => p[0] === m))) {
+        if (waived.includes(m)) { add('info', `${lbl(m)} absent ce mois-ci : accepté pour ${cname}.`, '', { hl: [lbl(m)] }); continue; }
+        add('error', `${lbl(m)} manquant`, '', {
+          short: `${lbl(m)} manquant`, hl: [lbl(m)],
+          detail: `${lbl(m)} est distribué ${inC} selon les Contacts, mais le planning reçu n'en contient aucune publication (marques présentes : ${all.map(x => x.brand).join(', ') || 'aucune'}).`,
+          fix: [`Ajoutez le planning ${lbl(m)} de l'agence dans 1 · Mise en forme, puis positionnez ${cname}.`, `Si ${lbl(m)} n'est plus distribué ${inC}, retirez-le des marques dans l'onglet Contacts.`],
+          actions: [{ type: 'goto', hash: '#miseenforme', label: 'Ouvrir la Mise en forme' }, { type: 'waive', brand: m, label: `Envoyer sans ${lbl(m)} ce mois-ci` }],
+        });
+      }
+      for (const g of extra.filter(g => !pairs.some(p => p[1] === g))) {
+        if (included.includes(g)) add('info', `${lbl(g)} n'est pas prévue pour ${cname} dans les contacts, mais vous l'avez incluse dans le fichier envoyé.`, '', { hl: [lbl(g)] });
+        else add('info', `${lbl(g)} n'est pas prévue pour ${cname} dans les contacts : onglet exclu du fichier envoyé (vous pouvez l'inclure).`, '', { hl: [lbl(g)] });
       }
     }
     // Marronniers du mois pour ce pays
@@ -1513,7 +1548,8 @@ select[multiple]{padding:4px}
       const iss = e ? e.issues : [];
       const ce = iss.filter(i => i.level === 'error').length, cw = iss.filter(i => i.level === 'warn').length;
       const ci = iss.filter(i => i.level !== 'error').length;
-      const ctrl = e ? `<div class="counts">${ce ? `<span style="color:var(--err)"><i class="dot" style="background:var(--err)"></i>${ce} erreur${ce > 1 ? 's' : ''}</span>` : '<span style="color:var(--ok)">OK</span>'}${ci ? `<span class="muted">· ${ci} remarque${ci > 1 ? 's' : ''}</span>` : ''}</div>` : '<span class="muted">—</span>';
+      const errs1 = iss.filter(i => i.level === 'error');
+      const ctrl = e ? `<div class="counts" style="flex-wrap:wrap">${ce ? `<span style="color:var(--err)"><i class="dot" style="background:var(--err)"></i>${errs1.length === 1 && errs1[0].short ? hl(errs1[0].short, errs1[0].hl) : `${ce} erreurs : ${errs1.map(x => hl(x.short || x.msg, x.hl)).join(' · ')}`}</span>` : '<span style="color:var(--ok)">OK</span>'}${ci ? `<span class="muted">· ${ci} remarque${ci > 1 ? 's' : ''}</span>` : ''}</div>` : '<span class="muted">—</span>';
       const rc = ct ? `<div class="addr">${(ct.to || []).map(c => `<div>${esc(c.email)}</div>`).join('')}${(ct.cc || []).length ? `<div class="muted">cc ${(ct.cc || []).map(c => esc(c.email)).join(', ')}</div>` : ''}</div>` : '<span style="color:var(--err)">aucun contact</span>';
       html += `<tr data-code="${esc(code)}" class="${state.sel === code ? 'sel' : ''}" tabindex="0">
         <td><b>${esc(nameFor(code))}</b><span class="code">${esc(code)}</span></td>
@@ -1606,7 +1642,11 @@ select[multiple]{padding:4px}
   }
 
   function renderControl(e) {
-    const item = i => `<li class="lv-${i.level}"><span class="lvl ${i.level}">${LEVEL_LABEL[i.level]}</span><div class="msg">${esc(i.msg)}</div>${i.where ? `<div class="where">${esc(i.where)}</div>` : ''}</li>`;
+    const item = i => `<li class="lv-${i.level}${i.detail ? ' rich' : ''}"><span class="lvl ${i.level}">${LEVEL_LABEL[i.level]}</span><div class="msg">${hl(i.msg, i.hl)}</div>
+      ${i.detail ? `<div class="det">${hl(i.detail, i.hl)}</div>` : ''}
+      ${i.fix && i.fix.length ? `<div class="fix"><b>Que faire</b>${i.fix.map(f => `<div class="fx">${hl(f, i.hl)}</div>`).join('')}</div>` : ''}
+      ${i.actions && i.actions.length ? `<div class="acts">${i.actions.map((x, k) => `<button class="btn small ${k === 0 ? 'primary' : ''}" data-fix='${esc(JSON.stringify(x))}'>${esc(x.label)}</button>`).join('')}</div>` : ''}
+      ${i.where ? `<div class="where">${esc(i.where)}</div>` : ''}</li>`;
     const strip = (items, label) => `<div class="hstrip"><div class="hstrip-head"><span>${label}</span><span class="spacer"></span>
         <button class="btn small" data-hs="-1" aria-label="Précédent">‹</button><button class="btn small" data-hs="1" aria-label="Suivant">›</button></div>
       <ul class="issues hscroll" tabindex="0">${items.map(item).join('')}</ul></div>`;
@@ -1625,6 +1665,12 @@ select[multiple]{padding:4px}
       <button class="btn small ghost" data-act="remove">Retirer ce fichier</button></div>`;
   }
 
+  // Met en évidence les marques et noms cités dans un message d'erreur
+  function hl(text, words) {
+    let h = esc(text);
+    for (const w of (words || []).filter(Boolean).sort((x, y) => y.length - x.length)) h = h.split(esc(w)).join(`<mark class="hl">${esc(w)}</mark>`);
+    return h;
+  }
   function renderMarronniers(e) {
     const evs = C.eventsForCountry(calEvents(), e.country, state.period, e.sheets.map(s => s.brand));
     const hasCal = !!state.calendars[String(state.period.y)];
@@ -1716,6 +1762,18 @@ select[multiple]{padding:4px}
       h.querySelectorAll('[data-hs]').forEach(b => b.addEventListener('click', () => ul.scrollBy({ left: +b.dataset.hs * Math.max(260, ul.clientWidth * 0.8), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })));
       ul.addEventListener('scroll', upd, { passive: true }); requestAnimationFrame(upd);
     });
+    box.querySelectorAll('[data-fix]').forEach(b => b.addEventListener('click', () => busy(b, async () => {
+      const x = JSON.parse(b.dataset.fix), e2 = entryFor(code), ct = state.contacts[code];
+      if (x.type === 'goto') { location.hash = x.hash; return; }
+      if (x.type === 'waive' && e2) { e2.waived = [...new Set([...(e2.waived || []), x.brand])]; toast(`${nameFor(code)} : envoi accepté sans ${C.BRANDS[x.brand] ? C.BRANDS[x.brand].label : x.brand} ce mois-ci`); refresh(); return; }
+      if (x.type === 'swapBrand' && ct) {
+        const brands = (ct.brands || []).map(bd => C.brandKey(bd) === C.brandKey(x.from) ? x.to : bd);
+        const doc = Object.assign({}, ct, { brands: [...new Set(brands)] });
+        await writeContact(code, doc, true); state.contacts[code] = doc;
+        if (e2) { e2.userBrands = false; e2.built = null; e2.archivedKey = null; }
+        toast(`${nameFor(code)} : ${x.to} remplace désormais ${x.from} dans les marques distribuées`); refresh(); archivePending();
+      }
+    })));
     const rd = box.querySelector('details.remarks'); if (rd) rd.addEventListener('toggle', () => { state.remarksOpen = rd.open; if (rd.open) rd.querySelectorAll('.hstrip').forEach(h => h.querySelector('.hscroll').dispatchEvent(new Event('scroll'))); });
     box.querySelectorAll('[data-brand]').forEach(cb => cb.addEventListener('change', () => {
       const k = cb.dataset.brand; e.userBrands = true;
@@ -1791,7 +1849,7 @@ select[multiple]{padding:4px}
     return e.buildP;
   }
   async function buildNow(e) {
-    const key = buildKey() + '|' + e.country + '|' + langFor(e.country) + '|' + e.excluded.join(',');
+    const key = buildKey() + '|' + e.country + '|' + langFor(e.country) + '|' + e.excluded.join(',') + '|' + (e.waived || []).join(',');
     if (e.built && e.built.key === key) return e.built;
     const lang = langFor(e.country);
     const wb = await C.buildWorkbook(window.ExcelJS, e, { lang, month: state.period, countryName: C.countryLabel(e.country, lang), fullCalendar: $('#optCal').checked, transformImage: $('#optImg').checked ? lighten : null });
