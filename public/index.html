@@ -117,6 +117,7 @@ tbody tr:last-child td{border-bottom:0}
 .ccard{display:grid;grid-template-columns:180px 1fr 1fr;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
 .ccard:first-of-type{border-top:0}
 .hist td{cursor:default}
+.place{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}
 .mailprev{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:#fff;color:#222;min-height:260px;overflow:auto;font-size:13px}
 .mailprev a{color:#1f4fd8}
 table.mef tr.off td{opacity:.45}
@@ -169,8 +170,8 @@ select[multiple]{padding:4px}
   </header>
 
   <nav class="tabs" aria-label="Sections">
-    <a href="#pays" data-view="pays">Pays et envois</a>
-    <a href="#miseenforme" data-view="miseenforme">Mise en forme</a>
+    <a href="#miseenforme" data-view="miseenforme">1 · Mise en forme</a>
+    <a href="#pays" data-view="pays">2 · Pays et envois</a>
     <a href="#telechargements" data-view="telechargements">Téléchargements</a>
     <a href="#marronniers" data-view="marronniers">Marronniers</a>
     <a href="#contacts" data-view="contacts">Contacts</a>
@@ -192,6 +193,7 @@ select[multiple]{padding:4px}
     <div class="progress" id="progress" hidden></div>
     <div id="archStatus"></div>
 
+    <div class="banner row" id="restore" hidden style="background:var(--accent-soft);color:var(--ink)"></div>
     <div class="stats" id="stats"></div>
 
     <div class="card row" style="padding:12px 16px">
@@ -504,6 +506,7 @@ select[multiple]{padding:4px}
     const sheets = [];
     wb.eachSheet(ws => {
       if (ws.state && ws.state !== 'visible') return;
+      if (/^(r[ée]capitulatif|summary|resumen)$/i.test(String(ws.name).trim())) return; // onglet récapitulatif de nos propres fichiers
       const s = parseSheet(wb, ws);
       if (s) sheets.push(s);
     });
@@ -1165,7 +1168,7 @@ select[multiple]{padding:4px}
 
   const state = {
     db: null, dl: null, contacts: {}, contactsReady: false, settings: null, envois: {},
-    links: {}, attach: {}, mef: [], mail: null, mailCfg: null, access: null, accessLinks: {}, portal: {}, mode: 'admin', me: null, myHashes: [], previewCountry: null, library: {}, assets: null, archiveQ: { total: 0, done: 0, running: false, failed: [] }, libAll: false, libSel: new Set(), usage: null, calendars: {}, calPreview: null, calAll: false, entries: [], sel: null, subtab: 'controle', period: null, overrides: {}, building: {}, importPreview: null,
+    workflow: {}, links: {}, attach: {}, mef: [], mail: null, mailCfg: null, access: null, accessLinks: {}, portal: {}, mode: 'admin', me: null, myHashes: [], previewCountry: null, library: {}, assets: null, archiveQ: { total: 0, done: 0, running: false, failed: [] }, libAll: false, libSel: new Set(), usage: null, calendars: {}, calPreview: null, calAll: false, entries: [], sel: null, subtab: 'controle', period: null, overrides: {}, building: {}, importPreview: null,
   };
 
   // ---------- Utilitaires ----------
@@ -1222,6 +1225,7 @@ select[multiple]{padding:4px}
     db.doc('settings/email').onSnapshot(d => { state.settings = d.exists ? d.data() : null; renderTemplates(); if (state.sel) renderDetail(); }, () => { });
     window.claude.use('assets').then(as => { state.assets = as; renderLibrary(); if (as) { refreshUsage(); archivePending(); } }).catch(() => { });
     db.collection('library').onSnapshot(snap => { const l = {}; snap.docs.forEach(d => l[d.id] = d.data()); state.library = l; renderLibrary(); renderTable(); schedulePortalSync(); }, () => { });
+    db.collection('workflow').onSnapshot(snap => { const w = {}; snap.docs.forEach(d => w[d.id] = d.data()); state.workflow = w; renderAll(); }, () => { });
     db.collection('liens').onSnapshot(snap => { const l = {}; snap.docs.forEach(d => l[d.id] = d.data().url || ''); state.links = l; if (state.sel && state.subtab === 'email') renderDetail(); }, () => { });
     db.collection('calendars').onSnapshot(snap => { const c = {}; snap.docs.forEach(d => c[d.id] = d.data()); state.calendars = c; refresh(); renderCalendar(); }, () => { });
     db.collection('envois').onSnapshot(snap => { const e = {}; snap.docs.forEach(d => e[d.id] = d.data()); state.envois = e; renderAll(); schedulePortalSync(); }, () => { });
@@ -1255,7 +1259,7 @@ select[multiple]{padding:4px}
         const ab = await f.arrayBuffer();
         const hash = await sha(ab.slice(0));
         const parsed = await C.parsePlanning(window.ExcelJS, ab, f.name);
-        const entry = Object.assign(parsed, { id: Math.random().toString(36).slice(2), size: f.size, hash, validated: false, built: null, allSheets: parsed.sheets, excluded: [], userBrands: false });
+        const entry = Object.assign(parsed, { id: Math.random().toString(36).slice(2), size: f.size, hash, validated: false, built: null, allSheets: parsed.sheets, excluded: [], userBrands: false, stage: 'envoi' });
         if (parsed.month) months.push(parsed.month);
         const prev = entry.country ? state.entries.findIndex(e => e.country === entry.country) : -1;
         if (prev >= 0) state.entries.splice(prev, 1, entry); else state.entries.push(entry);
@@ -1275,6 +1279,28 @@ select[multiple]{padding:4px}
     archivePending();
     const first = state.entries.find(e => e.country);
     if (!state.sel && first) { state.sel = first.country; renderAll(); }
+  }
+
+  // ---------- Reprise des plannings enregistrés (après fermeture de la page) ----------
+  function restorable() { const p = periodKey(); return Object.values(state.library).filter(d => d.period === p && !entryFor(d.code)); }
+  function renderRestore() {
+    const el = $('#restore'); if (!el) return;
+    const list = restorable();
+    el.hidden = !list.length;
+    if (list.length) el.innerHTML = `<span style="flex:1"><b>${list.length} planning(s) mis en forme</b> pour ${esc(cap(C.MONTHS_FR[state.period.m]))} ${state.period.y} sont enregistrés mais pas chargés (${esc(list.map(d => d.code).join(', '))}).</span><button class="btn primary small" id="restoreGo">Reprendre ces plannings</button>`;
+    const b = $('#restoreGo'); if (b) b.addEventListener('click', () => busy(b, restoreFromLibrary));
+  }
+  async function restoreFromLibrary() {
+    const list = restorable(); let n = 0;
+    for (const d of list) {
+      try {
+        const u8 = await fetchLib(d);
+        const parsed = await C.parsePlanning(window.ExcelJS, u8.buffer, d.filename);
+        const entry = Object.assign(parsed, { id: Math.random().toString(36).slice(2), country: d.code, month: state.period, size: d.size || u8.length, hash: 'lib:' + d.assetId, validated: false, built: null, allSheets: parsed.sheets, excluded: [], userBrands: true, stage: 'envoi', archivedKey: d.key, filename: d.source || d.filename });
+        if (!entryFor(d.code)) { state.entries.push(entry); n++; }
+      } catch (err) { console.error(err); toast(`${d.code} : reprise impossible (${err.message || err})`); }
+    }
+    refresh(); toast(`${n} planning(s) repris`);
   }
 
   // ---------- Contrôles ----------
@@ -1300,8 +1326,16 @@ select[multiple]{padding:4px}
     if (sent) return { k: 'sent', label: 'Envoyé le ' + fmtDate(sent.sentAt), cls: 'p-sent' };
     const e = entryFor(code);
     if (!e) return { k: 'wait', label: 'En attente du planning', cls: 'p-wait' };
+    if (stageOf(code).stage === 'revision') return { k: 'revision', label: 'En révision', cls: 'p-warn' };
     if (e.issues.some(i => i.level === 'error')) return { k: 'err', label: 'À corriger', cls: 'p-err' };
     return { k: 'ready', label: 'Prêt à envoyer', cls: 'p-ready' };
+  }
+  // Étape de chaque pays pour le mois : « revision » (en cours de révision) ou « envoi » (prêt pour l'envoi)
+  function stageOf(code) { const w = state.workflow[`${periodKey()}_${code}`]; const e = entryFor(code); return w || { stage: (e && e.stage) || 'envoi', note: (e && e.note) || '' }; }
+  async function setStage(code, stage, note) {
+    const id = `${periodKey()}_${code}`, doc = { code, period: periodKey(), stage, note: note || '', updatedAt: new Date().toISOString() };
+    state.workflow[id] = doc; const e = entryFor(code); if (e) { e.stage = stage; e.note = note || ''; }
+    if (state.db) { try { await state.db.doc('workflow/' + id).set(doc); } catch (err) { toast('Statut non enregistré : ' + (err.code || err.message)); } }
   }
   function codes() {
     const set = new Set([...Object.keys(state.contacts), ...state.entries.filter(e => e.country).map(e => e.country)]);
@@ -1310,13 +1344,14 @@ select[multiple]{padding:4px}
 
   // ---------- Rendu principal ----------
   function refresh() { recompute(); renderAll(); }
-  function renderAll() { renderStats(); renderTable(); renderDetail(); renderContacts(); renderHistory(); renderCalendar(); renderLibrary(); renderMef(); }
+  function renderAll() { renderStats(); renderRestore(); renderTable(); renderDetail(); renderContacts(); renderHistory(); renderCalendar(); renderLibrary(); renderMef(); }
 
   function renderStats() {
-    const cs = codes(); const c = { wait: 0, check: 0, ready: 0, sent: 0 };
-    cs.forEach(code => { const k = statusOf(code).k; if (k === 'wait') c.wait++; else if (k === 'err' || k === 'warn') c.check++; else if (k === 'ready') c.ready++; else c.sent++; });
+    const cs = codes(); const c = { wait: 0, rev: 0, check: 0, ready: 0, sent: 0 };
+    cs.forEach(code => { const k = statusOf(code).k; if (k === 'wait') c.wait++; else if (k === 'revision') c.rev++; else if (k === 'err' || k === 'warn') c.check++; else if (k === 'ready') c.ready++; else c.sent++; });
     $('#stats').innerHTML = `
       <div class="stat s-wait"><b>${c.wait}</b><span>en attente du planning</span></div>
+      <div class="stat s-check"><b>${c.rev}</b><span>en révision</span></div>
       <div class="stat s-check"><b>${c.check}</b><span>à corriger</span></div>
       <div class="stat s-ready"><b>${c.ready}</b><span>prêts à envoyer</span></div>
       <div class="stat s-sent"><b>${c.sent}</b><span>envoyés · ${esc(cap(C.MONTHS_FR[state.period.m]))} ${state.period.y}</span></div>`;
@@ -1418,8 +1453,12 @@ select[multiple]{padding:4px}
     const nIss = e ? e.issues.filter(i => i.level === 'error').length : 0;
     const tabs = [['controle', `Contrôle${e ? ` (${nIss})` : ''}`], ['apercu', 'Aperçu'], ['email', 'Email et envoi']];
     let html = `<div class="detail-head"><h2>${esc(nameFor(code))}</h2><span class="code">${esc(code)}</span><span class="pill ${st.cls}">${esc(st.label)}</span><span class="spacer"></span>
+      ${e && st.k === 'revision' ? `<button class="btn primary" data-act="toEnvoi">Valider : passer à l'envoi</button>` : ''}
+      ${e && st.k !== 'revision' && st.k !== 'sent' ? `<button class="btn" data-act="toRevision">Mettre en révision</button>` : ''}
       ${e ? `<button class="btn" data-act="xlsx">Télécharger le planning mis en forme</button>` : ''}
-      </div>`;
+      </div>
+      ${e && st.k === 'revision' ? `<div class="banner warn">Planning en révision${stageOf(code).note ? ` : ${esc(stageOf(code).note)}` : ''}. Il ne peut pas être envoyé tant qu'il n'est pas validé.</div>` : ''}
+      <div class="row" id="revBox" hidden><input id="revNote" placeholder="Motif de la révision (facultatif) : ex. en attente des vidéos, retours MB à intégrer…" style="flex:1;min-width:240px;border:1px solid var(--line);border-radius:6px;padding:7px 9px;background:var(--paper)"><button class="btn primary small" data-act="revOk">Mettre en révision</button></div>`;
     if (!e) {
       html += `<div class="note">Aucun planning reçu pour ${esc(nameFor(code))} sur ${esc(cap(C.MONTHS_FR[state.period.m]))} ${state.period.y}. Déposez le fichier de l'agence ci-dessus.${ct && ct.brands && ct.brands.length ? ` Marques attendues : <b>${esc(ct.brands.join(', '))}</b>.` : ''}</div>`;
       if (st.k === 'sent') html += sentNote(code);
@@ -1438,7 +1477,7 @@ select[multiple]{padding:4px}
         <button class="btn small" data-hs="-1" aria-label="Précédent">‹</button><button class="btn small" data-hs="1" aria-label="Suivant">›</button></div>
       <ul class="issues hscroll" tabindex="0">${items.map(item).join('')}</ul></div>`;
     const errs = e.issues.filter(i => i.level === 'error'), rem = e.issues.filter(i => i.level !== 'error');
-    const list = (errs.length ? strip(errs, `<b style="color:var(--err)">${errs.length} élément${errs.length > 1 ? 's' : ''} à corriger</b>`) : `<div class="note" style="color:var(--ok)">Aucune erreur : le planning peut être envoyé.</div>`)
+    const list = (errs.length ? strip(errs, `<b style="color:var(--err)">${errs.length} élément${errs.length > 1 ? 's' : ''} à corriger</b>`) : `<div class="note" style="color:var(--ok)">Aucune erreur${stageOf(e.country).stage === 'revision' ? ' : le planning pourra être envoyé une fois validé.' : ' : le planning peut être envoyé.'}</div>`)
       + (rem.length ? `<details class="remarks" ${state.remarksOpen ? 'open' : ''}><summary>${rem.length} remarque${rem.length > 1 ? 's' : ''} pour information (n'empêchent pas l'envoi)</summary>${strip(rem, '<span class="muted">Remarques</span>')}</details>` : '');
     const lang = langFor(e.country);
     const brandsBox = `<div class="detail" style="gap:8px"><h3>Marques envoyées à ${esc(nameFor(e.country))}</h3>
@@ -1492,7 +1531,7 @@ select[multiple]{padding:4px}
     const m = emailFor(code);
     const chip = c => `<span class="recip">${c.name ? `${esc(c.name)} ` : ''}<b class="mono">${esc(c.email)}</b></span>`;
     const from = senderOf();
-    const hasTo = m.to.length > 0;
+    const hasTo = m.to.length > 0 && st.k !== 'revision';
     const built = e.built;
     return `<div class="field"><label>De (compte Outlook d'envoi)</label><div class="recips">${chip(from)} <a class="btn small ghost" href="#modele">Modifier</a></div></div>
       <div class="grid2">
@@ -1562,7 +1601,10 @@ select[multiple]{padding:4px}
       const act = el.dataset.act;
       if (act === 'reassign') { el.addEventListener('change', () => { if (!el.value) return; const other = entryFor(el.value); if (other && other !== e) state.entries.splice(state.entries.indexOf(other), 1); e.country = el.value; e.built = null; state.sel = el.value; refresh(); }); return; }
       el.addEventListener('click', async () => {
-        if (act === 'validate') { e.validated = true; refresh(); toast('Contrôle validé'); }
+        if (act === 'toEnvoi') { await setStage(code, 'envoi', ''); toast(`${nameFor(code)} : prêt pour l'envoi`); refresh(); }
+        else if (act === 'toRevision') { const rb = box.querySelector('#revBox'); rb.hidden = false; box.querySelector('#revNote').focus(); }
+        else if (act === 'revOk') { await setStage(code, 'revision', box.querySelector('#revNote').value.trim()); toast(`${nameFor(code)} : en révision`); refresh(); }
+        else if (act === 'validate') { e.validated = true; refresh(); toast('Contrôle validé'); }
         else if (act === 'remove') { state.entries.splice(state.entries.indexOf(e), 1); state.sel = null; refresh(); }
         else if (act === 'xlsx') { await busy(el, async () => { const b = await build(e); await save(b.filename, b.blob); renderDetail(); }); }
         else if (act === 'outlook') {
@@ -1647,7 +1689,7 @@ select[multiple]{padding:4px}
   function initGlobal() {
     $('#zipFiles').addEventListener('click', e => busy(e.currentTarget, async () => { const z = await packZip(codes().filter(entryFor), false); await save(`Plannings PE ${monthUpper()} ${state.period.y}.zip`, z); }));
     $('#zipPack').addEventListener('click', e => busy(e.currentTarget, async () => {
-      const list = codes().filter(c => entryFor(c) && statusOf(c).k !== 'sent');
+      const list = codes().filter(c => entryFor(c) && !['sent', 'revision'].includes(statusOf(c).k));
       if (!list.length) { toast('Tous les plannings reçus sont déjà marqués comme envoyés.'); return; }
       const z = await packZip(list, true); await save(`Pack envoi PE ${monthUpper()} ${state.period.y}.zip`, z);
     }));
@@ -2136,7 +2178,16 @@ select[multiple]{padding:4px}
         ${outside ? `<p class="muted" style="margin:0;font-size:12.5px">${outside} publication(s) d'autres mois ignorée(s).</p>` : ''}
         <div class="row"><span class="muted" style="font-size:12.5px">Publications par pays :</span><div class="brands">${summary || '<span class="muted">aucun pays choisi</span>'}</div><span class="spacer"></span>
           <button class="btn" data-mefzip ${sel.length ? '' : 'disabled'}>Télécharger un fichier par pays (.zip)</button>
-          <button class="btn primary" data-mefsend ${sel.length ? '' : 'disabled'}>Ajouter aux envois des pays</button></div>
+        </div>
+        <div class="place">
+          <div class="row"><b style="font-size:13px">Positionner les ${sel.length} pays sélectionnés</b><span class="muted" style="font-size:12.5px">Les plannings rejoignent l'étape 2 · Pays et envois avec ce statut ; vous pourrez le changer pays par pays.</span></div>
+          <div class="row">
+            <input data-mefnote placeholder="Motif de révision (facultatif) : ex. en attente des vidéos" style="flex:1;min-width:220px;border:1px solid var(--line);border-radius:6px;padding:7px 9px;background:var(--paper)">
+            <button class="btn" data-mefrev ${sel.length ? '' : 'disabled'}>Mettre en révision</button>
+            <button class="btn primary" data-mefsend ${sel.length ? '' : 'disabled'}>Prêt pour l'envoi</button>
+          </div>
+          ${f.placed && Object.keys(f.placed).length ? `<div class="row"><span class="muted" style="font-size:12.5px">Positionnés :</span><div class="brands">${Object.keys(f.placed).map(c => { const s = statusOf(c); return `<span class="pill ${s.cls}" title="${esc(nameFor(c))}">${esc(c)} · ${esc(s.label)}</span>`; }).join('')}</div><a class="btn small ghost" href="#pays">Voir l'étape 2 · Pays et envois</a></div>` : ''}
+        </div>
       </section>`;
     }).join('');
     box.querySelectorAll('[data-mef]').forEach(card => {
@@ -2147,7 +2198,8 @@ select[multiple]{padding:4px}
       card.querySelectorAll('[data-mefc]').forEach(cb => cb.addEventListener('change', () => { cb.checked ? f.countries.add(cb.dataset.mefc) : f.countries.delete(cb.dataset.mefc); renderMef(); }));
       card.querySelectorAll('[data-mpost]').forEach(cb => cb.addEventListener('change', () => { const k = cb.dataset.mpost.split('|')[1]; cb.checked ? f.exclude.delete(k) : f.exclude.add(k); renderMef(); }));
       const z = card.querySelector('[data-mefzip]'); if (z) z.addEventListener('click', () => busy(z, () => mefZip(f)));
-      const sd = card.querySelector('[data-mefsend]'); if (sd) sd.addEventListener('click', () => busy(sd, async () => mefSend(f)));
+      const sd = card.querySelector('[data-mefsend]'); if (sd) sd.addEventListener('click', () => busy(sd, async () => mefSend(f, 'envoi', '')));
+      const rv = card.querySelector('[data-mefrev]'); if (rv) rv.addEventListener('click', () => busy(rv, async () => mefSend(f, 'revision', card.querySelector('[data-mefnote]').value.trim())));
     });
   }
   function mefAdapted(f, code) { return C.adaptForCountry(f.parsed, code, { lang: langFor(code), month: f.month, exclude: f.exclude, translationColumn: f.translationColumn }); }
@@ -2161,7 +2213,7 @@ select[multiple]{padding:4px}
     }
     await save(`PE ${brand} ${monthUp(f.month.m)} ${f.month.y} - par pays.zip`, await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 3 } }));
   }
-  function mefSend(f) {
+  async function mefSend(f, stage, note) {
     if (mKey(f.month) !== mKey(state.period)) setPeriod({ y: f.month.y, m: f.month.m });
     let n = 0;
     for (const code of f.countries) {
@@ -2178,11 +2230,13 @@ select[multiple]{padding:4px}
         entry = { id: Math.random().toString(36).slice(2), filename: f.filename, country: code, month: f.month, sheets: ad.sheets, allSheets: ad.sheets, excluded: [], userBrands: false, size: f.size, hash: `${f.hash}:${code}`, validated: false, built: null };
         state.entries.push(entry);
       }
+      await setStage(code, stage, note);
+      (f.placed = f.placed || {})[code] = stage;
       n++;
     }
     refresh(); archivePending();
-    toast(`${n} pays ajouté(s) aux envois de ${C.MONTHS_FR[f.month.m]} ${f.month.y}`);
-    location.hash = '#pays';
+    toast(`${n} pays positionné(s) ${stage === 'revision' ? 'en révision' : 'pour l\'envoi'} (${C.MONTHS_FR[f.month.m]} ${f.month.y})`);
+    renderMef();
   }
   function initMef() {
     const drop = $('#mefDrop'), inp = $('#mefIn'); if (!drop) return;
@@ -2194,10 +2248,10 @@ select[multiple]{padding:4px}
   }
 
   // ---------- Navigation ----------
-  const VIEWS = ['pays', 'miseenforme', 'telechargements', 'marronniers', 'contacts', 'modele', 'historique'];
+  const VIEWS = ['miseenforme', 'pays', 'telechargements', 'marronniers', 'contacts', 'modele', 'historique'];
   function route() {
     if (state.mode === 'portal' || state.previewCountry) return;
-    const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'pays';
+    const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'miseenforme';
     VIEWS.forEach(x => { $('#v-' + x).hidden = x !== v; });
     document.querySelectorAll('nav.tabs a').forEach(a => { if (a.dataset.view === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   }

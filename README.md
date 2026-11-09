@@ -10,6 +10,11 @@ Chaque mois, les agences livrent un fichier Excel par pays (Côte d'Ivoire, Came
 
 ## Ce que fait la plateforme
 
+Le travail se fait en deux étapes enchaînées :
+
+1. **Mise en forme** : les plannings des agences sont transformés en un fichier propre par pays.
+2. **Pays et envois** : chaque pays est positionné **En révision** (avec un motif, par exemple « en attente des vidéos ») ou **Prêt pour l'envoi**, contrôlé, puis envoyé. Un planning en révision ne peut pas être envoyé tant qu'il n'est pas validé. Les statuts sont conservés, et les plannings mis en forme peuvent être repris plus tard, même après fermeture de la page.
+
 ### 1. Dépôt
 Glissez les fichiers des agences (plusieurs à la fois). Le pays et le mois sont reconnus à partir du nom du fichier, par exemple `CIV - PE NOVEMBRE 2026.xlsx`. Textes, thématiques, commentaires et visuels intégrés sont lus automatiquement.
 
