@@ -117,6 +117,12 @@ tbody tr:last-child td{border-bottom:0}
 .ccard{display:grid;grid-template-columns:180px 1fr 1fr;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
 .ccard:first-of-type{border-top:0}
 .hist td{cursor:default}
+.viewer{position:fixed;inset:0;background:rgba(10,12,18,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.viewer[hidden]{display:none!important}
+.viewer-panel{background:var(--paper);border-radius:10px;width:min(1100px,100%);height:min(92vh,100%);display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+.viewer-head{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.viewer-body{flex:1;overflow:auto;padding:16px}
+body.noscroll{overflow:hidden}
 .place{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}
 .mailprev{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:#fff;color:#222;min-height:260px;overflow:auto;font-size:13px}
 .mailprev a{color:#1f4fd8}
@@ -300,6 +306,16 @@ select[multiple]{padding:4px}
       </table>
     </div>
   </section>
+</div>
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-labelledby="viewerTitle">
+  <div class="viewer-panel">
+    <div class="viewer-head">
+      <div style="flex:1;min-width:0"><h2 id="viewerTitle">Planning</h2><div class="muted" id="viewerMeta" style="font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div></div>
+      <button class="btn small" id="viewerDl">Télécharger</button>
+      <button class="btn small" id="viewerClose" aria-label="Fermer l'aperçu">Fermer</button>
+    </div>
+    <div class="viewer-body" id="viewerBody"></div>
+  </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -1998,7 +2014,7 @@ select[multiple]{padding:4px}
           <td><div class="brands">${(d.brands || []).map(b => `<span class="bchip"><i style="background:#${brandInfo(b).color}"></i>${esc(b)}</span>`).join('')}</div></td>
           <td>${esc(d.posts)}</td><td class="mono">${fmtSize(d.size || 0)}</td><td>${fmtDate(d.savedAt)}</td>
           <td>${sent ? `<span class="pill p-sent">Envoyé le ${fmtDate(sent.sentAt)}</span>` : '<span class="pill p-wait">Non envoyé</span>'}</td>
-          <td style="white-space:nowrap"><button class="btn small primary" data-ldl="${esc(id)}">Télécharger</button> ${state.assets ? `<button class="btn small ghost" data-ldel="${esc(id)}">Supprimer</button>` : ''}</td></tr>`;
+          <td style="white-space:nowrap"><button class="btn small" data-lview="${esc(id)}">Visualiser</button> <button class="btn small primary" data-ldl="${esc(id)}">Télécharger</button> ${state.assets ? `<button class="btn small ghost" data-ldel="${esc(id)}">Supprimer</button>` : ''}</td></tr>`;
       }).join('');
       html += `</tbody></table></div>`;
     }
@@ -2008,6 +2024,7 @@ select[multiple]{padding:4px}
     box.querySelector('#libAll').addEventListener('change', ev => { state.libAll = ev.target.checked; state.libSel.clear(); renderLibrary(); });
     box.querySelector('#libSelAll').addEventListener('click', () => { const ids = rows.map(([id]) => id); const all = ids.every(id => state.libSel.has(id)); ids.forEach(id => all ? state.libSel.delete(id) : state.libSel.add(id)); renderLibrary(); });
     box.querySelectorAll('[data-lsel]').forEach(cb => cb.addEventListener('change', () => { cb.checked ? state.libSel.add(cb.dataset.lsel) : state.libSel.delete(cb.dataset.lsel); renderLibrary(); }));
+    box.querySelectorAll('[data-lview]').forEach(b => b.addEventListener('click', () => openViewer(state.library[b.dataset.lview], b)));
     box.querySelectorAll('[data-ldl]').forEach(b => b.addEventListener('click', () => busy(b, async () => { const d = state.library[b.dataset.ldl]; const u8 = await fetchLib(d); await save(d.filename, new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); })));
     box.querySelectorAll('[data-ldel]').forEach(b => b.addEventListener('click', async () => {
       const id = b.dataset.ldel, d = state.library[id];
@@ -2084,16 +2101,17 @@ select[multiple]{padding:4px}
       html += `<div class="card row" style="gap:16px"><div style="flex:1;min-width:220px"><div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em">Dernier planning</div>
         <h2 style="margin-top:2px">${esc(cap(C.MONTHS_FR[+latest.period.split('-')[1] - 1]))} ${esc(latest.period.split('-')[0])}${countries.length > 1 ? ` · ${esc(latest.pays)}` : ''}</h2>
         <div class="brands" style="margin-top:6px">${(latest.brands || []).map(b => `<span class="bchip"><i style="background:#${brandInfo(b).color}"></i>${esc(b)}</span>`).join('')}</div></div>
-        <button class="btn primary" data-pdl="${esc(docs[0][0])}">Télécharger le planning</button></div>`;
+        <button class="btn" data-pview="${esc(docs[0][0])}">Visualiser</button><button class="btn primary" data-pdl="${esc(docs[0][0])}">Télécharger le planning</button></div>`;
       html += `<h3>Historique</h3><div class="tablewrap"><table><thead><tr><th>Mois</th>${countries.length > 1 ? '<th>Pays</th>' : ''}<th>Marques</th><th>Publications</th><th>Mis à disposition le</th><th>Envoyé par email le</th><th></th></tr></thead><tbody class="plain">`;
       html += docs.map(([id, d]) => { const [y, mm] = String(d.period).split('-'); return `<tr><td><b>${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</b></td>${countries.length > 1 ? `<td>${esc(d.pays)}</td>` : ''}
         <td><div class="brands">${(d.brands || []).map(b => `<span class="bchip"><i style="background:#${brandInfo(b).color}"></i>${esc(b)}</span>`).join('')}</div></td><td>${esc(d.posts)}</td>
         <td>${d.savedAt ? fmtDate(d.savedAt) : '—'}</td><td>${d.sentAt ? fmtDate(d.sentAt) : '<span class="muted">—</span>'}</td>
-        <td style="white-space:nowrap"><button class="btn small" data-pdl="${esc(id)}">Télécharger</button> <span class="muted mono" style="font-size:11.5px">${fmtSize(d.size || 0)}</span></td></tr>`; }).join('');
+        <td style="white-space:nowrap"><button class="btn small" data-pview="${esc(id)}">Visualiser</button> <button class="btn small" data-pdl="${esc(id)}">Télécharger</button> <span class="muted mono" style="font-size:11.5px">${fmtSize(d.size || 0)}</span></td></tr>`; }).join('');
       html += `</tbody></table></div>`;
     }
     box.innerHTML = html;
     const ex = box.querySelector('#pvExit'); if (ex) ex.addEventListener('click', () => { state.previewCountry = null; document.body.classList.remove('portal-mode'); $('#v-portail').hidden = true; route(); });
+    box.querySelectorAll('[data-pview]').forEach(b => b.addEventListener('click', () => openViewer(state.portal[b.dataset.pview], b)));
     box.querySelectorAll('[data-pdl]').forEach(b => b.addEventListener('click', () => busy(b, async () => { const d = state.portal[b.dataset.pdl]; const u8 = await fetchLib(d); await save(d.filename, new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); })));
   }
   function openPreview(code) { state.previewCountry = code; document.body.classList.add('portal-mode'); VIEWS.forEach(x => { $('#v-' + x).hidden = true; }); $('#v-portail').hidden = false; renderPortal(); window.scrollTo(0, 0); }
@@ -2247,6 +2265,48 @@ select[multiple]{padding:4px}
     renderMef();
   }
 
+
+  // ---------- Visualisation d'un planning enregistré ----------
+  const viewerCache = new Map();
+  let viewerReturn = null, viewerDoc = null;
+  async function openViewer(d, opener) {
+    if (!d) return;
+    viewerReturn = opener || null; viewerDoc = d;
+    const v = $('#viewer'), body = $('#viewerBody');
+    const [y, mm] = String(d.period).split('-');
+    $('#viewerTitle').textContent = `${d.pays} · ${cap(C.MONTHS_FR[+mm - 1] || '')} ${y}`;
+    $('#viewerMeta').textContent = `${(d.brands || []).join(', ')} · ${d.posts || 0} publication(s) · ${d.filename}`;
+    body.innerHTML = '<div class="empty">Ouverture du planning…</div>';
+    v.hidden = false; document.body.classList.add('noscroll');
+    $('#viewerClose').focus();
+    try {
+      let entry = viewerCache.get(d.assetId);
+      if (!entry) {
+        const u8 = await fetchLib(d);
+        entry = await C.parsePlanning(window.ExcelJS, u8.buffer, d.filename);
+        viewerCache.set(d.assetId, entry);
+      }
+      if (viewerDoc !== d) return;
+      const tabs = entry.sheets.map((s, i) => `<button role="tab" aria-selected="${i === 0}" data-vtab="${i}">${esc(s.brand)} <span class="muted">${s.posts.length}</span></button>`).join('');
+      body.innerHTML = `${entry.sheets.length > 1 ? `<div class="subtabs" role="tablist" style="margin-bottom:12px">${tabs}</div>` : ''}<div id="viewerSheets">${renderPreview({ sheets: [entry.sheets[0]] })}</div>`;
+      body.querySelectorAll('[data-vtab]').forEach(b => b.addEventListener('click', () => {
+        body.querySelectorAll('[data-vtab]').forEach(x => x.setAttribute('aria-selected', x === b ? 'true' : 'false'));
+        $('#viewerSheets').innerHTML = renderPreview({ sheets: [entry.sheets[+b.dataset.vtab]] });
+        body.scrollTop = 0;
+      }));
+    } catch (err) { body.innerHTML = `<div class="empty">Impossible d'ouvrir ce planning (${esc(err.message || err)}).</div>`; }
+  }
+  function closeViewer() {
+    $('#viewer').hidden = true; document.body.classList.remove('noscroll'); viewerDoc = null;
+    if (viewerReturn && viewerReturn.isConnected) viewerReturn.focus();
+  }
+  function initViewer() {
+    $('#viewerClose').addEventListener('click', closeViewer);
+    $('#viewer').addEventListener('click', e => { if (e.target.id === 'viewer') closeViewer(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#viewer').hidden) closeViewer(); });
+    $('#viewerDl').addEventListener('click', e => busy(e.currentTarget, async () => { const d = viewerDoc; if (!d) return; const u8 = await fetchLib(d); await save(d.filename, new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); }));
+  }
+
   // ---------- Navigation ----------
   const VIEWS = ['miseenforme', 'pays', 'telechargements', 'marronniers', 'contacts', 'modele', 'historique'];
   function route() {
@@ -2263,7 +2323,7 @@ select[multiple]{padding:4px}
     tb.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(ev.target.closest('tr')); } });
   }
 
-  initPeriod(); initDrop(); initTable(); initGlobal(); initContacts(); initTemplates(); initCalendar(); initSendAll(); initMef();
+  initPeriod(); initDrop(); initTable(); initGlobal(); initContacts(); initTemplates(); initCalendar(); initSendAll(); initMef(); initViewer();
   window.addEventListener('hashchange', route); route();
   renderAll();
   initCaps();

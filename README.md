@@ -71,11 +71,11 @@ Le mois et la liste des marques (« Planet, Bubble Up et American Cola ») sont 
 La plateforme fournit un **brouillon Outlook (.eml)** prêt à envoyer depuis contact20@exemple.example. Un pack réunit tous les pays en une fois. Chaque envoi est enregistré dans l'historique.
 
 ### 6. Téléchargements et Espace pays
-Tous les plannings mis en forme sont conservés, mois par mois, et restent téléchargeables à tout moment.
+Tous les plannings mis en forme sont conservés, mois par mois. Le bouton **Visualiser** les ouvre dans la plateforme, marque par marque, avec les textes et les visuels, sans téléchargement. On peut aussi les télécharger à tout moment.
 
 ![Téléchargements](docs/captures/telechargements.png)
 
-Les **bottlers** se connectent à leur **Espace pays**. Ils n'y voient que les plannings et l'historique de leur pays, en téléchargement uniquement.
+Les **bottlers** se connectent à leur **Espace pays**. Ils n'y voient que les plannings et l'historique de leur pays, qu'ils peuvent visualiser ou télécharger.
 
 ![Espace pays d'un bottler](docs/captures/espace-pays.png)
 
