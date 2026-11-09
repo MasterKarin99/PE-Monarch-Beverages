@@ -1329,6 +1329,7 @@ select[multiple]{padding:4px}
 (function () {
   'use strict';
   const C = window.PECore;
+  const CL = () => window.PE_CLAUDE || window.claude; // PE_CLAUDE : version de démonstration (données en mémoire)
   const $ = s => document.querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
@@ -1366,12 +1367,12 @@ select[multiple]{padding:4px}
   // ---------- Capacités ----------
   async function initCaps() {
     setTimeout(() => document.body.classList.remove('booting'), 4000);
-    if (!window.claude || !window.claude.use) { document.body.classList.remove('booting'); $('#dlWarn').hidden = false; renderContacts(); return; }
-    window.claude.use('downloads').then(dl => { state.dl = dl; $('#dlWarn').hidden = !!dl; }).catch(() => { $('#dlWarn').hidden = false; });
+    if (!CL() || !CL().use) { document.body.classList.remove('booting'); $('#dlWarn').hidden = false; renderContacts(); return; }
+    CL().use('downloads').then(dl => { state.dl = dl; $('#dlWarn').hidden = !!dl; }).catch(() => { $('#dlWarn').hidden = false; });
     let db = null;
-    try { db = await window.claude.use('db'); } catch (e) { db = null; }
+    try { db = await CL().use('db'); } catch (e) { db = null; }
     state.db = db;
-    let user = null; try { user = await window.claude.use('user'); } catch (e) { user = null; }
+    let user = null; try { user = await CL().use('user'); } catch (e) { user = null; }
     if (user) {
       const [canEdit, dw] = await Promise.all([user.canEdit(), user.can('data.write')]);
       if (!canEdit && dw !== true && dw !== null) state.mode = 'portal';
@@ -1381,8 +1382,8 @@ select[multiple]{padding:4px}
     document.body.classList.remove('booting');
     renderWho();
     if (state.mode === 'portal') { await initPortalMode(db); return; }
-    window.claude.use('access').then(x => { state.access = x; renderContacts(); }).catch(() => { });
-    window.claude.use('mail').then(m => { state.mail = m; if (m) m.config().then(c => { state.mailCfg = c; renderTemplates(); renderAll(); }).catch(() => { }); }).catch(() => { });
+    CL().use('access').then(x => { state.access = x; renderContacts(); }).catch(() => { });
+    CL().use('mail').then(m => { state.mail = m; if (m) m.config().then(c => { state.mailCfg = c; renderTemplates(); renderAll(); }).catch(() => { }); }).catch(() => { });
     if (!db) { state.contactsReady = true; renderAll(); return; }
     db.collection('portal').onSnapshot(snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); state.portal = p; schedulePortalSync(); renderPortal(); }, () => { });
     const timer = setTimeout(() => { if (!state.contactsReady) { state.contactsReady = true; state.dbSlow = true; renderAll(); } }, 10000);
@@ -1392,7 +1393,7 @@ select[multiple]{padding:4px}
       state.contactsReady = true; refresh(); schedulePortalSync();
     }, () => { clearTimeout(timer); state.contactsReady = true; renderAll(); });
     db.doc('settings/email').onSnapshot(d => { state.settings = d.exists ? d.data() : null; renderTemplates(); if (state.sel) renderDetail(); }, () => { });
-    window.claude.use('assets').then(as => { state.assets = as; renderLibrary(); if (as) { refreshUsage(); archivePending(); } }).catch(() => { });
+    CL().use('assets').then(as => { state.assets = as; renderLibrary(); if (as) { refreshUsage(); archivePending(); } }).catch(() => { });
     db.collection('library').onSnapshot(snap => { const l = {}; snap.docs.forEach(d => l[d.id] = d.data()); state.library = l; renderLibrary(); renderTable(); schedulePortalSync(); }, () => { });
     db.collection('workflow').onSnapshot(snap => { const w = {}; snap.docs.forEach(d => w[d.id] = d.data()); state.workflow = w; renderAll(); }, () => { });
     db.collection('liens').onSnapshot(snap => { const l = {}; snap.docs.forEach(d => l[d.id] = d.data().url || ''); state.links = l; if (state.sel && state.subtab === 'email') renderDetail(); }, () => { });
@@ -2514,6 +2515,31 @@ select[multiple]{padding:4px}
     $('#viewerDl').addEventListener('click', e => busy(e.currentTarget, async () => { const d = viewerDoc; if (!d) return; const u8 = await fetchLib(d); await save(d.filename, new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); }));
   }
 
+
+  // ---------- Démonstration : chargement automatique d'un mois type ----------
+  async function demoBoot(cfg) {
+    const st = $('#demoStatus'); const say = t => { if (st) st.textContent = t; };
+    try {
+      say('Chargement des plannings de démonstration…');
+      const files = [];
+      for (const f of cfg.files) { const r = await fetch(f.path); if (!r.ok) throw new Error(f.path); let blob = await r.blob(); if (f.path.endsWith('.txt')) { const bin = atob((await blob.text()).trim()); const u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); blob = new Blob([u8]); } files.push(new File([blob], f.name)); }
+      await mefAddFiles(files);
+      say('Positionnement des pays…');
+      for (const f of state.mef.slice().reverse()) {
+        if (f.parsed.source === 'slides') continue;
+        const code = f.parsed.country, rev = cfg.revision[code];
+        await mefSend(f, rev ? 'revision' : 'envoi', rev || '');
+      }
+      for (const [code, url] of Object.entries(cfg.links || {})) await saveLink(code, url);
+      for (const code of cfg.sent || []) await markSent(code);
+      state.mef = state.mef.filter(f => f.parsed.source === 'slides');
+      setPeriod(cfg.period); refresh(); renderMef();
+      location.hash = '#miseenforme';
+      say('Démo prête.');
+      setTimeout(() => { if (st) st.textContent = ''; }, 3000);
+    } catch (err) { console.error(err); say('Chargement de la démo incomplet : ' + (err.message || err)); }
+  }
+
   // ---------- Navigation ----------
   const VIEWS = ['miseenforme', 'pays', 'telechargements', 'marronniers', 'contacts', 'modele', 'historique'];
   function route() {
@@ -2533,7 +2559,7 @@ select[multiple]{padding:4px}
   initPeriod(); initTable(); initGlobal(); initContacts(); initTemplates(); initCalendar(); initSendAll(); initMef(); initViewer();
   window.addEventListener('hashchange', route); route();
   renderAll();
-  initCaps();
+  initCaps().then(() => { if (window.PE_DEMO) setTimeout(() => demoBoot(window.PE_DEMO), 300); });
 })();
 
 </script>
