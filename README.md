@@ -83,6 +83,8 @@ Tous les plannings mis en forme sont conservés, mois par mois. Le bouton **Visu
 
 Les **bottlers** se connectent à leur **Espace pays**. Ils n'y voient que les plannings et l'historique de leur pays, qu'ils peuvent visualiser ou télécharger.
 
+Depuis leur Espace pays, ils peuvent aussi **valider le planning** ou **demander des modifications** (avec un commentaire). Leur réponse apparaît dans la colonne « Validation bottler » de l'onglet Téléchargements et sous le statut du pays dans « Pays et envois ». Chaque bottler ne peut répondre que pour les plannings de son pays.
+
 ![Espace pays d'un bottler](docs/captures/espace-pays.png)
 
 ---

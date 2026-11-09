@@ -120,10 +120,26 @@ app.get('/api/db/list', (req, res) => {
 app.get('/api/db/doc', (req, res) => {
   const p = String(req.query.path || '');
   if (!validPath(p, 0)) return res.status(400).json({ error: 'Chemin invalide' });
+  if (!req.user.isAdmin && p === ownValidation(req.user)) { const d = store.get(p); return res.json(d ? Object.assign({ exists: true }, d) : { exists: false }); }
   if (!req.user.isAdmin && !isPortal(p)) return res.json({ exists: false });
   const d = store.get(p);
   if (!d || !visibleTo(req.user, d)) return res.json({ exists: false });
   res.json(Object.assign({ exists: true }, d));
+});
+// Validation d'un planning par le bottler : chacun n'écrit que son propre document validations/<email>,
+// et seulement pour des plannings de son pays (vérifié par l'empreinte de son adresse).
+const ownValidation = u => 'validations/' + u.email;
+app.put('/api/db/doc', express.json({ limit: '256kb' }), (req, res, next) => {
+  const p = String(req.query.path || '');
+  if (req.user.isAdmin || p !== ownValidation(req.user)) return next();
+  if (!validPath(p, 0)) return res.status(400).json({ error: 'Chemin invalide' });
+  const src = (req.body && req.body.items) || {}; const items = {};
+  for (const [id, it] of Object.entries(src)) {
+    const doc = store.get('portal/' + id);
+    if (!doc || !visibleTo(req.user, doc) || !it || !['valide', 'modifs'].includes(it.status)) continue;
+    items[id] = { status: it.status, comment: String(it.comment || '').slice(0, 2000), at: String(it.at || new Date().toISOString()).slice(0, 40), code: doc.data.code, period: doc.data.period, filename: doc.data.filename };
+  }
+  store.set(p, { email: req.user.email, hash: req.user.hash, name: '', items }, req.user.email); res.status(204).end();
 });
 const adminOnly = (req, res, next) => req.user.isAdmin ? next() : res.status(403).json({ error: 'Accès réservé à l\'équipe' });
 app.put('/api/db/doc', adminOnly, express.json({ limit: '2mb' }), (req, res) => {

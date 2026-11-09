@@ -185,6 +185,10 @@ select[multiple]{padding:4px}
 @media (max-width:760px){ .grid2,.ccard,.grid4{grid-template-columns:1fr} .grid4 .field{grid-column:auto!important} .post{grid-template-columns:1fr} .issues li{grid-template-columns:1fr} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
+.valbox{flex-basis:100%;border-top:1px solid var(--line);padding-top:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.valcom{font-size:12.5px;color:var(--ink);margin-top:4px;white-space:pre-wrap;max-width:320px}
+.valask{display:flex;flex-direction:column;gap:6px;min-width:240px;flex:1}
+.valask textarea{border:1px solid var(--line);border-radius:6px;padding:7px 9px;background:var(--paper);width:100%;resize:vertical;font-family:var(--font-body)}
 </style>
 </head>
 <body class="booting">
@@ -1372,7 +1376,7 @@ select[multiple]{padding:4px}
 
   const state = {
     db: null, dl: null, contacts: {}, contactsReady: false, settings: null, envois: {},
-    workflow: {}, links: {}, attach: {}, mef: [], mail: null, mailCfg: null, access: null, accessLinks: {}, portal: {}, mode: 'admin', me: null, myHashes: [], previewCountry: null, library: {}, assets: null, archiveQ: { total: 0, done: 0, running: false, failed: [] }, libAll: false, libSel: new Set(), usage: null, calendars: {}, calPreview: null, calAll: false, entries: [], sel: null, subtab: 'controle', period: null, overrides: {}, building: {}, importPreview: null,
+    workflow: {}, links: {}, attach: {}, mef: [], mail: null, mailCfg: null, access: null, accessLinks: {}, portal: {}, validations: {}, myVal: null, uid: null, valAsk: null, valEdit: null, mode: 'admin', me: null, myHashes: [], previewCountry: null, library: {}, assets: null, archiveQ: { total: 0, done: 0, running: false, failed: [] }, libAll: false, libSel: new Set(), usage: null, calendars: {}, calPreview: null, calAll: false, entries: [], sel: null, subtab: 'controle', period: null, overrides: {}, building: {}, importPreview: null,
   };
 
   // ---------- Utilitaires ----------
@@ -1414,9 +1418,11 @@ select[multiple]{padding:4px}
     state.db = db;
     let user = null; try { user = await CL().use('user'); } catch (e) { user = null; }
     if (user) {
-      const [canEdit, dw] = await Promise.all([user.canEdit(), user.can('data.write')]);
-      if (!canEdit && dw !== true && dw !== null) state.mode = 'portal';
-      else if (!canEdit && dw === null && !(await user.isOwner())) state.mode = 'portal';
+      // Équipe = propriétaire et éditeurs ; toute autre personne (bottler) ne voit que son Espace pays
+      const [canEdit, isOwner, dw] = await Promise.all([user.canEdit(), user.isOwner(), user.can('data.write')]);
+      if (!canEdit && !isOwner && !window.PE_HOSTED) state.mode = 'portal';
+      else if (window.PE_HOSTED && !canEdit) state.mode = 'portal';
+      state.canWrite = dw !== false; state.userCap = user;
       try { state.me = await user.me(); } catch (e) { state.me = null; }
     }
     document.body.classList.remove('booting');
@@ -1425,7 +1431,12 @@ select[multiple]{padding:4px}
     CL().use('access').then(x => { state.access = x; renderContacts(); }).catch(() => { });
     CL().use('mail').then(m => { state.mail = m; if (m) m.config().then(c => { state.mailCfg = c; renderTemplates(); renderAll(); }).catch(() => { }); }).catch(() => { });
     if (!db) { state.contactsReady = true; renderAll(); return; }
-    db.collection('portal').onSnapshot(snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); state.portal = p; schedulePortalSync(); renderPortal(); }, () => { });
+    db.collection('portal').onSnapshot(snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); state.portal = p; schedulePortalSync(); renderPortal(); renderLibrary(); renderTable(); }, () => { });
+    db.collection('validations').onSnapshot(async snap => {
+      const v = {}; snap.docs.forEach(d => v[d.id] = Object.assign({}, d.data())); 
+      try { const ps = state.userCap && !window.PE_HOSTED ? await state.userCap.profiles(Object.keys(v)) : null; if (ps) for (const [uid, x] of Object.entries(v)) { const em = ps[uid] && ps[uid].email; if (em) { x.email = em; x.hash = await hashEmail(em); x.name = ps[uid].name || x.name; } } } catch (e) { }
+      state.validations = v; renderLibrary(); renderTable(); if (state.sel) renderDetail();
+    }, () => { });
     const timer = setTimeout(() => { if (!state.contactsReady) { state.contactsReady = true; state.dbSlow = true; renderAll(); } }, 10000);
     db.collection('contacts').onSnapshot(snap => {
       const c = {}; snap.docs.forEach(d => { c[d.id] = d.data(); });
@@ -1540,6 +1551,24 @@ select[multiple]{padding:4px}
     if (e.issues.some(i => i.level === 'error')) return { k: 'err', label: 'À corriger', cls: 'p-err' };
     return { k: 'ready', label: 'Prêt à envoyer', cls: 'p-ready' };
   }
+  // Validation du planning par le bottler (depuis son Espace pays)
+  function validationOf(id) {
+    const acc = (state.portal[id] && state.portal[id].access) || [];
+    let best = null;
+    for (const v of Object.values(state.validations || {})) {
+      const it = v && v.items && v.items[id]; if (!it || !it.status) continue;
+      if (!best || String(it.at) > String(best.at)) best = Object.assign({}, it, { email: v.email || '', name: v.name || '', verified: !!v.hash && acc.includes(v.hash) });
+    }
+    return best;
+  }
+  function valPill(id, opts) {
+    const v = validationOf(id); opts = opts || {};
+    if (!v) return opts.empty === false ? '' : '<span class="pill p-wait">En attente</span>';
+    const who = v.email ? ` title="${esc((v.name ? v.name + ' · ' : '') + v.email)}"` : '';
+    const warn = v.verified ? '' : ' <span class="muted" style="font-size:11.5px" title="Adresse absente des destinataires de ce pays">(adresse non reconnue)</span>';
+    if (v.status === 'valide') return `<span class="pill p-sent"${who}>Validé le ${esc(fmtDate(v.at))}</span>${opts.who ? `<div class="muted" style="font-size:11.5px;margin-top:2px">${esc(v.email)}</div>` : ''}${warn}`;
+    return `<span class="pill p-warn"${who}>Modifications demandées le ${esc(fmtDate(v.at))}</span>${opts.who ? `<div class="muted" style="font-size:11.5px;margin-top:2px">${esc(v.email)}</div>` : ''}${v.comment && opts.comment !== false ? `<div class="valcom">« ${esc(v.comment)} »</div>` : ''}${warn}`;
+  }
   // Étape de chaque pays pour le mois : « revision » (en cours de révision) ou « envoi » (prêt pour l'envoi)
   function stageOf(code) { const w = state.workflow[`${periodKey()}_${code}`]; const e = entryFor(code); return w || { stage: (e && e.stage) || 'envoi', note: (e && e.note) || '' }; }
   async function setStage(code, stage, note) {
@@ -1594,7 +1623,7 @@ select[multiple]{padding:4px}
       const rc = ct ? `<div class="addr">${(ct.to || []).map(c => `<div>${esc(c.email)}</div>`).join('')}${(ct.cc || []).length ? `<div class="muted">cc ${(ct.cc || []).map(c => esc(c.email)).join(', ')}</div>` : ''}</div>` : '<span style="color:var(--err)">aucun contact</span>';
       html += `<tr data-code="${esc(code)}" class="${state.sel === code ? 'sel' : ''}" tabindex="0">
         <td><b>${esc(nameFor(code))}</b><span class="code">${esc(code)}</span></td>
-        <td><span class="pill ${st.cls}">${esc(st.label)}</span></td>
+        <td><span class="pill ${st.cls}">${esc(st.label)}</span>${validationOf(libId(periodKey(), code)) ? `<div style="margin-top:4px">${valPill(libId(periodKey(), code), { comment: false })}</div>` : ''}</td>
         <td><div class="brands">${chips || '<span class="muted">—</span>'}</div></td>
         <td style="font-variant-numeric:tabular-nums">${e ? n : '<span class="muted">—</span>'}</td>
         <td>${ctrl}</td><td>${rc}</td></tr>`;
@@ -2216,7 +2245,7 @@ select[multiple]{padding:4px}
     const rows = libRows();
     const monthTxt = `${cap(C.MONTHS_FR[state.period.m])} ${state.period.y}`;
     const pvCodes = [...new Set(Object.values(state.library).map(d => d.code))];
-    html += `<div class="note row"><span style="flex:1">Les personnes externes (bottlers) ${window.PE_ACCESS_LINKS ? 'dont l\'adresse figure dans les Contacts' : window.PE_HOSTED ? 'invitées dans Microsoft 365' : 'avec qui vous partagez la plateforme'} ne voient qu'un <b>Espace pays</b> : les plannings et l'historique de leur pays, à télécharger. ${window.PE_ACCESS_LINKS ? 'Elles se connectent avec un lien reçu par email (bouton « Liens d\'accès » dans l\'onglet Contacts).' : 'Elles sont reconnues par leur adresse email, qui doit figurer dans l\'onglet Contacts.'}</span>
+    html += `<div class="note row"><span style="flex:1">Les personnes externes (bottlers) ${window.PE_ACCESS_LINKS ? 'dont l\'adresse figure dans les Contacts' : window.PE_HOSTED ? 'invitées dans Microsoft 365' : 'avec qui vous partagez la plateforme'} ne voient qu'un <b>Espace pays</b> : les plannings et l'historique de leur pays, à télécharger et à valider (ou à renvoyer avec une demande de modifications). ${window.PE_HOSTED ? '' : 'Pour valider en ligne, partagez la plateforme avec elles en tant que <b>Contributeur</b> ; vos collègues de l\'équipe doivent être <b>Éditeurs</b>. '}${window.PE_ACCESS_LINKS ? 'Elles se connectent avec un lien reçu par email (bouton « Liens d\'accès » dans l\'onglet Contacts).' : 'Elles sont reconnues par leur adresse email, qui doit figurer dans l\'onglet Contacts.'}</span>
       <select id="pvSel" class="btn small" aria-label="Pays à prévisualiser">${pvCodes.map(c => `<option value="${esc(c)}">${esc(nameFor(c))}</option>`).join('')}</select><button class="btn small" id="pvGo" ${pvCodes.length ? '' : 'disabled'}>Voir l'espace de ce pays</button></div>`;
     html += `<div class="row"><h2 style="flex:1">${state.libAll ? 'Tous les plannings enregistrés' : `Plannings de ${monthTxt}`} · ${rows.length}</h2>
       <label class="opts"><label><input type="checkbox" id="libAll" ${state.libAll ? 'checked' : ''}> Tous les mois</label></label>
@@ -2224,7 +2253,7 @@ select[multiple]{padding:4px}
       <button class="btn primary" id="libZip" ${state.libSel.size ? '' : 'disabled'}>Télécharger la sélection (${state.libSel.size}) en .zip</button></div>`;
     if (!rows.length) html += `<div class="card empty">Aucun planning enregistré${state.libAll ? '' : ` pour ${monthTxt}`}. Déposez les plannings des agences dans « Pays et envois » : ils sont mis en forme et enregistrés ici automatiquement.</div>`;
     else {
-      html += `<div class="tablewrap"><table><thead><tr><th style="width:36px"></th><th>Pays</th><th>Mois</th><th>Marques</th><th>Publications</th><th>Taille</th><th>Enregistré le</th><th>Envoi</th><th></th></tr></thead><tbody class="plain">`;
+      html += `<div class="tablewrap"><table><thead><tr><th style="width:36px"></th><th>Pays</th><th>Mois</th><th>Marques</th><th>Publications</th><th>Taille</th><th>Enregistré le</th><th>Envoi</th><th>Validation bottler</th><th></th></tr></thead><tbody class="plain">`;
       html += rows.map(([id, d]) => {
         const [y, mm] = String(d.period).split('-'); const sent = state.envois[id];
         return `<tr><td><input type="checkbox" data-lsel="${esc(id)}" aria-label="Sélectionner ${esc(d.pays)}" ${state.libSel.has(id) ? 'checked' : ''}></td>
@@ -2232,6 +2261,7 @@ select[multiple]{padding:4px}
           <td><div class="brands">${(d.brands || []).map(b => `<span class="bchip">${mark(b)}${esc(b)}</span>`).join('')}</div></td>
           <td>${esc(d.posts)}</td><td class="mono">${fmtSize(d.size || 0)}</td><td>${fmtDate(d.savedAt)}</td>
           <td>${sent ? `<span class="pill p-sent">Envoyé le ${fmtDate(sent.sentAt)}</span>` : '<span class="pill p-wait">Non envoyé</span>'}</td>
+          <td style="max-width:240px">${valPill(id, { who: true })}</td>
           <td style="white-space:nowrap"><button class="btn small" data-lview="${esc(id)}">Visualiser</button> <button class="btn small primary" data-ldl="${esc(id)}">Télécharger</button> ${state.assets ? `<button class="btn small ghost" data-ldel="${esc(id)}">Supprimer</button>` : ''}</td></tr>`;
       }).join('');
       html += `</tbody></table></div>`;
@@ -2291,6 +2321,8 @@ select[multiple]{padding:4px}
     VIEWS.forEach(x => { $('#v-' + x).hidden = true; });
     if (state.me && state.me.email) state.myHashes = [await hashEmail(state.me.email)];
     if (!db) { renderPortal(); return; }
+    try { const u = await CL().use('user'); state.uid = u ? await u.id() : null; } catch (e) { state.uid = null; }
+    if (state.uid) db.doc('validations/' + state.uid).onSnapshot(d => { state.myVal = d.exists ? d.data() : null; renderPortal(); }, () => { });
     const timer = setTimeout(() => { state.portalSlow = true; renderPortal(); }, 10000);
     db.collection('portal').onSnapshot(snap => { clearTimeout(timer); state.portalSlow = false; const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); state.portal = p; state.portalLoaded = true; renderPortal(); }, () => { clearTimeout(timer); state.portalLoaded = true; renderPortal(); });
     renderPortal();
@@ -2310,7 +2342,7 @@ select[multiple]{padding:4px}
     let html = '';
     if (preview) html += `<div class="banner warn row"><span style="flex:1">Aperçu de ce que voit une personne de <b>${esc(nameFor(state.previewCountry))}</b> en ouvrant la plateforme.</span><button class="btn small" id="pvExit">Quitter l'aperçu</button></div>`;
     html += `<div class="card"><h2>${countries.length ? `Plannings éditoriaux · ${esc(countries.join(', '))}` : 'Plannings éditoriaux'}</h2>
-      <p class="muted" style="margin:4px 0 0">Téléchargez les plannings éditoriaux de votre pays. Pour toute question, écrivez à <b>${esc(senderOf().email)}</b>.</p></div>`;
+      <p class="muted" style="margin:4px 0 0">Téléchargez les plannings éditoriaux de votre pays, puis validez-les ou demandez des modifications. Pour toute question, écrivez à <b>${esc(senderOf().email)}</b>.</p></div>`;
     if (!preview && !state.myHashes.length) html += `<div class="card empty">Nous n'avons pas pu identifier l'adresse email de votre compte. Contactez ${esc(senderOf().email)} pour obtenir l'accès à vos plannings.</div>`;
     else if (!preview && !state.portalLoaded) html += `<div class="card empty">${state.portalSlow ? 'Les plannings ne sont pas encore accessibles. Réessayez dans un instant.' : 'Chargement de vos plannings…'}</div>`;
     else if (!docs.length) html += `<div class="card empty">Aucun planning n'est disponible pour votre pays pour le moment.${preview ? '' : ` Si vous pensez qu'il s'agit d'une erreur, contactez ${esc(senderOf().email)}.`}</div>`;
@@ -2319,18 +2351,53 @@ select[multiple]{padding:4px}
       html += `<div class="card row" style="gap:16px"><div style="flex:1;min-width:220px"><div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em">Dernier planning</div>
         <h2 style="margin-top:2px">${esc(cap(C.MONTHS_FR[+latest.period.split('-')[1] - 1]))} ${esc(latest.period.split('-')[0])}${countries.length > 1 ? ` · ${esc(latest.pays)}` : ''}</h2>
         <div class="brands" style="margin-top:6px">${(latest.brands || []).map(b => `<span class="bchip">${mark(b)}${esc(b)}</span>`).join('')}</div></div>
-        <button class="btn" data-pview="${esc(docs[0][0])}">Visualiser</button><button class="btn primary" data-pdl="${esc(docs[0][0])}">Télécharger le planning</button></div>`;
-      html += `<h3>Historique</h3><div class="tablewrap"><table><thead><tr><th>Mois</th>${countries.length > 1 ? '<th>Pays</th>' : ''}<th>Marques</th><th>Publications</th><th>Mis à disposition le</th><th>Envoyé par email le</th><th></th></tr></thead><tbody class="plain">`;
+        <button class="btn" data-pview="${esc(docs[0][0])}">Visualiser</button><button class="btn primary" data-pdl="${esc(docs[0][0])}">Télécharger le planning</button>
+        <div class="valbox">${portalVal(docs[0][0], preview, true)}</div></div>`;
+      html += `<h3>Historique</h3><div class="tablewrap"><table><thead><tr><th>Mois</th>${countries.length > 1 ? '<th>Pays</th>' : ''}<th>Marques</th><th>Publications</th><th>Mis à disposition le</th><th>Envoyé par email le</th><th>Validation</th><th></th></tr></thead><tbody class="plain">`;
       html += docs.map(([id, d]) => { const [y, mm] = String(d.period).split('-'); return `<tr><td><b>${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</b></td>${countries.length > 1 ? `<td>${esc(d.pays)}</td>` : ''}
         <td><div class="brands">${(d.brands || []).map(b => `<span class="bchip">${mark(b)}${esc(b)}</span>`).join('')}</div></td><td>${esc(d.posts)}</td>
         <td>${d.savedAt ? fmtDate(d.savedAt) : '—'}</td><td>${d.sentAt ? fmtDate(d.sentAt) : '<span class="muted">—</span>'}</td>
+        <td style="min-width:200px">${portalVal(id, preview, false)}</td>
         <td style="white-space:nowrap"><button class="btn small" data-pview="${esc(id)}">Visualiser</button> <button class="btn small" data-pdl="${esc(id)}">Télécharger</button> <span class="muted mono" style="font-size:11.5px">${fmtSize(d.size || 0)}</span></td></tr>`; }).join('');
       html += `</tbody></table></div>`;
     }
     box.innerHTML = html;
     const ex = box.querySelector('#pvExit'); if (ex) ex.addEventListener('click', () => { state.previewCountry = null; document.body.classList.remove('portal-mode'); $('#v-portail').hidden = true; route(); });
     box.querySelectorAll('[data-pview]').forEach(b => b.addEventListener('click', () => openViewer(state.portal[b.dataset.pview], b)));
+    box.querySelectorAll('[data-vok]').forEach(b => b.addEventListener('click', () => busy(b, () => setMyValidation(b.dataset.vok, 'valide', ''))));
+    box.querySelectorAll('[data-vask]').forEach(b => b.addEventListener('click', () => { state.valAsk = b.dataset.vask; renderPortal(); const t = box.querySelector(`[data-vtxt="${CSS.escape(b.dataset.vask)}"]`); if (t) t.focus(); }));
+    box.querySelectorAll('[data-vedit]').forEach(b => b.addEventListener('click', () => { state.valEdit = b.dataset.vedit; renderPortal(); }));
+    box.querySelectorAll('[data-vcancel]').forEach(b => b.addEventListener('click', () => { state.valAsk = null; state.valEdit = null; renderPortal(); }));
+    box.querySelectorAll('[data-vsend]').forEach(b => b.addEventListener('click', () => {
+      const id = b.dataset.vsend, t = box.querySelector(`[data-vtxt="${CSS.escape(id)}"]`), txt = (t && t.value || '').trim();
+      if (!txt) { toast('Décrivez les modifications souhaitées'); if (t) t.focus(); return; }
+      busy(b, () => setMyValidation(id, 'modifs', txt));
+    }));
     box.querySelectorAll('[data-pdl]').forEach(b => b.addEventListener('click', () => busy(b, async () => { const d = state.portal[b.dataset.pdl]; const u8 = await fetchLib(d); await save(d.filename, new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); })));
+  }
+  function portalVal(id, preview, big) {
+    const it = state.myVal && state.myVal.items && state.myVal.items[id];
+    const dis = preview || !state.uid || !state.db || state.canWrite === false ? 'disabled' : '';
+    if (!preview && state.canWrite === false && !(it && it.status)) return big ? `<span class="muted" style="font-size:12.5px">Pour valider ce planning ou demander des modifications, répondez par email à ${esc(senderOf().email)}.</span>` : '<span class="muted">Par email</span>';
+    if (state.valAsk === id) return `<div class="valask"><label class="muted" style="font-size:12.5px" for="vt-${esc(id)}">Modifications souhaitées</label>
+      <textarea id="vt-${esc(id)}" data-vtxt="${esc(id)}" rows="3" placeholder="Ex. : remplacer le visuel du 12/11, corriger la date du marronnier…">${esc(it && it.status === 'modifs' ? it.comment || '' : '')}</textarea>
+      <div class="row" style="gap:6px"><button class="btn small primary" data-vsend="${esc(id)}">Envoyer la demande</button><button class="btn small ghost" data-vcancel="1">Annuler</button></div></div>`;
+    if (it && it.status && state.valEdit !== id) {
+      const pill = it.status === 'valide' ? `<span class="pill p-sent">Validé le ${esc(fmtDate(it.at))}</span>` : `<span class="pill p-warn">Modifications demandées le ${esc(fmtDate(it.at))}</span>${it.comment ? `<div class="valcom">« ${esc(it.comment)} »</div>` : ''}`;
+      return `${pill} <button class="btn small ghost" data-vedit="${esc(id)}" ${dis}>Modifier ma réponse</button>`;
+    }
+    const lead = big ? `<div class="muted" style="font-size:12.5px;flex-basis:100%">Après relecture, validez le planning ou indiquez les modifications souhaitées.</div>` : '';
+    return `<div class="row" style="gap:6px">${lead}<button class="btn small primary" data-vok="${esc(id)}" ${dis}>Valider le planning</button><button class="btn small" data-vask="${esc(id)}" ${dis}>Demander des modifications</button>${state.valEdit === id ? '<button class="btn small ghost" data-vcancel="1">Annuler</button>' : ''}</div>${preview ? '<div class="muted" style="font-size:11.5px;margin-top:3px">Boutons actifs pour le bottler</div>' : ''}`;
+  }
+  async function setMyValidation(id, status, comment) {
+    const d = state.portal[id]; if (!d || !state.uid) return;
+    const items = Object.assign({}, (state.myVal && state.myVal.items) || {});
+    items[id] = { status, comment: String(comment || '').slice(0, 2000), at: new Date().toISOString(), code: d.code, period: d.period, filename: d.filename };
+    try {
+      await state.db.doc('validations/' + state.uid).set({ email: (state.me && state.me.email) || '', name: (state.me && state.me.name) || '', hash: state.myHashes[0] || '', items });
+      state.myVal = { email: (state.me && state.me.email) || '', items }; state.valAsk = null; state.valEdit = null; renderPortal();
+      toast(status === 'valide' ? 'Planning validé, merci !' : 'Demande de modifications envoyée');
+    } catch (err) { toast('Enregistrement impossible : ' + (err.code || err.message)); }
   }
   function openPreview(code) { state.previewCountry = code; document.body.classList.add('portal-mode'); VIEWS.forEach(x => { $('#v-' + x).hidden = true; }); $('#v-portail').hidden = false; renderPortal(); window.scrollTo(0, 0); }
 

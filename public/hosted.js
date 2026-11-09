@@ -66,7 +66,7 @@
   const meP = api('/api/me').then(r => { window.PE_SMTP = !!r.smtp; return (me = r); }).catch(() => (me = { email: '', isAdmin: false, mail: { enabled: false } }));
   const user = {
     canEdit: async () => { await meP; return !!me.isAdmin; },
-    can: async () => { await meP; return !!me.isAdmin; },
+    can: async n => { await meP; return n === 'data.write' ? !!me.email : !!me.isAdmin; },
     isOwner: async () => { await meP; return !!me.isAdmin; },
     id: async () => { await meP; return me.email || null; },
     me: async () => { await meP; return { id: me.email || null, email: me.email || null, name: me.name || '', isOwner: !!me.isAdmin, canEdit: !!me.isAdmin, avatarUrl: '', color: '' }; },
