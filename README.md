@@ -53,7 +53,17 @@ Dans les deux cas, chaque pays reçoit un fichier Excel propre :
 - des en-têtes en français, en anglais ou en espagnol selon le pays.
 
 ### 5. Envoi
-Pour chaque pays, la plateforme prépare l'email : destinataires principaux et en copie issus des Contacts, objet et message dans la langue du pays, planning en pièce jointe. Elle fournit un **brouillon Outlook (.eml)** à ouvrir depuis la boîte contact20@exemple.example, puis à envoyer. Un pack réunit tous les pays en une fois. Chaque envoi est enregistré dans l'historique.
+Chaque pays reçoit l'un des trois modèles d'email, choisi dans l'onglet Contacts :
+
+| Modèle | Pays par défaut | Contenu |
+|---|---|---|
+| Anglais | Nigeria, Ghana, Argentine | *For your information, please find the … editorial calendar…* |
+| Français – information | Guadeloupe, Vanuatu | *Veuillez trouver le planning éditorial…*, sans demande de validation |
+| Français – avec validation | autres pays | *… Merci de bien vouloir nous confirmer que ce planning vous convient.* |
+
+Le mois et la liste des marques (« Planet, Bubble Up et American Cola ») sont remplis automatiquement. Le **lien de téléchargement** (SwissTransfer, WeTransfer…) se renseigne par pays et devient cliquable dans l'email. Un bouton le reporte sur tous les pays du même modèle. Joindre aussi le fichier Excel est facultatif.
+
+La plateforme fournit un **brouillon Outlook (.eml)** prêt à envoyer depuis contact20@exemple.example. Un pack réunit tous les pays en une fois. Chaque envoi est enregistré dans l'historique.
 
 ### 6. Téléchargements et Espace pays
 Tous les plannings mis en forme sont conservés, mois par mois, et restent téléchargeables à tout moment.

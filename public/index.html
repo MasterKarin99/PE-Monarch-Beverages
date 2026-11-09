@@ -117,6 +117,8 @@ tbody tr:last-child td{border-bottom:0}
 .ccard{display:grid;grid-template-columns:180px 1fr 1fr;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
 .ccard:first-of-type{border-top:0}
 .hist td{cursor:default}
+.mailprev{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:#fff;color:#222;min-height:260px;overflow:auto;font-size:13px}
+.mailprev a{color:#1f4fd8}
 table.mef tr.off td{opacity:.45}
 table.mef td{vertical-align:top}
 body.booting nav.tabs, body.booting section{visibility:hidden}
@@ -276,7 +278,7 @@ select[multiple]{padding:4px}
   <section id="v-modele" class="detail" hidden>
     <div class="card detail">
       <h2>Modèle d'email</h2>
-      <p class="muted" style="margin:0">Variables disponibles : <span class="mono">{pays} {mois} {marques} {nb} {signature}</span>. Chaque pays reçoit la version de sa langue.</p>
+      <p class="muted" style="margin:0">Trois modèles, choisis pour chaque pays dans l'onglet Contacts. Variables : <span class="mono">{mois} {marques} {pour_marques} {pays} {nb} {signature}</span>. Le lien de téléchargement s'écrit <span class="mono">[texte]({lien})</span> : il devient cliquable dans l'email.</p>
       <div class="grid2">
         <div class="field"><label for="fromEmail">Expéditeur : adresse Outlook qui envoie les emails</label><input id="fromEmail" type="email" autocomplete="off"><span id="fromHint" class="muted" style="font-size:12px" hidden>Définie sur le serveur par votre équipe informatique (MAIL_SENDER).</span></div>
         <div class="field"><label for="fromName">Nom affiché</label><input id="fromName" autocomplete="off"></div>
@@ -1081,11 +1083,41 @@ select[multiple]{padding:4px}
   }
 
   // ---------- Email ----------
+  // Trois modèles, affectés par pays (onglet Contacts). Le lien de téléchargement s'écrit [texte]({lien}).
+  const FR_INTRO = 'Pour rappel, les publications et visuels fournis sont génériques, dans un souci d’optimisation de notre processus. Ils seront ensuite adaptés à chaque marché en fonction des références disponibles localement avant diffusion.\nLes supports vidéo sont en cours de production auprès des agences concernées.';
   const DEFAULT_TEMPLATES = {
-    fr: { subject: 'Planning éditorial {mois} – {pays}', body: 'Bonjour à toutes et à tous,\n\nVeuillez trouver ci-joint le planning éditorial de {mois} pour {pays} ({marques}), soit {nb} publications.\n\nMerci de nous faire part de vos retours ou de votre validation en réponse à cet email.\n\nBelle journée,\n{signature}' },
-    en: { subject: 'Editorial planning {mois} – {pays}', body: 'Hello everyone,\n\nPlease find attached the {mois} editorial planning for {pays} ({marques}), {nb} posts in total.\n\nPlease share your feedback or approval by replying to this email.\n\nBest regards,\n{signature}' },
-    es: { subject: 'Planificación editorial {mois} – {pays}', body: 'Hola a todos,\n\nAdjuntamos la planificación editorial de {mois} para {pays} ({marques}), con un total de {nb} publicaciones.\n\nPor favor, envíennos sus comentarios o validación respondiendo a este correo.\n\nSaludos cordiales,\n{signature}' },
+    'en': { label: 'Anglais', lang: 'en', subject: 'Editorial calendar {mois} – {pays}',
+      body: 'Hello everyone,\n\nFor your information, please find the {mois} editorial calendar for {marques} at the following link: [here]({lien})\n\nPlease note that the posts and visuals provided are generic and will be adapted to each market based on locally available products before publication.\nVideo content is currently being produced by the respective agencies.\n\nBest regards,\n{signature}' },
+    'fr-info': { label: 'Français – information', lang: 'fr', subject: 'Planning éditorial {mois} – {pays}',
+      body: 'Bonjour à tous,\n\nVeuillez trouver le planning éditorial de {mois} de {marques} : [lien de téléchargement.]({lien})\n\n' + FR_INTRO + '\n\nBien à vous,\n{signature}' },
+    'fr-validation': { label: 'Français – avec validation', lang: 'fr', subject: 'Planning éditorial {mois} – {pays}',
+      body: 'Bonjour à tous,\n\nVeuillez trouver le planning éditorial de {mois} {pour_marques} : [lien de téléchargement.]({lien})\n\n' + FR_INTRO + '\n\nMerci de bien vouloir nous confirmer que ce planning vous convient.\nLe cas échéant, n’hésitez pas à nous transmettre vos retours ou demandes d’ajustement afin que nous puissions les prendre en compte dans les meilleurs délais.\n\nBien cordialement,\n{signature}' },
   };
+  const TEMPLATE_IDS = Object.keys(DEFAULT_TEMPLATES);
+  const DEFAULT_TEMPLATE_FOR = { NG: 'en', GH: 'en', AR: 'en', GD: 'fr-info', VU: 'fr-info' };
+  const defaultTemplateFor = code => DEFAULT_TEMPLATE_FOR[code] || 'fr-validation';
+  const BRAND_ORDER = ['PLANET', 'BUBBLE UP', 'AMERICAN COLA', 'REAKTOR', 'RUSH'];
+  function brandList(brands, lang) {
+    const b = [...new Set(brands)].sort((x, y) => (BRAND_ORDER.indexOf(brandKey(x)) + 1 || 99) - (BRAND_ORDER.indexOf(brandKey(y)) + 1 || 99));
+    if (b.length <= 1) return b.join('');
+    return b.slice(0, -1).join(', ') + (lang === 'en' ? ' and ' : ' et ') + b[b.length - 1];
+  }
+  function pourMarques(brands, lang) {
+    const n = new Set(brands).size, l = brandList(brands, lang);
+    if (lang === 'en') return `for ${l}`;
+    return n > 1 ? `pour les marques ${l}` : `pour la marque ${l}`;
+  }
+  // Rendu du message : texte brut (lien entre parenthèses) et HTML (lien cliquable)
+  const LINK_RE = /\[([^\]]+)\]\(\{lien\}\)/g;
+  function renderMessage(body, url) {
+    const text = String(body).replace(LINK_RE, (m, t) => url ? `${t.replace(/[.\s]+$/, '')} : ${url}` : `${t.replace(/[.\s]+$/, '')} (lien à ajouter)`).replace(/\{lien\}/g, url || '(lien à ajouter)');
+    const escH = v => String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    let html = '', last = 0; const src = String(body); let m; LINK_RE.lastIndex = 0;
+    while ((m = LINK_RE.exec(src))) { html += escH(src.slice(last, m.index)); html += url ? `<a href="${escH(url)}">${escH(m[1])}</a>` : escH(m[1]); last = m.index + m[0].length; }
+    html += escH(src.slice(last));
+    html = `<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt">${html.replace(/\{lien\}/g, url ? `<a href="${escH(url)}">${escH(url)}</a>` : '').replace(/\n/g, '<br>')}</div>`;
+    return { text, html, hasLink: LINK_RE.test(src) || /\{lien\}/.test(src) };
+  }
   const COUNTRY_NAMES_I18N = { en: { CM: 'Cameroon', CG: 'Congo', CIV: "Côte d'Ivoire", GN: 'Guinea', ML: 'Mali', SN: 'Senegal', TD: 'Chad', NG: 'Nigeria', GH: 'Ghana', BF: 'Burkina Faso', GD: 'Guadeloupe', VU: 'Vanuatu', AR: 'Argentina' },
     es: { CM: 'Camerún', CG: 'Congo', CIV: 'Costa de Marfil', GN: 'Guinea', ML: 'Malí', SN: 'Senegal', TD: 'Chad', NG: 'Nigeria', GH: 'Ghana', BF: 'Burkina Faso', GD: 'Guadalupe', VU: 'Vanuatu', AR: 'Argentina' } };
   function countryLabel(code, lang) { return (COUNTRY_NAMES_I18N[lang] && COUNTRY_NAMES_I18N[lang][code]) || (COUNTRIES[code] || {}).name || code; }
@@ -1101,23 +1133,21 @@ select[multiple]{padding:4px}
   const encWord = s => /^[\x20-\x7E]*$/.test(s) ? s : `=?UTF-8?B?${b64FromU8(utf8(s))}?=`;
   const addrList = list => list.map(c => c.name ? `${encWord(c.name.replace(/["<>]/g, ''))} <${c.email}>` : c.email).join(', ');
 
-  function buildEml({ from, to, cc, subject, body, attachment }) {
-    const boundary = '----=_PE_' + Math.random().toString(36).slice(2);
-    const lines = [
-      'MIME-Version: 1.0', 'X-Unsent: 1', from && from.email ? `From: ${addrList([from])}` : null, `To: ${addrList(to)}`, cc && cc.length ? `Cc: ${addrList(cc)}` : null,
-      `Subject: ${encWord(subject)}`, `Content-Type: multipart/mixed; boundary="${boundary}"`, '', `--${boundary}`,
-      'Content-Type: text/plain; charset="UTF-8"', 'Content-Transfer-Encoding: base64', '', wrap76(b64FromU8(utf8(body))),
-    ].filter(l => l !== null);
-    let head = lines.join('\r\n');
-    if (attachment) {
-      head += `\r\n--${boundary}\r\nContent-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; name="${encWord(attachment.filename)}"\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="${encWord(attachment.filename)}"\r\n\r\n`;
-      head += wrap76(b64FromU8(toU8(attachment.data)));
-    }
-    head += `\r\n--${boundary}--\r\n`;
-    return head;
+  function buildEml({ from, to, cc, subject, body, html, attachment }) {
+    const bm = '----=_PE_M' + Math.random().toString(36).slice(2), ba = '----=_PE_A' + Math.random().toString(36).slice(2);
+    const head = ['MIME-Version: 1.0', 'X-Unsent: 1', from && from.email ? `From: ${addrList([from])}` : null, `To: ${addrList(to)}`, cc && cc.length ? `Cc: ${addrList(cc)}` : null, `Subject: ${encWord(subject)}`].filter(Boolean);
+    const alt = html
+      ? `Content-Type: multipart/alternative; boundary="${ba}"\r\n\r\n--${ba}\r\nContent-Type: text/plain; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(b64FromU8(utf8(body)))}\r\n--${ba}\r\nContent-Type: text/html; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(b64FromU8(utf8('<html><body>' + html + '</body></html>')))}\r\n--${ba}--\r\n`
+      : `Content-Type: text/plain; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(b64FromU8(utf8(body)))}\r\n`;
+    if (!attachment) return head.join('\r\n') + '\r\n' + alt;
+    let out = head.join('\r\n') + `\r\nContent-Type: multipart/mixed; boundary="${bm}"\r\n\r\n--${bm}\r\n` + alt;
+    out += `\r\n--${bm}\r\nContent-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; name="${encWord(attachment.filename)}"\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="${encWord(attachment.filename)}"\r\n\r\n`;
+    out += wrap76(b64FromU8(toU8(attachment.data)));
+    out += `\r\n--${bm}--\r\n`;
+    return out;
   }
 
-  const api = { adaptForCountry, postCountries, b64FromU8, parseCalendarWorkbook, eventsForCountry, eventCoverage, eventCountries, FLAG_TO_CODE, COUNTRIES, BRANDS, L10N, DEFAULT_TEMPLATES, MONTHS_FR, LANG_LABEL, cleanText, detectCountry, detectMonth, parsePlanning, checkCountry, fingerprint, buildWorkbook,
+  const api = { TEMPLATE_IDS, defaultTemplateFor, brandList, pourMarques, renderMessage, adaptForCountry, postCountries, b64FromU8, parseCalendarWorkbook, eventsForCountry, eventCoverage, eventCountries, FLAG_TO_CODE, COUNTRIES, BRANDS, L10N, DEFAULT_TEMPLATES, MONTHS_FR, LANG_LABEL, cleanText, detectCountry, detectMonth, parsePlanning, checkCountry, fingerprint, buildWorkbook,
     parseContactsWorkbook, parseContactCell, splitBrands, fillTemplate, buildEml, monthLabel, countryLabel, fmtDateLong, imageSize, brandKey, ymd, detectLang };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PECore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1135,7 +1165,7 @@ select[multiple]{padding:4px}
 
   const state = {
     db: null, dl: null, contacts: {}, contactsReady: false, settings: null, envois: {},
-    mef: [], mail: null, mailCfg: null, access: null, accessLinks: {}, portal: {}, mode: 'admin', me: null, myHashes: [], previewCountry: null, library: {}, assets: null, archiveQ: { total: 0, done: 0, running: false, failed: [] }, libAll: false, libSel: new Set(), usage: null, calendars: {}, calPreview: null, calAll: false, entries: [], sel: null, subtab: 'controle', period: null, overrides: {}, building: {}, importPreview: null,
+    links: {}, attach: {}, mef: [], mail: null, mailCfg: null, access: null, accessLinks: {}, portal: {}, mode: 'admin', me: null, myHashes: [], previewCountry: null, library: {}, assets: null, archiveQ: { total: 0, done: 0, running: false, failed: [] }, libAll: false, libSel: new Set(), usage: null, calendars: {}, calPreview: null, calAll: false, entries: [], sel: null, subtab: 'controle', period: null, overrides: {}, building: {}, importPreview: null,
   };
 
   // ---------- Utilitaires ----------
@@ -1192,6 +1222,7 @@ select[multiple]{padding:4px}
     db.doc('settings/email').onSnapshot(d => { state.settings = d.exists ? d.data() : null; renderTemplates(); if (state.sel) renderDetail(); }, () => { });
     window.claude.use('assets').then(as => { state.assets = as; renderLibrary(); if (as) { refreshUsage(); archivePending(); } }).catch(() => { });
     db.collection('library').onSnapshot(snap => { const l = {}; snap.docs.forEach(d => l[d.id] = d.data()); state.library = l; renderLibrary(); renderTable(); schedulePortalSync(); }, () => { });
+    db.collection('liens').onSnapshot(snap => { const l = {}; snap.docs.forEach(d => l[d.id] = d.data().url || ''); state.links = l; if (state.sel && state.subtab === 'email') renderDetail(); }, () => { });
     db.collection('calendars').onSnapshot(snap => { const c = {}; snap.docs.forEach(d => c[d.id] = d.data()); state.calendars = c; refresh(); renderCalendar(); }, () => { });
     db.collection('envois').onSnapshot(snap => { const e = {}; snap.docs.forEach(d => e[d.id] = d.data()); state.envois = e; renderAll(); schedulePortalSync(); }, () => { });
   }
@@ -1331,20 +1362,28 @@ select[multiple]{padding:4px}
   function select(key) { state.sel = key; state.subtab = state.subtab || 'controle'; renderTable(); renderDetail(); const d = $('#detail'); if (!d.hidden) d.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); }
 
   // ---------- Détail pays ----------
+  function templateIdFor(code) { const ct = contactFor(code); const t = ct && ct.template; return C.TEMPLATE_IDS.includes(t) ? t : C.defaultTemplateFor(code); }
+  function templateOf(id) { const t = state.settings && state.settings.templates && state.settings.templates[id]; return Object.assign({}, C.DEFAULT_TEMPLATES[id], t && t.body ? t : {}); }
+  const linkKey = code => `${periodKey()}_${code}`;
+  function linkFor(code) { return state.links[linkKey(code)] || ''; }
+  function attachFor(code) { const v = state.attach[linkKey(code)]; return v != null ? v : !linkFor(code); }
   function emailFor(code) {
-    const e = entryFor(code), lang = langFor(code), ct = contactFor(code) || {};
-    const tpls = (state.settings && state.settings.templates) || C.DEFAULT_TEMPLATES;
-    const tpl = tpls[lang] || C.DEFAULT_TEMPLATES[lang] || C.DEFAULT_TEMPLATES.fr;
+    const e = entryFor(code), ct = contactFor(code) || {};
+    const tplId = templateIdFor(code), tpl = templateOf(tplId), lang = tpl.lang || 'fr';
     const brands = e ? e.sheets.map(s => s.brand) : (ct.brands || []);
-    const nb = e ? e.sheets.reduce((a, s) => a + s.posts.length, 0) : 0;
+    const nb = e ? e.sheets.reduce((n, s) => n + s.posts.length, 0) : 0;
     const monthTxt = C.monthLabel(state.period, lang); const mois = lang === 'en' ? monthTxt : monthTxt.toLowerCase();
-    const vars = { pays: C.countryLabel(code, lang), mois, marques: brands.join(', '), nb, signature: (state.settings && state.settings.signature) || '' };
+    const vars = { pays: C.countryLabel(code, lang), mois, marques: C.brandList(brands, lang), pour_marques: C.pourMarques(brands, lang), nb, signature: (state.settings && state.settings.signature) || '' };
     const ov = state.overrides[code] || {};
-    return {
-      to: ct.to || [], cc: ct.cc || [], lang,
-      subject: ov.subject != null ? ov.subject : C.fillTemplate(tpl.subject, vars),
-      body: ov.body != null ? ov.body : C.fillTemplate(tpl.body, vars).replace(/\n+$/, ''),
-    };
+    const raw = ov.body != null ? ov.body : C.fillTemplate(tpl.body, vars).replace(/\n+$/, '');
+    const link = linkFor(code);
+    const r = C.renderMessage(raw, link);
+    return { to: ct.to || [], cc: ct.cc || [], lang, tplId, link, raw, body: r.text, html: r.html, needsLink: r.hasLink, attach: attachFor(code),
+      subject: ov.subject != null ? ov.subject : C.fillTemplate(tpl.subject, vars) };
+  }
+  async function saveLink(code, url) {
+    const k = linkKey(code); state.links[k] = url;
+    if (state.db) { try { if (url) await state.db.doc('liens/' + k).set({ code, period: periodKey(), url, updatedAt: new Date().toISOString() }); else await state.db.doc('liens/' + k).delete(); } catch (err) { toast('Lien non enregistré : ' + (err.code || err.message)); } }
   }
   const DEFAULT_SENDER = { name: 'Équipe marketing', email: 'contact20@exemple.example' };
   function senderOf() {
@@ -1366,6 +1405,12 @@ select[multiple]{padding:4px}
 
   function renderDetail() {
     const box = $('#detail');
+    // Conserver la saisie en cours si l'affichage est rafraîchi (synchronisation des données)
+    const ae = document.activeElement, keep = ae && box.contains(ae) && ae.id ? { id: ae.id, v: ae.value, s: ae.selectionStart, e: ae.selectionEnd } : null;
+    renderDetailInner(box);
+    if (keep) { const el = document.getElementById(keep.id); if (el) { if (el.value !== keep.v && 'value' in el) el.value = keep.v; el.focus(); try { el.setSelectionRange(keep.s, keep.e); } catch (e) { } } }
+  }
+  function renderDetailInner(box) {
     if (!state.sel) { box.hidden = true; return; }
     box.hidden = false;
     if (state.sel.startsWith('id:')) { renderUnknown(box, state.entries.find(e => 'id:' + e.id === state.sel)); return; }
@@ -1453,9 +1498,18 @@ select[multiple]{padding:4px}
       <div class="grid2">
       <div class="field"><label>À</label><div class="recips">${hasTo ? m.to.map(chip).join('') : '<span style="color:var(--err)">Aucun destinataire : complétez l\'onglet Contacts.</span>'}</div></div>
       <div class="field"><label>Copie</label><div class="recips">${m.cc.length ? m.cc.map(chip).join('') : '<span class="muted">—</span>'}</div></div></div>
+      <div class="grid2">
+        <div class="field"><label for="mTpl">Modèle d'email</label><select id="mTpl">${C.TEMPLATE_IDS.map(id => `<option value="${id}" ${id === m.tplId ? 'selected' : ''}>${esc(C.DEFAULT_TEMPLATES[id].label)}</option>`).join('')}</select></div>
+        <div class="field"><label for="mLink">Lien de téléchargement (SwissTransfer, WeTransfer…)</label>
+          <div class="row" style="gap:6px;flex-wrap:nowrap"><input id="mLink" type="url" placeholder="https://www.swisstransfer.com/dl/…" value="${esc(m.link)}" style="flex:1"><button class="btn small" data-act="linkAll" ${m.link ? '' : 'disabled'} title="Utiliser ce lien pour les autres pays du même modèle">Même lien pour le modèle</button></div></div>
+      </div>
+      ${m.needsLink && !m.link ? `<div class="banner warn">Ajoutez le lien de téléchargement : le message y fait référence.</div>` : ''}
       <div class="field"><label for="mSubj">Objet</label><input id="mSubj" value="${esc(m.subject)}"></div>
-      <div class="field"><label for="mBody">Message (${C.LANG_LABEL[m.lang]})</label><textarea id="mBody" style="min-height:200px">${esc(m.body)}</textarea></div>
-      <div class="field"><label>Pièce jointe</label><div class="mono">${esc(fileName(code))}${built ? ` · ${fmtSize(built.blob.size)}` : ''}</div></div>
+      <div class="grid2">
+        <div class="field"><label for="mBody">Message <span class="muted">(le lien s'écrit [texte]({lien}))</span></label><textarea id="mBody" style="min-height:260px">${esc(m.raw)}</textarea></div>
+        <div class="field"><label>Aperçu</label><div class="mailprev">${m.html}</div></div>
+      </div>
+      <label class="opts"><label><input type="checkbox" id="mAttach" ${m.attach ? 'checked' : ''}> Joindre aussi le planning Excel à l'email <span class="mono muted">${esc(fileName(code))}${built ? ` · ${fmtSize(built.blob.size)}` : ''}</span></label></label>
       ${state.mailCfg && !state.mailCfg.enabled ? `<div class="banner warn">L'envoi direct depuis Outlook n'est pas encore configuré sur le serveur : utilisez l'email prêt à envoyer.</div>` : ''}
       <div class="row">
         ${state.mailCfg && state.mailCfg.enabled && st.k !== 'sent' ? `<button class="btn primary" data-act="outlook" ${hasTo ? '' : 'disabled'}>Envoyer depuis Outlook</button>` : ''}
@@ -1467,8 +1521,8 @@ select[multiple]{padding:4px}
         ${st.k === 'sent' ? '' : `<button class="btn" data-act="sent" ${hasTo ? '' : 'disabled'}>Marquer comme envoyé</button>`}
       </div>
       ${st.k === 'sent' ? sentNote(code) : ''}
-      ${state.mailCfg && state.mailCfg.enabled ? `<div class="note"><b>Envoyer depuis Outlook</b> envoie immédiatement l'email et le planning mis en forme depuis la boîte <b>${esc(from.email)}</b> (il apparaît dans ses éléments envoyés) et marque le pays comme envoyé.${state.mailCfg.mode === 'dryrun' ? ' <b>Mode test : aucun email ne part réellement.</b>' : ''}</div>` : `<div class="note"><b>Envoi en un clic.</b> « Télécharger l'email prêt à envoyer » fournit un .zip contenant le planning mis en forme et un fichier <span class="mono">.eml</span>. Ouvrez le <span class="mono">.eml</span> : Outlook l'affiche comme un brouillon envoyé depuis <b>${esc(from.email)}</b>, avec destinataires, objet, message et pièce jointe déjà remplis. Il ne reste qu'à cliquer sur Envoyer, puis à revenir ici pour « Marquer comme envoyé ».
-      « Ouvrir dans ma messagerie » prépare le message sans pièce jointe (les liens mailto ne permettent pas d'en ajouter).</div>`}`;
+      ${state.mailCfg && state.mailCfg.enabled ? `<div class="note"><b>Envoyer depuis Outlook</b> envoie immédiatement l'email et le planning mis en forme depuis la boîte <b>${esc(from.email)}</b> (il apparaît dans ses éléments envoyés) et marque le pays comme envoyé.${state.mailCfg.mode === 'dryrun' ? ' <b>Mode test : aucun email ne part réellement.</b>' : ''}</div>` : `<div class="note"><b>Envoi en un clic.</b> « Télécharger l'email prêt à envoyer » fournit un .zip contenant le planning mis en forme et un fichier <span class="mono">.eml</span>. Ouvrez le <span class="mono">.eml</span> : Outlook l'affiche comme un brouillon envoyé depuis <b>${esc(from.email)}</b>, avec destinataires, objet, message (lien cliquable) et, si la case est cochée, le planning en pièce jointe. Il ne reste qu'à cliquer sur Envoyer, puis à revenir ici pour « Marquer comme envoyé ».
+      « Ouvrir dans ma messagerie » prépare le message en texte simple, sans pièce jointe.</div>`}`;
   }
 
   function renderUnknown(box, e) {
@@ -1496,8 +1550,14 @@ select[multiple]{padding:4px}
       e.built = null; e.archivedKey = null; delete state.overrides[code]; refresh(); archivePending();
     }));
     const subj = box.querySelector('#mSubj'), body = box.querySelector('#mBody');
+    const tplSel = box.querySelector('#mTpl');
+    if (tplSel) tplSel.addEventListener('change', async () => { delete state.overrides[code]; const ct = state.contacts[code]; if (ct) { const doc = Object.assign({}, ct, { template: tplSel.value }); await writeContact(code, doc, true); state.contacts[code] = doc; } renderDetail(); });
+    const lk = box.querySelector('#mLink');
+    if (lk) lk.addEventListener('change', async () => { const v = lk.value.trim(); if (v && !/^https?:\/\/\S+$/i.test(v)) { toast('Lien invalide : il doit commencer par https://'); return; } await saveLink(code, v); renderDetail(); });
+    const at = box.querySelector('#mAttach');
+    if (at) at.addEventListener('change', () => { state.attach[linkKey(code)] = at.checked; });
     if (subj) subj.addEventListener('input', () => { (state.overrides[code] = state.overrides[code] || {}).subject = subj.value; updateMailto(box, code); });
-    if (body) body.addEventListener('input', () => { (state.overrides[code] = state.overrides[code] || {}).body = body.value; updateMailto(box, code); });
+    if (body) body.addEventListener('input', () => { (state.overrides[code] = state.overrides[code] || {}).body = body.value; updateMailto(box, code); const pv = box.querySelector('.mailprev'); if (pv) pv.innerHTML = emailFor(code).html; });
     box.querySelectorAll('[data-act]').forEach(el => {
       const act = el.dataset.act;
       if (act === 'reassign') { el.addEventListener('change', () => { if (!el.value) return; const other = entryFor(el.value); if (other && other !== e) state.entries.splice(state.entries.indexOf(other), 1); e.country = el.value; e.built = null; state.sel = el.value; refresh(); }); return; }
@@ -1512,6 +1572,11 @@ select[multiple]{padding:4px}
         }
         else if (act === 'pack') { await busy(el, async () => { const z = await packZip([code]); await save(`${code} - Envoi PE ${monthUpper()} ${state.period.y}.zip`, z); renderDetail(); }); }
         else if (act === 'copyTo') { const m = emailFor(code); copy(`De : ${senderOf().email}\nÀ : ${m.to.map(c => c.email).join('; ')}${m.cc.length ? `\nCc : ${m.cc.map(c => c.email).join('; ')}` : ''}`, 'Destinataires'); }
+        else if (act === 'linkAll') {
+          const m0 = emailFor(code); const others = codes().filter(c => c !== code && templateIdFor(c) === m0.tplId && !linkFor(c));
+          for (const c of others) await saveLink(c, m0.link);
+          toast(others.length ? `Lien ajouté pour : ${others.map(nameFor).join(', ')}` : 'Les autres pays de ce modèle ont déjà un lien.'); renderDetail();
+        }
         else if (act === 'copyMsg') { const m = emailFor(code); copy(`${m.subject}\n\n${m.body}`, 'Message'); }
         else if (act === 'sent') { await markSent(code); }
         else if (act === 'unsend') { await unmark(`${periodKey()}_${code}`); }
@@ -1572,7 +1637,7 @@ select[multiple]{padding:4px}
       if (withEml) {
         const m = emailFor(code);
         if (!m.to.length) { skipped.push(code); continue; }
-        folder.file(`${code} - Email ${monthUpper()} ${state.period.y}.eml`, C.buildEml({ from: senderOf(), to: m.to, cc: m.cc, subject: m.subject, body: m.body, attachment: { filename: b.filename, data: b.u8 } }));
+        folder.file(`${code} - Email ${monthUpper()} ${state.period.y}.eml`, C.buildEml({ from: senderOf(), to: m.to, cc: m.cc, subject: m.subject, body: m.body, html: m.html, attachment: m.attach ? { filename: b.filename, data: b.u8 } : null }));
       }
     }
     if (withEml) zip.file('LISEZ-MOI.txt', readme());
@@ -1594,7 +1659,7 @@ select[multiple]{padding:4px}
     const e = entryFor(code), m = emailFor(code);
     if (!e || !state.mail) return false;
     const b = await build(e);
-    const payload = { code, pays: nameFor(code), period: periodKey(), to: m.to, cc: m.cc, subject: m.subject, body: m.body, filename: b.filename, contentBase64: C.b64FromU8(b.u8),
+    const payload = { code, pays: nameFor(code), period: periodKey(), to: m.to, cc: m.cc, subject: m.subject, body: m.body, filename: b.filename, contentBase64: m.attach ? C.b64FromU8(b.u8) : null,
       brands: e.sheets.map(s => s.brand), posts: e.sheets.reduce((n, s) => n + s.posts.length, 0), source: e.filename };
     try {
       const r = await state.mail.send(payload);
@@ -1621,7 +1686,7 @@ select[multiple]{padding:4px}
   async function markSent(code) {
     const e = entryFor(code), m = emailFor(code);
     const doc = { code, pays: nameFor(code), period: periodKey(), sentAt: new Date().toISOString(), brands: e ? e.sheets.map(s => s.brand) : [], posts: e ? e.sheets.reduce((a, s) => a + s.posts.length, 0) : 0,
-      from: senderOf().email, to: m.to.map(c => c.email), cc: m.cc.map(c => c.email), subject: m.subject, file: e ? e.filename : '' };
+      from: senderOf().email, to: m.to.map(c => c.email), cc: m.cc.map(c => c.email), subject: m.subject, link: m.link || null, file: e ? e.filename : '' };
     const id = `${periodKey()}_${code}`;
     if (state.db) { try { await state.db.doc('envois/' + id).set(doc); toast(`${nameFor(code)} marqué comme envoyé`); } catch (err) { toast('Enregistrement impossible : ' + (err.code || err.message)); } }
     else { state.envois[id] = doc; renderAll(); toast('Marqué comme envoyé (non synchronisé)'); }
@@ -1659,6 +1724,7 @@ select[multiple]{padding:4px}
           <div><b>${esc(c.name)}</b><span class="code">${esc(code)}</span></div>
           <div class="field"><label for="cl-${code}">Langue</label><select id="cl-${code}" data-f="lang">${['fr', 'en', 'es'].map(l => `<option value="${l}" ${c.lang === l ? 'selected' : ''}>${cap(C.LANG_LABEL[l])}</option>`).join('')}</select></div>
           <div class="field"><label for="cb-${code}">Marques distribuées</label><input id="cb-${code}" data-f="brands" value="${esc((c.brands || []).join(', '))}"></div>
+          <div class="field"><label for="cm-${code}">Modèle d'email</label><select id="cm-${code}" data-f="template">${C.TEMPLATE_IDS.map(id => `<option value="${id}" ${id === templateIdFor(code) ? 'selected' : ''}>${esc(C.DEFAULT_TEMPLATES[id].label)}</option>`).join('')}</select></div>
         </div>
         <div class="field"><label for="ct-${code}">Destinataires principaux</label><textarea id="ct-${code}" data-f="to" class="mono" rows="5">${esc(lineList(c.to))}</textarea></div>
         <div class="field"><label for="cc-${code}">En copie</label><textarea id="cc-${code}" data-f="cc" class="mono" rows="5">${esc(lineList(c.cc))}</textarea>
@@ -1674,7 +1740,7 @@ select[multiple]{padding:4px}
       const code = card.dataset.code;
       card.querySelector('[data-save]').addEventListener('click', () => {
         const old = state.contacts[code];
-        const doc = { code, name: old.name, lang: card.querySelector('[data-f=lang]').value, brands: C.splitBrands(card.querySelector('[data-f=brands]').value),
+        const doc = { code, name: old.name, lang: card.querySelector('[data-f=lang]').value, template: card.querySelector('[data-f=template]').value, brands: C.splitBrands(card.querySelector('[data-f=brands]').value),
           to: C.parseContactCell(card.querySelector('[data-f=to]').value), cc: C.parseContactCell(card.querySelector('[data-f=cc]').value) };
         writeContact(code, doc);
       });
@@ -1714,14 +1780,14 @@ select[multiple]{padding:4px}
 
   // ---------- Modèle ----------
   function renderTemplates() {
-    const tpls = (state.settings && state.settings.templates) || C.DEFAULT_TEMPLATES;
     $('#sig').value = (state.settings && state.settings.signature) || '';
     $('#fromName').value = senderOf().name || ''; $('#fromEmail').value = senderOf().email || '';
     $('#fromEmail').readOnly = !!(state.mailCfg && state.mailCfg.sender);
     $('#fromHint').hidden = !(state.mailCfg && state.mailCfg.sender);
-    $('#tplList').innerHTML = ['fr', 'en', 'es'].map(l => `<div class="detail" style="gap:8px"><h3>${cap(C.LANG_LABEL[l])}</h3>
-      <div class="field"><label for="ts-${l}">Objet</label><input id="ts-${l}" value="${esc((tpls[l] || C.DEFAULT_TEMPLATES[l]).subject)}"></div>
-      <div class="field"><label for="tb-${l}">Message</label><textarea id="tb-${l}" style="min-height:170px">${esc((tpls[l] || C.DEFAULT_TEMPLATES[l]).body)}</textarea></div></div>`).join('');
+    $('#tplList').innerHTML = C.TEMPLATE_IDS.map(id => { const t = templateOf(id); const users = codes().filter(c => templateIdFor(c) === id);
+      return `<div class="detail" style="gap:8px"><h3>${esc(C.DEFAULT_TEMPLATES[id].label)} <span class="muted" style="font-weight:500">· ${users.length ? esc(users.map(nameFor).join(', ')) : 'aucun pays'}</span></h3>
+      <div class="field"><label for="ts-${id}">Objet</label><input id="ts-${id}" value="${esc(t.subject)}"></div>
+      <div class="field"><label for="tb-${id}">Message</label><textarea id="tb-${id}" style="min-height:220px">${esc(t.body)}</textarea></div></div>`; }).join('');
   }
   function initTemplates() {
     renderTemplates();
@@ -1729,12 +1795,12 @@ select[multiple]{padding:4px}
       const fe = $('#fromEmail').value.trim();
       if (fe && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(fe)) { toast("L'adresse de l'expéditeur n'est pas valide."); return; }
       const doc = { signature: $('#sig').value, sender: { name: $('#fromName').value.trim(), email: fe || DEFAULT_SENDER.email }, templates: {} };
-      ['fr', 'en', 'es'].forEach(l => doc.templates[l] = { subject: $('#ts-' + l).value, body: $('#tb-' + l).value });
+      C.TEMPLATE_IDS.forEach(id => doc.templates[id] = { subject: $('#ts-' + id).value, body: $('#tb-' + id).value, lang: C.DEFAULT_TEMPLATES[id].lang });
       state.overrides = {};
       if (state.db) { try { await state.db.doc('settings/email').set(doc); toast('Modèle enregistré'); } catch (err) { toast('Enregistrement impossible : ' + (err.code || err.message)); } }
       else { state.settings = doc; toast('Modèle appliqué pour cette session'); renderDetail(); }
     });
-    $('#tplReset').addEventListener('click', () => { state.settings = Object.assign({}, state.settings || {}, { templates: C.DEFAULT_TEMPLATES }); renderTemplates(); toast('Modèle par défaut rétabli : cliquez sur Enregistrer pour le conserver.'); });
+    $('#tplReset').addEventListener('click', () => { state.settings = Object.assign({}, state.settings || {}, { templates: {} }); renderTemplates(); toast('Modèle par défaut rétabli : cliquez sur Enregistrer pour le conserver.'); });
   }
 
 
