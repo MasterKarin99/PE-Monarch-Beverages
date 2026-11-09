@@ -121,6 +121,15 @@ body.booting nav.tabs, body.booting section{visibility:hidden}
 body.portal-mode nav.tabs, body.portal-mode header.top .period, body.portal-mode header.top .brandline p{display:none}
 .addr{font-size:12px;line-height:1.45;word-break:break-all;max-width:260px}
 .recip b{font-weight:500}
+.hstrip{display:flex;flex-direction:column;gap:6px}
+.hstrip-head{display:flex;align-items:center;gap:6px;font-size:13px}
+.hstrip.noscroll [data-hs]{display:none}
+.issues.hscroll{display:flex;flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;padding:2px 2px 10px;overscroll-behavior-x:contain}
+.issues.hscroll li{flex:0 0 min(300px,82%);scroll-snap-align:start;display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--line);border-left:4px solid var(--info);border-radius:8px;background:var(--paper)}
+.issues.hscroll li.lv-error{border-left-color:var(--err);background:var(--err-soft)}
+.issues.hscroll li .lvl{align-self:flex-start}
+.issues.hscroll li .msg{font-size:13.5px}
+.issues.hscroll li .where{margin-top:auto}
 .remarks summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;padding:4px 0}
 .remarks[open] summary{margin-bottom:6px}
 tbody.plain tr{cursor:default} tbody.plain tr:hover{background:transparent}
@@ -1305,10 +1314,13 @@ select[multiple]{padding:4px}
   }
 
   function renderControl(e) {
-    const item = i => `<li><span class="lvl ${i.level}">${LEVEL_LABEL[i.level]}</span><div>${esc(i.msg)}${i.where ? `<div class="where">${esc(i.where)}</div>` : ''}</div></li>`;
+    const item = i => `<li class="lv-${i.level}"><span class="lvl ${i.level}">${LEVEL_LABEL[i.level]}</span><div class="msg">${esc(i.msg)}</div>${i.where ? `<div class="where">${esc(i.where)}</div>` : ''}</li>`;
+    const strip = (items, label) => `<div class="hstrip"><div class="hstrip-head"><span>${label}</span><span class="spacer"></span>
+        <button class="btn small" data-hs="-1" aria-label="Précédent">‹</button><button class="btn small" data-hs="1" aria-label="Suivant">›</button></div>
+      <ul class="issues hscroll" tabindex="0">${items.map(item).join('')}</ul></div>`;
     const errs = e.issues.filter(i => i.level === 'error'), rem = e.issues.filter(i => i.level !== 'error');
-    const list = (errs.length ? `<ul class="issues">${errs.map(item).join('')}</ul>` : `<div class="note" style="color:var(--ok)">Aucune erreur : le planning peut être envoyé.</div>`)
-      + (rem.length ? `<details class="remarks"><summary>${rem.length} remarque${rem.length > 1 ? 's' : ''} pour information (n'empêchent pas l'envoi)</summary><ul class="issues">${rem.map(item).join('')}</ul></details>` : '');
+    const list = (errs.length ? strip(errs, `<b style="color:var(--err)">${errs.length} élément${errs.length > 1 ? 's' : ''} à corriger</b>`) : `<div class="note" style="color:var(--ok)">Aucune erreur : le planning peut être envoyé.</div>`)
+      + (rem.length ? `<details class="remarks" ${state.remarksOpen ? 'open' : ''}><summary>${rem.length} remarque${rem.length > 1 ? 's' : ''} pour information (n'empêchent pas l'envoi)</summary>${strip(rem, '<span class="muted">Remarques</span>')}</details>` : '');
     const lang = langFor(e.country);
     const brandsBox = `<div class="detail" style="gap:8px"><h3>Marques envoyées à ${esc(nameFor(e.country))}</h3>
       <div class="opts">${e.allSheets.map(s => { const b = C.BRANDS[s.brandKey] || { color: s.sourceColor || '777777' }; return `<label><input type="checkbox" data-brand="${esc(s.brandKey)}" ${e.excluded.includes(s.brandKey) ? '' : 'checked'}> <span class="bchip"><i style="background:#${b.color}"></i>${esc(s.brand)} <b>${s.posts.length}</b></span></label>`; }).join('')}</div>
@@ -1397,6 +1409,13 @@ select[multiple]{padding:4px}
   function bindDetail(box, code, entryOverride) {
     const e = entryOverride || (code && entryFor(code));
     box.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { state.subtab = b.dataset.tab; renderDetail(); }));
+    box.querySelectorAll('.hstrip').forEach(h => {
+      const ul = h.querySelector('.hscroll');
+      const upd = () => { const [p, n] = h.querySelectorAll('[data-hs]'); p.disabled = ul.scrollLeft <= 2; n.disabled = ul.scrollLeft + ul.clientWidth >= ul.scrollWidth - 2; h.classList.toggle('noscroll', ul.scrollWidth <= ul.clientWidth + 2); };
+      h.querySelectorAll('[data-hs]').forEach(b => b.addEventListener('click', () => ul.scrollBy({ left: +b.dataset.hs * Math.max(260, ul.clientWidth * 0.8), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })));
+      ul.addEventListener('scroll', upd, { passive: true }); requestAnimationFrame(upd);
+    });
+    const rd = box.querySelector('details.remarks'); if (rd) rd.addEventListener('toggle', () => { state.remarksOpen = rd.open; if (rd.open) rd.querySelectorAll('.hstrip').forEach(h => h.querySelector('.hscroll').dispatchEvent(new Event('scroll'))); });
     box.querySelectorAll('[data-brand]').forEach(cb => cb.addEventListener('change', () => {
       const k = cb.dataset.brand; e.userBrands = true;
       e.excluded = cb.checked ? e.excluded.filter(x => x !== k) : [...new Set([...e.excluded, k])];
