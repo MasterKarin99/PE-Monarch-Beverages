@@ -206,9 +206,9 @@ select[multiple]{padding:4px}
     <a href="#miseenforme" data-view="miseenforme">1 · Mise en forme</a>
     <a href="#pays" data-view="pays">2 · Pays et envois</a>
     <a href="#telechargements" data-view="telechargements">Téléchargements</a>
-    <a href="#marronniers" data-view="marronniers">Marronniers</a>
     <a href="#contacts" data-view="contacts">Contacts</a>
     <a href="#modele" data-view="modele">Modèle d'email</a>
+    <a href="#marronniers" data-view="marronniers">Marronniers</a>
     <a href="#historique" data-view="historique">Historique</a>
   </nav>
 
@@ -2581,7 +2581,7 @@ select[multiple]{padding:4px}
   }
 
   // ---------- Navigation ----------
-  const VIEWS = ['miseenforme', 'pays', 'telechargements', 'marronniers', 'contacts', 'modele', 'historique'];
+  const VIEWS = ['miseenforme', 'pays', 'telechargements', 'contacts', 'modele', 'marronniers', 'historique'];
   function route() {
     if (state.mode === 'portal' || state.previewCountry) return;
     const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'miseenforme';
