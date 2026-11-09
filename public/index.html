@@ -185,63 +185,6 @@ select[multiple]{padding:4px}
 @media (max-width:760px){ .grid2,.ccard,.grid4{grid-template-columns:1fr} .grid4 .field{grid-column:auto!important} .post{grid-template-columns:1fr} .issues li{grid-template-columns:1fr} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
-/* ===== Aplats de couleur et repères visuels ===== */
-:root{--zebra:color-mix(in srgb,var(--bg) 55%,var(--paper))}
-/* Couleur propre à chaque espace (onglet + bandeau d'en-tête de section) */
-#v-miseenforme,[data-view="miseenforme"]{--sec:#4e7c5b}
-#v-pays,[data-view="pays"]{--sec:#2f6690}
-#v-telechargements,[data-view="telechargements"]{--sec:#6b4f96}
-#v-contacts,[data-view="contacts"]{--sec:#a4561c}
-#v-modele,[data-view="modele"]{--sec:#a23e5a}
-#v-marronniers,[data-view="marronniers"]{--sec:#8a6a00}
-#v-historique,[data-view="historique"]{--sec:#5F6367}
-#v-portail{--sec:#4e7c5b}
-section{--sec-soft:color-mix(in srgb,var(--sec) 13%,var(--paper));--sec-ink:color-mix(in srgb,var(--sec) 80%,var(--ink))}
-/* En-tête de marque en aplat ardoise */
-header.top{background:var(--brand-slate);color:#fff;border-radius:12px;padding:14px 18px;border-bottom:6px solid var(--brand-sage)}
-header.top .brandline h1{color:#fff}
-header.top .brandline p{color:#e3e7e4}
-header.top .mlogo{box-shadow:none}
-header.top .period{border-color:transparent;color:var(--ink)}
-/* Onglets : pastille couleur + aplat plein sur l'onglet actif */
-nav.tabs{border-bottom:0;gap:6px;padding:2px 0}
-nav.tabs a{border:0;border-radius:8px;background:var(--paper);box-shadow:inset 0 0 0 1px var(--line);display:inline-flex;align-items:center;gap:7px;color:var(--ink)}
-nav.tabs a::before{content:"";width:9px;height:9px;border-radius:3px;background:var(--sec)}
-nav.tabs a:hover{background:color-mix(in srgb,var(--sec) 10%,var(--paper))}
-nav.tabs a[aria-current="page"]{background:var(--sec);color:#fff;box-shadow:none}
-nav.tabs a[aria-current="page"]::before{background:#fff}
-/* Bandeau d'en-tête de chaque section */
-section > .card:first-child{background:var(--sec-soft);border-color:transparent;border-left:6px solid var(--sec)}
-section > .card:first-child h2{color:var(--sec-ink)}
-section .card h2{display:flex;align-items:center;gap:8px}
-section .drop{background:var(--sec-soft);border-color:color-mix(in srgb,var(--sec) 45%,var(--paper))}
-section .drop .glyph{background:var(--sec);color:#fff}
-/* Tableaux : en-tête en aplat, lignes alternées */
-th{background:color-mix(in srgb,var(--sec,var(--brand-slate)) 16%,var(--paper));color:var(--sec-ink,var(--ink));font-weight:700}
-tbody tr:nth-child(even){background:var(--zebra)}
-tbody tr:hover{background:color-mix(in srgb,var(--sec,var(--accent)) 9%,var(--paper))}
-tbody tr.sel{background:color-mix(in srgb,var(--sec,var(--accent)) 18%,var(--paper));box-shadow:inset 4px 0 0 var(--sec,var(--accent))}
-.tablewrap{border-top:4px solid var(--sec,var(--brand-slate))}
-/* Compteurs en aplats de statut */
-.stat{border:0;border-left:6px solid var(--line)}
-.stat.s-wait{background:var(--info-soft);border-left-color:var(--info)} .stat.s-wait b{color:var(--info)}
-.stat.s-check{background:var(--warn-soft);border-left-color:var(--warn)} .stat.s-check b{color:var(--warn)}
-.stat.s-ready{background:var(--accent-soft);border-left-color:var(--accent)} .stat.s-ready b{color:var(--accent)}
-.stat.s-sent{background:var(--ok-soft);border-left-color:var(--ok)} .stat.s-sent b{color:var(--ok)}
-.stat span{color:var(--ink);opacity:.8;font-weight:500}
-/* Statuts plus lisibles */
-.pill{font-weight:700;box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 30%,transparent)}
-.lvl{box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 30%,transparent)}
-/* Sous-onglets du détail pays */
-.subtabs{background:color-mix(in srgb,var(--sec,var(--accent)) 12%,var(--paper))}
-.subtabs button[aria-selected="true"]{background:var(--sec,var(--accent));color:#fff;box-shadow:none}
-/* Fiche pays sélectionnée et cartes */
-#detail{border-top:5px solid var(--sec)}
-.issues.hscroll li{background:var(--paper)}
-.issues.hscroll li.lv-error{border-left-width:6px}
-.note{background:var(--sec-soft,var(--bg));border-left:3px solid var(--sec,var(--line))}
-.recip{background:color-mix(in srgb,var(--sec,var(--accent)) 10%,var(--paper))}
-.ccard:nth-of-type(even){background:var(--zebra);margin:0 -16px;padding-left:16px;padding-right:16px}
 </style>
 </head>
 <body class="booting">
