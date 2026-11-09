@@ -117,6 +117,8 @@ tbody tr:last-child td{border-bottom:0}
 .ccard{display:grid;grid-template-columns:180px 1fr 1fr;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
 .ccard:first-of-type{border-top:0}
 .hist td{cursor:default}
+table.mef tr.off td{opacity:.45}
+table.mef td{vertical-align:top}
 body.booting nav.tabs, body.booting section{visibility:hidden}
 body.portal-mode nav.tabs, body.portal-mode header.top .period, body.portal-mode header.top .brandline p{display:none}
 .addr{font-size:12px;line-height:1.45;word-break:break-all;max-width:260px}
@@ -166,6 +168,7 @@ select[multiple]{padding:4px}
 
   <nav class="tabs" aria-label="Sections">
     <a href="#pays" data-view="pays">Pays et envois</a>
+    <a href="#miseenforme" data-view="miseenforme">Mise en forme</a>
     <a href="#telechargements" data-view="telechargements">Téléchargements</a>
     <a href="#marronniers" data-view="marronniers">Marronniers</a>
     <a href="#contacts" data-view="contacts">Contacts</a>
@@ -209,6 +212,20 @@ select[multiple]{padding:4px}
     </div>
 
     <div class="card detail" id="detail" hidden></div>
+  </section>
+
+  <!-- ============ MISE EN FORME (plannings agences) ============ -->
+  <section id="v-miseenforme" class="detail" hidden>
+    <div class="card"><h2>Mise en forme des plannings agences</h2>
+      <p class="muted" style="margin:4px 0 0">Déposez le planning d'une agence, même s'il regroupe plusieurs pays et plusieurs mois. La plateforme prépare un fichier propre par pays pour les bottlers : publications du mois, posts communs et marronniers du pays, texte anglais pour les pays anglophones. Les colonnes Commentaires, Retours et Budget sont retirées.</p></div>
+    <label class="drop" id="mefDrop" for="mefIn">
+      <div class="glyph">XLSX</div>
+      <div style="flex:1;min-width:220px"><div class="big">Déposez ici un planning agence</div><p>Exemple : « planet-facebook-decembre-propositions_v1.xlsx ». Le fichier est lu dans votre navigateur.</p></div>
+      <span class="btn primary">Choisir un fichier</span>
+      <input id="mefIn" type="file" accept=".xlsx" multiple hidden>
+    </label>
+    <div class="progress" id="mefStatus" hidden></div>
+    <div class="detail" id="mefBody"></div>
   </section>
 
   <!-- ============ ESPACE PAYS (externes) ============ -->
@@ -328,15 +345,15 @@ select[multiple]{padding:4px}
   const LANG_LABEL = { fr: 'français', en: 'anglais', es: 'espagnol' };
 
   const L10N = {
-    fr: { date: 'DATE', day: 'JOUR', theme: 'THÉMATIQUE', text: 'TEXTE', visual: 'VISUEL', comment: 'COMMENTAIRES', feedback: 'RETOURS / VALIDATION PAYS',
+    fr: { date: 'DATE', day: 'JOUR', theme: 'THÉMATIQUE', text: 'TEXTE', visual: 'VISUEL', comment: 'COMMENTAIRES', translation: 'TRADUCTION EN',
           title: 'PLANNING ÉDITORIAL', week: 'Semaine du', posts: 'publication(s)', recap: 'Récapitulatif', brand: 'Marque', count: 'Publications', dates: 'Dates de publication',
-          note: 'Merci de nous transmettre vos retours ou votre validation dans la colonne « Retours / Validation pays » de chaque onglet.', generated: 'Version du', country: 'Pays', period: 'Période' },
-    en: { date: 'DATE', day: 'DAY', theme: 'THEME', text: 'COPY', visual: 'VISUAL', comment: 'COMMENTS', feedback: 'COUNTRY FEEDBACK / APPROVAL',
+          note: 'Merci de nous transmettre vos retours ou votre validation en réponse à l\'email d\'envoi.', generated: 'Version du', country: 'Pays', period: 'Période' },
+    en: { date: 'DATE', day: 'DAY', theme: 'THEME', text: 'COPY', visual: 'VISUAL', comment: 'COMMENTS', translation: 'TRANSLATION',
           title: 'EDITORIAL PLANNING', week: 'Week of', posts: 'post(s)', recap: 'Summary', brand: 'Brand', count: 'Posts', dates: 'Publishing dates',
-          note: 'Please share your feedback or approval in the "Country feedback / approval" column of each tab.', generated: 'Version of', country: 'Country', period: 'Period' },
-    es: { date: 'FECHA', day: 'DÍA', theme: 'TEMÁTICA', text: 'TEXTO', visual: 'VISUAL', comment: 'COMENTARIOS', feedback: 'COMENTARIOS / VALIDACIÓN PAÍS',
+          note: 'Please share your feedback or approval by replying to the email.', generated: 'Version of', country: 'Country', period: 'Period' },
+    es: { date: 'FECHA', day: 'DÍA', theme: 'TEMÁTICA', text: 'TEXTO', visual: 'VISUAL', comment: 'COMENTARIOS', translation: 'TRADUCCIÓN',
           title: 'PLANIFICACIÓN EDITORIAL', week: 'Semana del', posts: 'publicación(es)', recap: 'Resumen', brand: 'Marca', count: 'Publicaciones', dates: 'Fechas de publicación',
-          note: 'Por favor, envíennos sus comentarios o validación en la columna «Comentarios / Validación país» de cada pestaña.', generated: 'Versión del', country: 'País', period: 'Período' },
+          note: 'Por favor, envíennos sus comentarios o validación respondiendo al correo.', generated: 'Versión del', country: 'País', period: 'Período' },
   };
 
   // ---------- Utilitaires ----------
@@ -488,7 +505,50 @@ select[multiple]{padding:4px}
       const s = parseSheet(wb, ws);
       if (s) sheets.push(s);
     });
-    return { filename, country: detectCountry(filename), month: detectMonth(filename), sheets };
+    const fb = brandKey(String(filename || '').replace(/[_\-.]+/g, ' '));
+    if (BRANDS[fb]) sheets.forEach(s => { if (!BRANDS[s.brandKey]) { s.brandKey = fb; s.brand = BRANDS[fb].label; } });
+    return { filename, country: detectCountry(filename), month: detectMonth(filename) || detectMonthLoose(filename, sheets), sheets };
+  }
+  // Mois sans année dans le nom (« decembre ») : année déduite des dates du planning
+  function detectMonthLoose(filename, sheets) {
+    const N = norm(filename); const names = MONTHS_FR.map(m => norm(m));
+    const i = names.findIndex(n => new RegExp(`(^|[^A-Z])${n}([^A-Z]|$)`).test(N.replace(/[_\-.]+/g, ' ')));
+    if (i < 0) return null;
+    const ys = []; sheets.forEach(s => s.posts.forEach(p => { if (p.date && p.date.getUTCMonth() === i) ys.push(p.date.getUTCFullYear()); }));
+    return { y: ys.length ? ys.sort((a, b) => ys.filter(v => v === b).length - ys.filter(v => v === a).length)[0] : new Date().getFullYear(), m: i };
+  }
+  const REJECT_RE = /pas partir|ne (va|vas|allons|partons) pas|n.?allons pas|refus|supprim|a retirer|on retire|abandonn|on oublie|pas retenu|non retenu|ne pas publier|pas valide/i;
+  // Pays visés par un post : drapeaux du texte, sinon codes ou noms de pays dans la thématique
+  function postCountries(p) {
+    const body = p.text + ' ' + p.translation;
+    const flags = flagsIn(body.slice(0, 200)).map(f => FLAG_TO_CODE[f]).filter(Boolean);
+    if (flags.length) return [...new Set(flags)];
+    const out = new Set();
+    const th = p.theme || '';
+    const ALIAS = { CI: 'CIV', CMR: 'CM', GP: 'GD' };
+    (th.match(/\b[A-Z]{2,3}\b/g) || []).forEach(t => { const c = ALIAS[t] || t; if (COUNTRIES[c]) out.add(c); });
+    for (const code of Object.keys(COUNTRY_MENTIONS)) if (mentionsCountry(th, code)) out.add(code);
+    return [...out];
+  }
+  // Prépare un planning compilé (plusieurs pays) pour un pays donné
+  function adaptForCountry(parsed, code, opts) {
+    const lang = opts.lang || (COUNTRIES[code] || {}).lang || 'fr';
+    const month = opts.month;
+    const exclude = opts.exclude || new Set();
+    const sheets = parsed.sheets.map((s, si) => {
+      const posts = s.posts.filter(p => {
+        if (exclude.has(si + ':' + p.row)) return false;
+        if (month && p.date && (p.date.getUTCMonth() !== month.m || p.date.getUTCFullYear() !== month.y)) return false;
+        if (p.countries.length && !p.countries.includes(code)) return false;
+        return true;
+      }).map(p => {
+        const useTr = lang === 'en' && p.translation;
+        const text = useTr ? p.translation : (p.text || p.translation);
+        return Object.assign({}, p, { text, translation: lang === 'fr' && opts.translationColumn ? p.translation : '', comment: '', feedback: '' });
+      });
+      return Object.assign({}, s, { posts, orphans: [], weekHeaders: [] });
+    }).filter(s => s.posts.length);
+    return { filename: parsed.filename, country: code, month, sheets };
   }
 
   function brandKey(name) {
@@ -506,12 +566,14 @@ select[multiple]{padding:4px}
         const t = norm(cellToString(cell.value));
         if (!t) return;
         if (/^TH[E]M|^THEME/.test(t) && !found.theme) found.theme = c;
-        else if (/^(TEXTE|TEXT|COPY|TRADUCTION|WORDING|CAPTION|LEGENDE)/.test(t) && !found.text) found.text = c;
+        else if (/^(TRADUCTION|TRANSLATION|ENGLISH|ANGLAIS|VERSION EN|TEXTE EN\b|EN$)/.test(t) && !found.translation) found.translation = c;
+        else if (/^(TEXTE|TEXT|COPY|WORDING|CAPTION|LEGENDE)/.test(t) && !found.text) found.text = c;
+        else if (/^BUDGET/.test(t) && !found.budget) found.budget = c;
         else if (/^(MEDIA|VISUEL|VISUAL|IMAGE)/.test(t) && !found.media) found.media = c;
         else if (/^(COMMENT)/.test(t) && !found.comment) found.comment = c;
         else if (/^(RETOUR|FEEDBACK|VALIDATION)/.test(t) && !found.feedback) found.feedback = c;
       });
-      if (found.text || found.theme) { headerRow = r; cols = found; break; }
+      if (found.text || found.theme) { headerRow = r; cols = found; if (found.budget) { const sub = ws.getRow(r + 1); let any = false; sub.eachCell({ includeEmpty: false }, (cc, ci) => { if (ci >= found.budget) any = true; }); if (any && !cellToString(ws.getRow(r + 1).getCell(1).value)) headerRow = r + 1; } break; }
     }
     if (!headerRow) { headerRow = 1; cols = { theme: 2, text: 3, media: 4, comment: 5 }; }
     if (!cols.text) cols.text = (cols.theme || 2) + 1;
@@ -525,13 +587,17 @@ select[multiple]{padding:4px}
       const a = row.getCell(dateCol).value;
       const d = toDate(a);
       if (d) current = d;
-      else if (typeof a === 'string' && /semaine|week|semana/i.test(a)) weekHeaders.push({ row: r, label: a.trim() });
+      else if (typeof a === 'string' && /semaine|week|semana/i.test(a)) { weekHeaders.push({ row: r, label: a.trim() }); continue; }
       const text = cleanText(row.getCell(cols.text).value);
       const theme = cleanText(row.getCell(cols.theme).value);
       const comment = cols.comment ? cleanText(row.getCell(cols.comment).value) : '';
       const feedback = cols.feedback ? cleanText(row.getCell(cols.feedback).value) : '';
-      if (!text && !theme) continue;
-      posts.push({ row: r, date: d || current, dateFromRow: !!d, theme, text, comment, feedback, images: [] });
+      const translation = cols.translation ? cleanText(row.getCell(cols.translation).value) : '';
+      if (!text && !theme && !translation) continue;
+      const p = { row: r, date: d || current, dateFromRow: !!d, theme, text, translation, comment, feedback, images: [] };
+      p.countries = postCountries(p);
+      p.rejected = REJECT_RE.test(stripAccents(feedback));
+      posts.push(p);
     }
 
     // Images
@@ -550,6 +616,7 @@ select[multiple]{padding:4px}
 
     const key = brandKey(ws.name);
     return {
+      columns: { theme: !!cols.theme, text: !!cols.text, translation: !!cols.translation, media: !!cols.media, comment: !!cols.comment, feedback: !!cols.feedback, budget: !!cols.budget },
       sheetName: ws.name, brandKey: key, brand: BRANDS[key] ? BRANDS[key].label : titleCase(ws.name),
       sourceColor: sourceColor(ws), posts, orphans, weekHeaders, imageCount: imgs.length,
     };
@@ -559,9 +626,12 @@ select[multiple]{padding:4px}
     if (!imgs.length) return [];
     if (posts.length && imgs.length === posts.length) { imgs.forEach((im, i) => posts[i].images.push(im)); return []; }
     const pairs = [];
-    imgs.forEach((im, i) => posts.forEach((p, j) => { const d = Math.abs(p.row - im.row); if (d <= 4) pairs.push([d, i, j]); }));
-    pairs.sort((a, b) => a[0] - b[0]);
     const usedI = new Set(), usedP = new Set();
+    // 1) Visuels ancrés exactement sur la ligne d'une publication (y compris carrousels)
+    imgs.forEach((im, i) => { const j = posts.findIndex(p => p.row === im.row); if (j >= 0) { posts[j].images.push(im); usedI.add(i); usedP.add(j); } });
+    // 2) Visuels décalés : rattachement au plus proche, une publication libre à la fois
+    imgs.forEach((im, i) => { if (usedI.has(i)) return; posts.forEach((p, j) => { const d = Math.abs(p.row - im.row); if (d <= 4) pairs.push([d, i, j]); }); });
+    pairs.sort((a, b) => a[0] - b[0]);
     for (const [, i, j] of pairs) { if (usedI.has(i) || usedP.has(j)) continue; usedI.add(i); usedP.add(j); posts[j].images.push(imgs[i]); }
     const orphans = [];
     imgs.forEach((im, i) => {
@@ -840,42 +910,46 @@ select[multiple]{padding:4px}
     rc.getCell(`B${rr + 2}`).value = L.note; rc.getCell(`B${rr + 2}`).font = { ...font, italic: true, color: { argb: 'FF555555' } }; rc.getCell(`B${rr + 2}`).alignment = { wrapText: true };
     rc.getRow(rr + 2).height = 30;
 
-    // Onglets marques
+    // Onglets marques (Commentaires, Retours et Budget ne sont jamais repris)
     const IMG_MAX_W = 230, IMG_MAX_H = 260;
     for (const s of entry.sheets) {
       const b = BRANDS[s.brandKey] || { color: s.sourceColor || '444444', text: 'FFFFFF' };
       const tint = tintHex(b.color, 0.86);
+      const withTr = !!opts.translationColumn && s.posts.some(p => p.translation);
+      const defs = [{ k: 'date', h: L.date, w: 12 }, { k: 'day', h: L.day, w: 21 }, { k: 'theme', h: L.theme, w: 24 }, { k: 'text', h: L.text, w: 62 }];
+      if (withTr) defs.push({ k: 'translation', h: L.translation, w: 55 });
+      defs.push({ k: 'visual', h: L.visual, w: 35 });
+      const N = defs.length, lastCol = String.fromCharCode(64 + N), vIdx = defs.findIndex(d => d.k === 'visual');
       const ws = wb.addWorksheet(s.brand.slice(0, 31), { views: [{ state: 'frozen', ySplit: 4, showGridLines: false }], pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 } });
-      ws.columns = [{ width: 12 }, { width: 21 }, { width: 22 }, { width: 62 }, { width: 35 }, { width: 22 }, { width: 30 }];
-      ws.mergeCells('A1:G1');
+      ws.columns = defs.map(d => ({ width: d.w }));
+      ws.mergeCells(`A1:${lastCol}1`);
       const t = ws.getCell('A1');
       t.value = `${L.title} · ${countryName.toUpperCase()} · ${s.brand.toUpperCase()} · ${periodLabel.toUpperCase()}`;
       t.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF' + b.text } };
       t.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + b.color } };
       t.alignment = { vertical: 'middle', indent: 1 };
       ws.getRow(1).height = 34;
-      ws.mergeCells('A2:G2');
+      ws.mergeCells(`A2:${lastCol}2`);
       ws.getCell('A2').value = `${s.posts.length} ${L.posts}`;
       ws.getCell('A2').font = { ...font, color: { argb: 'FF666666' } }; ws.getCell('A2').alignment = { indent: 1, vertical: 'middle' };
       ws.getRow(2).height = 18;
       const h = ws.getRow(4);
-      h.values = [L.date, L.day, L.theme, L.text, L.visual, L.comment, L.feedback];
+      h.values = defs.map(d => d.h);
       h.height = 24;
-      h.eachCell((c, i) => {
+      h.eachCell(c => {
         c.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
-        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i === 7 ? 'FF7A6A00' : 'FF2B2B2B' } };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2B2B2B' } };
         c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }; c.border = border;
       });
-      ws.autoFilter = { from: 'A4', to: 'G4' };
+      ws.autoFilter = { from: 'A4', to: `${lastCol}4` };
 
-      // Lignes : regroupées par semaine
       const items = buildRows(s.posts, month, !!opts.fullCalendar);
       let r = 5; let lastWeek = null;
       for (const it of items) {
         const wk = it.date ? ymd(weekStart(it.date)) : 'none';
         if (wk !== lastWeek) {
           lastWeek = wk;
-          ws.mergeCells(`A${r}:G${r}`);
+          ws.mergeCells(`A${r}:${lastCol}${r}`);
           const c = ws.getCell(`A${r}`);
           c.value = it.date ? weekLabel(weekStart(it.date), lang) : '—';
           c.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF' + darkHex(b.color) } };
@@ -885,20 +959,19 @@ select[multiple]{padding:4px}
         }
         const row = ws.getRow(r);
         const p = it.post;
-        row.getCell(1).value = it.date || null; row.getCell(1).numFmt = 'dd/mm/yyyy';
-        row.getCell(2).value = it.date ? fmtDateLong(it.date, lang) : '';
-        if (p) {
-          row.getCell(3).value = p.theme; row.getCell(4).value = p.text; row.getCell(6).value = p.comment; row.getCell(7).value = p.feedback || null;
-        }
-        for (let c = 1; c <= 7; c++) {
-          const cell = row.getCell(c);
-          cell.font = c === 3 ? { ...font, bold: true } : font;
-          cell.alignment = { vertical: 'top', horizontal: c <= 2 ? 'center' : 'left', wrapText: true };
+        defs.forEach((d, i) => {
+          const cell = row.getCell(i + 1);
+          if (d.k === 'date') { cell.value = it.date || null; cell.numFmt = 'dd/mm/yyyy'; }
+          else if (d.k === 'day') cell.value = it.date ? fmtDateLong(it.date, lang) : '';
+          else if (p && d.k === 'theme') cell.value = p.theme;
+          else if (p && d.k === 'text') cell.value = p.text;
+          else if (p && d.k === 'translation') cell.value = p.translation || null;
+          cell.font = d.k === 'theme' ? { ...font, bold: true } : font;
+          cell.alignment = { vertical: 'top', horizontal: i <= 1 ? 'center' : 'left', wrapText: true };
           cell.border = border;
-          if (c === 7) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF8D6' } };
-          else if (!p) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFAFAFA' } };
-        }
-        let height = p ? textHeight(p.text, 62) : 16;
+          if (!p) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFAFAFA' } };
+        });
+        let height = p ? Math.max(textHeight(p.text, 62), withTr ? textHeight(p.translation, 55) : 0) : 16;
         if (p && p.images.length) {
           const n = p.images.length; let y = 4;
           let imgsH = 0;
@@ -909,7 +982,7 @@ select[multiple]{padding:4px}
             const k = Math.min(IMG_MAX_W / sz.w, maxH / sz.h, 1);
             const w = Math.round(sz.w * k), hh = Math.round(sz.h * k);
             const id = wb.addImage(imgArg(img.data, img.ext));
-            ws.addImage(id, { tl: { col: 4 + (IMG_MAX_W - w) / 2 / 245 * 1 + 0.02, row: r - 1 + y / 20 }, ext: { width: w, height: hh }, editAs: 'oneCell' });
+            ws.addImage(id, { tl: { col: vIdx + (IMG_MAX_W - w) / 2 / 245 + 0.02, row: r - 1 + y / 20 }, ext: { width: w, height: hh }, editAs: 'oneCell' });
             y += hh * 0.75 + 6; imgsH += hh * 0.75 + 6;
           }
           height = Math.max(height, imgsH + 8);
@@ -919,14 +992,14 @@ select[multiple]{padding:4px}
       }
       if (s.orphans.length) {
         r++;
-        ws.mergeCells(`A${r}:G${r}`);
+        ws.mergeCells(`A${r}:${lastCol}${r}`);
         ws.getCell(`A${r}`).value = lang === 'en' ? 'Additional visuals' : lang === 'es' ? 'Visuales adicionales' : 'Visuels complémentaires';
         ws.getCell(`A${r}`).font = { ...font, bold: true }; r++;
         for (const img0 of s.orphans) {
           const img = opts.transformImage ? await opts.transformImage(img0) : img0;
           const sz = img.size || imageSize(img.data); const k = Math.min(IMG_MAX_W / sz.w, IMG_MAX_H / sz.h, 1);
           const id = wb.addImage(imgArg(img.data, img.ext));
-          ws.addImage(id, { tl: { col: 4.02, row: r - 1 + 0.2 }, ext: { width: Math.round(sz.w * k), height: Math.round(sz.h * k) }, editAs: 'oneCell' });
+          ws.addImage(id, { tl: { col: vIdx + 0.02, row: r - 1 + 0.2 }, ext: { width: Math.round(sz.w * k), height: Math.round(sz.h * k) }, editAs: 'oneCell' });
           ws.getRow(r).height = Math.min(409, sz.h * k * 0.75 + 10); r++;
         }
       }
@@ -1009,9 +1082,9 @@ select[multiple]{padding:4px}
 
   // ---------- Email ----------
   const DEFAULT_TEMPLATES = {
-    fr: { subject: 'Planning éditorial {mois} – {pays}', body: 'Bonjour à toutes et à tous,\n\nVeuillez trouver ci-joint le planning éditorial de {mois} pour {pays} ({marques}), soit {nb} publications.\n\nMerci de nous faire part de vos retours ou de votre validation directement dans la colonne « Retours / Validation pays » du fichier, ou en réponse à cet email.\n\nBelle journée,\n{signature}' },
-    en: { subject: 'Editorial planning {mois} – {pays}', body: 'Hello everyone,\n\nPlease find attached the {mois} editorial planning for {pays} ({marques}), {nb} posts in total.\n\nPlease share your feedback or approval directly in the "Country feedback / approval" column of the file, or by replying to this email.\n\nBest regards,\n{signature}' },
-    es: { subject: 'Planificación editorial {mois} – {pays}', body: 'Hola a todos,\n\nAdjuntamos la planificación editorial de {mois} para {pays} ({marques}), con un total de {nb} publicaciones.\n\nPor favor, envíennos sus comentarios o validación en la columna «Comentarios / Validación país» del archivo, o respondiendo a este correo.\n\nSaludos cordiales,\n{signature}' },
+    fr: { subject: 'Planning éditorial {mois} – {pays}', body: 'Bonjour à toutes et à tous,\n\nVeuillez trouver ci-joint le planning éditorial de {mois} pour {pays} ({marques}), soit {nb} publications.\n\nMerci de nous faire part de vos retours ou de votre validation en réponse à cet email.\n\nBelle journée,\n{signature}' },
+    en: { subject: 'Editorial planning {mois} – {pays}', body: 'Hello everyone,\n\nPlease find attached the {mois} editorial planning for {pays} ({marques}), {nb} posts in total.\n\nPlease share your feedback or approval by replying to this email.\n\nBest regards,\n{signature}' },
+    es: { subject: 'Planificación editorial {mois} – {pays}', body: 'Hola a todos,\n\nAdjuntamos la planificación editorial de {mois} para {pays} ({marques}), con un total de {nb} publicaciones.\n\nPor favor, envíennos sus comentarios o validación respondiendo a este correo.\n\nSaludos cordiales,\n{signature}' },
   };
   const COUNTRY_NAMES_I18N = { en: { CM: 'Cameroon', CG: 'Congo', CIV: "Côte d'Ivoire", GN: 'Guinea', ML: 'Mali', SN: 'Senegal', TD: 'Chad', NG: 'Nigeria', GH: 'Ghana', BF: 'Burkina Faso', GD: 'Guadeloupe', VU: 'Vanuatu', AR: 'Argentina' },
     es: { CM: 'Camerún', CG: 'Congo', CIV: 'Costa de Marfil', GN: 'Guinea', ML: 'Malí', SN: 'Senegal', TD: 'Chad', NG: 'Nigeria', GH: 'Ghana', BF: 'Burkina Faso', GD: 'Guadalupe', VU: 'Vanuatu', AR: 'Argentina' } };
@@ -1044,7 +1117,7 @@ select[multiple]{padding:4px}
     return head;
   }
 
-  const api = { b64FromU8, parseCalendarWorkbook, eventsForCountry, eventCoverage, eventCountries, FLAG_TO_CODE, COUNTRIES, BRANDS, L10N, DEFAULT_TEMPLATES, MONTHS_FR, LANG_LABEL, cleanText, detectCountry, detectMonth, parsePlanning, checkCountry, fingerprint, buildWorkbook,
+  const api = { adaptForCountry, postCountries, b64FromU8, parseCalendarWorkbook, eventsForCountry, eventCoverage, eventCountries, FLAG_TO_CODE, COUNTRIES, BRANDS, L10N, DEFAULT_TEMPLATES, MONTHS_FR, LANG_LABEL, cleanText, detectCountry, detectMonth, parsePlanning, checkCountry, fingerprint, buildWorkbook,
     parseContactsWorkbook, parseContactCell, splitBrands, fillTemplate, buildEml, monthLabel, countryLabel, fmtDateLong, imageSize, brandKey, ymd, detectLang };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PECore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1062,14 +1135,15 @@ select[multiple]{padding:4px}
 
   const state = {
     db: null, dl: null, contacts: {}, contactsReady: false, settings: null, envois: {},
-    mail: null, mailCfg: null, access: null, accessLinks: {}, portal: {}, mode: 'admin', me: null, myHashes: [], previewCountry: null, library: {}, assets: null, archiveQ: { total: 0, done: 0, running: false, failed: [] }, libAll: false, libSel: new Set(), usage: null, calendars: {}, calPreview: null, calAll: false, entries: [], sel: null, subtab: 'controle', period: null, overrides: {}, building: {}, importPreview: null,
+    mef: [], mail: null, mailCfg: null, access: null, accessLinks: {}, portal: {}, mode: 'admin', me: null, myHashes: [], previewCountry: null, library: {}, assets: null, archiveQ: { total: 0, done: 0, running: false, failed: [] }, libAll: false, libSel: new Set(), usage: null, calendars: {}, calPreview: null, calAll: false, entries: [], sel: null, subtab: 'controle', period: null, overrides: {}, building: {}, importPreview: null,
   };
 
   // ---------- Utilitaires ----------
   let toastT;
   function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 3200); }
   const periodKey = () => `${state.period.y}-${String(state.period.m + 1).padStart(2, '0')}`;
-  const monthUpper = () => C.MONTHS_FR[state.period.m].toUpperCase();
+  const monthUp = m => C.MONTHS_FR[m].normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+  const monthUpper = () => monthUp(state.period.m);
   const fmtDate = iso => { try { return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return iso; } };
   const fmtSize = n => n > 1048576 ? (n / 1048576).toFixed(1) + ' Mo' : Math.round(n / 1024) + ' Ko';
   const brandInfo = label => C.BRANDS[C.brandKey(label)] || { label, color: '777777' };
@@ -1205,7 +1279,7 @@ select[multiple]{padding:4px}
 
   // ---------- Rendu principal ----------
   function refresh() { recompute(); renderAll(); }
-  function renderAll() { renderStats(); renderTable(); renderDetail(); renderContacts(); renderHistory(); renderCalendar(); renderLibrary(); }
+  function renderAll() { renderStats(); renderTable(); renderDetail(); renderContacts(); renderHistory(); renderCalendar(); renderLibrary(); renderMef(); }
 
   function renderStats() {
     const cs = codes(); const c = { wait: 0, check: 0, ready: 0, sent: 0 };
@@ -1327,7 +1401,7 @@ select[multiple]{padding:4px}
       <p class="muted" style="margin:0;font-size:12.5px">Par défaut, seules les marques distribuées dans le pays (onglet Contacts) sont incluses dans le fichier mis en forme et dans l'email.</p></div>`;
     return `${list}${brandsBox}${renderMarronniers(e)}
       <div class="note">Fichier reçu : <b>${esc(e.filename)}</b> (${fmtSize(e.size)}) · ${e.sheets.length} onglet(s) : ${e.sheets.map(s => esc(s.sheetName)).join(', ')} · langue attendue : ${C.LANG_LABEL[lang]}.
-      La mise en forme régénère les semaines à partir des dates, nettoie les textes (caractères invisibles, sauts de ligne), aligne chaque visuel sur sa publication et ajoute une colonne de retours pour le pays.</div>
+      La mise en forme régénère les semaines à partir des dates, nettoie les textes (caractères invisibles, sauts de ligne), aligne chaque visuel sur sa publication et ne reprend ni commentaires, ni retours, ni budget.</div>
       <div class="row"><label class="field" style="flex-direction:row;align-items:center;gap:8px"><span class="muted" style="font-size:12px">Ce fichier concerne</span>
       <select data-act="reassign" class="btn small">${ORDER.concat(Object.keys(state.contacts).filter(c => !ORDER.includes(c))).map(c => `<option value="${c}" ${c === e.country ? 'selected' : ''}>${esc(nameFor(c))} (${c})</option>`).join('')}</select></label>
       <button class="btn small ghost" data-act="remove">Retirer ce fichier</button></div>`;
@@ -1358,7 +1432,7 @@ select[multiple]{padding:4px}
       const b = C.BRANDS[s.brandKey] || { color: s.sourceColor || '555555', text: 'FFFFFF' };
       const posts = s.posts.slice().sort((a, b2) => (a.date || 0) - (b2.date || 0));
       return `<section class="brandsec"><header style="background:#${b.color};color:#${b.text || 'FFFFFF'}">${esc(s.brand)}<span style="font-weight:500;opacity:.85">${s.posts.length} publication(s)</span></header>
-        <div class="posts">${posts.map(p => `<div class="post"><div><div class="d">${p.date ? esc(C.fmtDateLong(p.date, 'fr')) : 'Sans date'}</div><div class="t">${esc(p.theme)}</div>${p.comment ? `<div class="t">${esc(p.comment)}</div>` : ''}</div>
+        <div class="posts">${posts.map(p => `<div class="post"><div><div class="d">${p.date ? esc(C.fmtDateLong(p.date, 'fr')) : 'Sans date'}</div><div class="t">${esc(p.theme)}</div></div>
           <div class="txt">${esc(p.text) || '<span class="muted">Pas de texte</span>'}</div>
           <div class="thumbs">${p.images.length ? p.images.map(thumb).join('') : '<div class="noimg">Pas de visuel intégré</div>'}</div></div>`).join('') || '<div class="empty">Aucune publication</div>'}</div></section>`;
     }).join('');
@@ -1837,7 +1911,7 @@ select[multiple]{padding:4px}
     if (z) z.addEventListener('click', () => busy(z, async () => {
       const zip = new JSZip(); const ids = [...state.libSel].filter(id => state.library[id]); const periods = new Set();
       for (const id of ids) { const d = state.library[id]; periods.add(d.period); zip.file(d.filename, await fetchLib(d)); }
-      const name = periods.size === 1 ? `Plannings PE ${C.MONTHS_FR[+[...periods][0].split('-')[1] - 1].toUpperCase()} ${[...periods][0].split('-')[0]}.zip` : 'Plannings PE.zip';
+      const name = periods.size === 1 ? `Plannings PE ${monthUp(+[...periods][0].split('-')[1] - 1)} ${[...periods][0].split('-')[0]}.zip` : 'Plannings PE.zip';
       await save(name, await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 3 } }));
     }));
   }
@@ -1916,8 +1990,145 @@ select[multiple]{padding:4px}
   }
   function openPreview(code) { state.previewCountry = code; document.body.classList.add('portal-mode'); VIEWS.forEach(x => { $('#v-' + x).hidden = true; }); $('#v-portail').hidden = false; renderPortal(); window.scrollTo(0, 0); }
 
+
+  // ---------- Mise en forme des plannings agences (fichiers compilés multi-pays) ----------
+  const REMOVED_LABELS = { comment: 'Commentaires', feedback: 'Retours', budget: 'Budget' };
+  function mefMonths(f) {
+    const seen = new Map();
+    f.parsed.sheets.forEach(s => s.posts.forEach(p => { if (p.date) { const k = p.date.getUTCFullYear() * 12 + p.date.getUTCMonth(); seen.set(k, (seen.get(k) || 0) + 1); } }));
+    return [...seen.keys()].sort((x, y) => x - y).map(k => ({ y: Math.floor(k / 12), m: k % 12, n: seen.get(k) }));
+  }
+  const mKey = m => m ? `${m.y}-${m.m}` : '';
+  function mefBrands(f) { return [...new Set(f.parsed.sheets.map(s => s.brand))]; }
+  function mefDefaultCountries(f) {
+    const bk = f.parsed.sheets.map(s => s.brandKey);
+    const cs = Object.keys(state.contacts).filter(c => { const b = (state.contacts[c].brands || []).map(C.brandKey); return !b.length || b.some(x => bk.includes(x)); });
+    return cs.length ? cs : ORDER.slice();
+  }
+  async function mefAddFiles(files) {
+    files = files.filter(f => /\.xlsx$/i.test(f.name));
+    if (!files.length) { toast('Déposez des fichiers .xlsx'); return; }
+    const st = $('#mefStatus'); st.hidden = false;
+    for (const file of files) {
+      st.textContent = `Lecture de ${file.name}…`;
+      try {
+        const ab = await file.arrayBuffer(); const hash = await sha(ab.slice(0));
+        const parsed = await C.parsePlanning(window.ExcelJS, ab, file.name);
+        if (!parsed.sheets.length) { toast(`${file.name} : aucune publication trouvée`); continue; }
+        const f = { id: Math.random().toString(36).slice(2), filename: file.name, size: file.size, hash, parsed, exclude: new Set(), translationColumn: false };
+        const months = mefMonths(f);
+        f.month = parsed.month && months.some(m => mKey(m) === mKey(parsed.month)) ? parsed.month : (months.slice().sort((x, y) => y.n - x.n)[0] || null);
+        f.countries = new Set(mefDefaultCountries(f));
+        parsed.sheets.forEach((s, si) => s.posts.forEach(p => { if (p.rejected) f.exclude.add(si + ':' + p.row); }));
+        state.mef.unshift(f);
+      } catch (err) { console.error(err); toast(`${file.name} : lecture impossible (${err.message || err})`); }
+    }
+    st.hidden = true; renderMef();
+  }
+  function mefCountFor(f, code) {
+    const lang = langFor(code);
+    return C.adaptForCountry(f.parsed, code, { lang, month: f.month, exclude: f.exclude }).sheets.reduce((n, s) => n + s.posts.length, 0);
+  }
+  function renderMef() {
+    const box = $('#mefBody'); if (!box) return;
+    if (!state.mef.length) { box.innerHTML = `<div class="card empty">Aucun planning agence chargé. Déposez un fichier ci-dessus : il peut couvrir plusieurs pays et plusieurs mois.</div>`; return; }
+    box.innerHTML = state.mef.map(f => {
+      const all = f.parsed.sheets.flatMap((s, si) => s.posts.map(p => ({ s, si, p })));
+      const cols = f.parsed.sheets.reduce((o, s) => { Object.entries(s.columns || {}).forEach(([k, v]) => { if (v) o[k] = true; }); return o; }, {});
+      const removed = Object.keys(REMOVED_LABELS).filter(k => cols[k]).map(k => REMOVED_LABELS[k]);
+      const kept = ['Date', 'Thématique', 'Texte'].concat(cols.translation ? ['Traduction EN (pays anglophones)'] : []).concat(['Visuels']);
+      const months = mefMonths(f);
+      const inMonth = all.filter(x => x.p.date && mKey({ y: x.p.date.getUTCFullYear(), m: x.p.date.getUTCMonth() }) === mKey(f.month));
+      const outside = all.length - inMonth.length;
+      const countries = SCOPE_CODES().filter(c => state.contacts[c] || C.COUNTRIES[c]);
+      const rows = inMonth.sort((x, y) => x.p.date - y.p.date || x.p.row - y.p.row).map(({ s, si, p }) => {
+        const k = si + ':' + p.row, inc = !f.exclude.has(k);
+        const tgt = p.countries.length ? p.countries.map(c => `<span class="bchip">${esc(c)}</span>`).join(' ') : '<span class="muted">Tous</span>';
+        const txt = (p.text || p.translation || '').split('\n')[0];
+        return `<tr class="${inc ? '' : 'off'}"><td><input type="checkbox" data-mpost="${esc(f.id)}|${esc(k)}" ${inc ? 'checked' : ''} aria-label="Inclure la publication du ${esc(C.fmtDateLong(p.date, 'fr'))}"></td>
+          <td class="mono" style="white-space:nowrap">${esc(fmtDM(C.ymd(p.date)))}</td><td><b>${esc(p.theme)}</b>${f.parsed.sheets.length > 1 ? `<div class="muted" style="font-size:12px">${esc(s.brand)}</div>` : ''}</td>
+          <td style="max-width:360px">${esc(txt.slice(0, 120))}${p.translation && p.text ? ' <span class="scope s-global">FR + EN</span>' : p.translation ? ' <span class="scope s-global">EN seul</span>' : ''}</td>
+          <td>${tgt}</td><td>${p.images.length ? `${p.images.length} visuel${p.images.length > 1 ? 's' : ''}` : '<span class="muted">—</span>'}</td>
+          <td>${p.rejected ? `<span class="pill p-err" title="${esc(p.feedback)}">Refusé (retour MB)</span>` : '<span class="muted">—</span>'}</td></tr>`;
+      }).join('');
+      const sel = [...f.countries].filter(c => countries.includes(c));
+      const summary = sel.map(c => { const n = mefCountFor(f, c); return `<span class="bchip" title="${esc(nameFor(c))}">${esc(c)} <b>${n}</b>${langFor(c) !== 'fr' ? ` <span class="muted">${langFor(c).toUpperCase()}</span>` : ''}</span>`; }).join('');
+      return `<section class="card detail" data-mef="${esc(f.id)}">
+        <div class="row"><div style="flex:1;min-width:240px"><h2>${esc(f.filename)}</h2>
+          <div class="brands" style="margin-top:6px">${mefBrands(f).map(b => `<span class="bchip"><i style="background:#${brandInfo(b).color}"></i>${esc(b)}</span>`).join('')}<span class="muted" style="font-size:12.5px">${all.length} publication(s) · ${fmtSize(f.size)}</span></div></div>
+          <button class="btn small ghost" data-mefdel>Retirer</button></div>
+        <div class="grid2">
+          <div class="note"><b>Colonnes conservées :</b> ${esc(kept.join(', '))}.<br><b>Colonnes retirées :</b> ${removed.length ? esc(removed.join(', ')) : 'aucune'} (jamais transmises aux bottlers).</div>
+          <div class="note">Chaque pays ne reçoit que les publications du mois choisi, les posts communs et ses propres marronniers (repérés par drapeau ou code pays). Les posts refusés dans les retours MB sont écartés ; vous pouvez cocher ou décocher chaque publication.</div>
+        </div>
+        <div class="row" style="align-items:flex-end;gap:16px">
+          <div class="field"><label for="mm-${esc(f.id)}">Mois à envoyer</label><select id="mm-${esc(f.id)}" data-mefmonth>${months.map(m => `<option value="${mKey(m)}" ${mKey(m) === mKey(f.month) ? 'selected' : ''}>${esc(cap(C.MONTHS_FR[m.m]))} ${m.y} (${m.n} publication${m.n > 1 ? 's' : ''})</option>`).join('')}</select></div>
+          ${cols.translation ? `<label class="opts"><label><input type="checkbox" data-meftr ${f.translationColumn ? 'checked' : ''}> Ajouter aussi la traduction EN en colonne pour les pays francophones</label></label>` : ''}
+        </div>
+        <div class="field"><label>Pays destinataires</label><div class="brands">${countries.map(c => `<label class="bchip" style="cursor:pointer"><input type="checkbox" data-mefc="${esc(c)}" ${f.countries.has(c) ? 'checked' : ''}> ${esc(nameFor(c))}</label>`).join('')}</div></div>
+        <div class="tablewrap"><table class="mef"><thead><tr><th></th><th>Date</th><th>Thématique</th><th>Texte</th><th>Pays ciblés</th><th>Visuels</th><th>Retours MB</th></tr></thead><tbody class="plain">${rows || '<tr><td colspan="7" class="empty">Aucune publication ce mois-ci.</td></tr>'}</tbody></table></div>
+        ${outside ? `<p class="muted" style="margin:0;font-size:12.5px">${outside} publication(s) d'autres mois ignorée(s).</p>` : ''}
+        <div class="row"><span class="muted" style="font-size:12.5px">Publications par pays :</span><div class="brands">${summary || '<span class="muted">aucun pays choisi</span>'}</div><span class="spacer"></span>
+          <button class="btn" data-mefzip ${sel.length ? '' : 'disabled'}>Télécharger un fichier par pays (.zip)</button>
+          <button class="btn primary" data-mefsend ${sel.length ? '' : 'disabled'}>Ajouter aux envois des pays</button></div>
+      </section>`;
+    }).join('');
+    box.querySelectorAll('[data-mef]').forEach(card => {
+      const f = state.mef.find(x => x.id === card.dataset.mef); if (!f) return;
+      card.querySelector('[data-mefdel]').addEventListener('click', () => { state.mef = state.mef.filter(x => x !== f); renderMef(); });
+      const ms = card.querySelector('[data-mefmonth]'); if (ms) ms.addEventListener('change', () => { const [y, m] = ms.value.split('-').map(Number); f.month = { y, m }; renderMef(); });
+      const tr = card.querySelector('[data-meftr]'); if (tr) tr.addEventListener('change', () => { f.translationColumn = tr.checked; });
+      card.querySelectorAll('[data-mefc]').forEach(cb => cb.addEventListener('change', () => { cb.checked ? f.countries.add(cb.dataset.mefc) : f.countries.delete(cb.dataset.mefc); renderMef(); }));
+      card.querySelectorAll('[data-mpost]').forEach(cb => cb.addEventListener('change', () => { const k = cb.dataset.mpost.split('|')[1]; cb.checked ? f.exclude.delete(k) : f.exclude.add(k); renderMef(); }));
+      const z = card.querySelector('[data-mefzip]'); if (z) z.addEventListener('click', () => busy(z, () => mefZip(f)));
+      const sd = card.querySelector('[data-mefsend]'); if (sd) sd.addEventListener('click', () => busy(sd, async () => mefSend(f)));
+    });
+  }
+  function mefAdapted(f, code) { return C.adaptForCountry(f.parsed, code, { lang: langFor(code), month: f.month, exclude: f.exclude, translationColumn: f.translationColumn }); }
+  async function mefZip(f) {
+    const zip = new JSZip(); const brand = mefBrands(f).join(' ').toUpperCase();
+    for (const code of f.countries) {
+      const ad = mefAdapted(f, code); if (!ad.sheets.length) continue;
+      const lang = langFor(code);
+      const wb = await C.buildWorkbook(window.ExcelJS, ad, { lang, month: f.month, countryName: C.countryLabel(code, lang), translationColumn: f.translationColumn, transformImage: $('#optImg').checked ? lighten : null });
+      zip.file(`${code} - PE ${brand} ${monthUp(f.month.m)} ${f.month.y}.xlsx`, new Uint8Array(await wb.xlsx.writeBuffer()));
+    }
+    await save(`PE ${brand} ${monthUp(f.month.m)} ${f.month.y} - par pays.zip`, await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 3 } }));
+  }
+  function mefSend(f) {
+    if (mKey(f.month) !== mKey(state.period)) setPeriod({ y: f.month.y, m: f.month.m });
+    let n = 0;
+    for (const code of f.countries) {
+      const ad = mefAdapted(f, code); if (!ad.sheets.length) continue;
+      const cur = entryFor(code);
+      let entry;
+      if (cur && cur.month && mKey(cur.month) === mKey(f.month)) {
+        const keys = ad.sheets.map(s => s.brandKey);
+        cur.allSheets = cur.allSheets.filter(s => !keys.includes(s.brandKey)).concat(ad.sheets);
+        cur.filename = cur.filename.includes(f.filename) ? cur.filename : `${cur.filename} + ${f.filename}`;
+        cur.hash = `${cur.hash}|${f.hash}:${code}`; cur.built = null; cur.archivedKey = null; entry = cur;
+      } else {
+        if (cur) state.entries.splice(state.entries.indexOf(cur), 1);
+        entry = { id: Math.random().toString(36).slice(2), filename: f.filename, country: code, month: f.month, sheets: ad.sheets, allSheets: ad.sheets, excluded: [], userBrands: false, size: f.size, hash: `${f.hash}:${code}`, validated: false, built: null };
+        state.entries.push(entry);
+      }
+      n++;
+    }
+    refresh(); archivePending();
+    toast(`${n} pays ajouté(s) aux envois de ${C.MONTHS_FR[f.month.m]} ${f.month.y}`);
+    location.hash = '#pays';
+  }
+  function initMef() {
+    const drop = $('#mefDrop'), inp = $('#mefIn'); if (!drop) return;
+    inp.addEventListener('change', () => { mefAddFiles([...inp.files]); inp.value = ''; });
+    ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+    ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+    drop.addEventListener('drop', e => mefAddFiles([...e.dataTransfer.files]));
+    renderMef();
+  }
+
   // ---------- Navigation ----------
-  const VIEWS = ['pays', 'telechargements', 'marronniers', 'contacts', 'modele', 'historique'];
+  const VIEWS = ['pays', 'miseenforme', 'telechargements', 'marronniers', 'contacts', 'modele', 'historique'];
   function route() {
     if (state.mode === 'portal' || state.previewCountry) return;
     const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'pays';
@@ -1932,7 +2143,7 @@ select[multiple]{padding:4px}
     tb.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(ev.target.closest('tr')); } });
   }
 
-  initPeriod(); initDrop(); initTable(); initGlobal(); initContacts(); initTemplates(); initCalendar(); initSendAll();
+  initPeriod(); initDrop(); initTable(); initGlobal(); initContacts(); initTemplates(); initCalendar(); initSendAll(); initMef();
   window.addEventListener('hashchange', route); route();
   renderAll();
   initCaps();

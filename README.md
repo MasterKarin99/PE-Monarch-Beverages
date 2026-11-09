@@ -34,12 +34,22 @@ Le calendrier marketing de l'année (import du fichier Excel) indique, pour chaq
 
 ![Marronniers](docs/captures/marronniers.png)
 
-### 4. Mise en forme
-Un fichier Excel propre par pays :
+### 4. Mise en forme des plannings agences
+L'espace **Mise en forme** accepte aussi les plannings « compilés » des agences, qui regroupent plusieurs pays et plusieurs mois. On y voit le texte FR, la traduction EN, les visuels, les commentaires de production, les retours MB et le budget. Pour chaque pays destinataire, la plateforme ne garde que :
+
+- les publications du mois choisi ;
+- les posts communs ;
+- les marronniers du pays, repérés par drapeau ou code pays.
+
+Les pays anglophones reçoivent le texte anglais. Les posts refusés dans les retours MB sont écartés, et chaque publication peut être cochée ou décochée. Les colonnes **Commentaires, Retours et Budget ne sont jamais transmises**. Le résultat se télécharge (un fichier par pays) ou s'ajoute directement aux envois des pays.
+
+![Mise en forme d'un planning agence](docs/captures/mise-en-forme.png)
+
+Dans les deux cas, chaque pays reçoit un fichier Excel propre :
 
 - une page de récapitulatif, puis un onglet par marque aux couleurs de la marque ;
 - les publications regroupées par semaine, chaque visuel aligné sur sa publication ;
-- une colonne **Retours / Validation pays** pour la réponse du bottler ;
+- uniquement les colonnes utiles au bottler : date, jour, thématique, texte, visuel ;
 - des en-têtes en français, en anglais ou en espagnol selon le pays.
 
 ### 5. Envoi
