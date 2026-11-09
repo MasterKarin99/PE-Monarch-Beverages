@@ -162,6 +162,23 @@ app.get('/_blob/:id', (req, res) => {
   res.set({ 'Content-Type': a.content_type, 'Cache-Control': 'private, max-age=0' }).sendFile(store.assetPath(a.id));
 });
 
+// Import d'une présentation Google Slides (partagée « Tous les utilisateurs disposant du lien »)
+app.get('/api/import/slides', adminOnly, async (req, res) => {
+  const id = String(req.query.id || '');
+  if (!/^[a-zA-Z0-9_-]{20,}$/.test(id)) return res.status(400).json({ error: 'Lien Google Slides invalide' });
+  try {
+    const r = await fetch(`https://docs.google.com/presentation/d/${id}/export/pptx`, { redirect: 'follow', signal: AbortSignal.timeout(60000) });
+    const ct = r.headers.get('content-type') || '';
+    if (!r.ok || !/presentationml|octet-stream/.test(ct)) return res.status(400).json({ error: 'Présentation inaccessible : partagez-la avec « Tous les utilisateurs disposant du lien » (lecteur), ou téléchargez-la en .pptx et déposez le fichier.' });
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length > 80 * 1024 * 1024) return res.status(413).json({ error: 'Présentation trop volumineuse (plus de 80 Mo)' });
+    const cd = r.headers.get('content-disposition') || '';
+    const name = (cd.match(/filename\*=UTF-8''([^;]+)/i) || [])[1] || encodeURIComponent(((cd.match(/filename="([^"]+)"/i) || [])[1]) || `Google Slides ${id}.pptx`);
+    store.audit(req.user.email, 'import-slides', { id });
+    res.set({ 'Content-Type': 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'X-Filename': name }).send(buf);
+  } catch (e) { res.status(502).json({ error: 'Google Slides ne répond pas : réessayez, ou téléchargez la présentation en .pptx et déposez le fichier.' }); }
+});
+
 // Liens d'accès générés par l'équipe (à transmettre sans passer par un email automatique)
 app.post('/api/access/link', adminOnly, express.json({ limit: '4kb' }), (req, res) => {
   const email = normalizeEmail(req.body && req.body.email);

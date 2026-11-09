@@ -187,16 +187,7 @@ select[multiple]{padding:4px}
 
   <!-- ============ PAYS ============ -->
   <section id="v-pays" class="detail">
-    <label class="drop" id="drop" for="fileIn">
-      <div class="glyph">XLSX</div>
-      <div style="flex:1;min-width:220px">
-        <div class="big">Déposez ici les plannings reçus des agences</div>
-        <p>Un fichier par pays, nommé avec le code pays (ex. « CIV - PE NOVEMBRE 2026.xlsx »). Plusieurs fichiers à la fois acceptés. Les fichiers sont traités dans votre navigateur.</p>
-      </div>
-      <span class="btn primary">Choisir des fichiers</span>
-      <input id="fileIn" type="file" accept=".xlsx" multiple hidden>
-    </label>
-    <div class="progress" id="progress" hidden></div>
+    <div class="card row" style="padding:12px 16px"><span style="flex:1">Les plannings arrivent ici depuis l'étape <b>1 · Mise en forme</b>, positionnés <b>en révision</b> ou <b>prêts pour l'envoi</b>.</span><a class="btn small" href="#miseenforme">Mettre en forme un planning</a></div>
     <div id="archStatus"></div>
 
     <div class="banner row" id="restore" hidden style="background:var(--accent-soft);color:var(--ink)"></div>
@@ -230,11 +221,17 @@ select[multiple]{padding:4px}
       <p class="muted" style="margin:4px 0 0">Déposez le planning d'une agence, même s'il regroupe plusieurs pays et plusieurs mois. La plateforme prépare un fichier propre par pays pour les bottlers : publications du mois, posts communs et marronniers du pays, texte anglais pour les pays anglophones. Les colonnes Commentaires, Retours et Budget sont retirées.</p></div>
     <label class="drop" id="mefDrop" for="mefIn">
       <div class="glyph">XLSX</div>
-      <div style="flex:1;min-width:220px"><div class="big">Déposez ici un planning agence</div><p>Exemple : « planet-facebook-decembre-propositions_v1.xlsx ». Le fichier est lu dans votre navigateur.</p></div>
-      <span class="btn primary">Choisir un fichier</span>
-      <input id="mefIn" type="file" accept=".xlsx" multiple hidden>
+      <div style="flex:1;min-width:220px"><div class="big">Déposez ici les plannings agences</div><p>Excel (.xlsx) : planning compilé multi-pays ou un fichier par pays (« CIV - PE NOVEMBRE 2026.xlsx »). PowerPoint (.pptx) : présentation Google Slides exportée. Plusieurs fichiers à la fois acceptés, lus dans votre navigateur.</p></div>
+      <span class="btn primary">Choisir des fichiers</span>
+      <input id="mefIn" type="file" accept=".xlsx,.pptx" multiple hidden>
     </label>
+    <div class="card detail" style="gap:8px">
+      <label for="gsUrl" style="font-weight:600">Depuis un lien Google Slides</label>
+      <div class="row" style="flex-wrap:nowrap"><input id="gsUrl" type="url" placeholder="https://docs.google.com/presentation/d/…" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--paper)"><button class="btn primary" id="gsGo">Importer la présentation</button></div>
+      <div class="note" id="gsHelp" hidden></div>
+    </div>
     <div class="progress" id="mefStatus" hidden></div>
+    <div class="banner row" id="mefAll" hidden style="background:var(--accent-soft);color:var(--ink)"></div>
     <div class="detail" id="mefBody"></div>
   </section>
 
@@ -671,6 +668,127 @@ select[multiple]{padding:4px}
   }
   const titleCase = s => String(s).toLowerCase().replace(/(^|\s)\S/g, m => m.toUpperCase()).trim();
 
+
+
+  // ---------- Lecture d'une présentation (Google Slides exporté en PowerPoint) ----------
+  // Deux formes reconnues : une diapositive par publication (date, thématique, texte, visuel,
+  // notes de l'orateur), ou un tableau Date / Thématique / Texte sur la diapositive.
+  const xmlDec = t => String(t).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (m, n) => String.fromCodePoint(+n)).replace(/&#x([0-9a-f]+);/gi, (m, n) => String.fromCodePoint(parseInt(n, 16))).replace(/&amp;/g, '&');
+  function paraText(xml) {
+    const ps = String(xml).match(/<a:p[\s>][\s\S]*?<\/a:p>|<a:p\/>/g) || [];
+    return ps.map(p => (p.match(/<a:t>[\s\S]*?<\/a:t>|<a:t\/>|<a:br\/>/g) || []).map(x => x === '<a:br/>' ? '\n' : xmlDec(x.replace(/<\/?a:t\/?>/g, ''))).join('')).join('\n');
+  }
+  const offOf = xml => { const m = String(xml).match(/<a:off x="(-?\d+)" y="(-?\d+)"\/>/); return m ? { x: +m[1], y: +m[2] } : { x: 0, y: 0 }; };
+  const extOf = xml => { const m = String(xml).match(/<a:ext cx="(\d+)" cy="(\d+)"\/>/); return m ? { cx: +m[1], cy: +m[2] } : { cx: 0, cy: 0 }; };
+  function relsMap(xml) { const map = {}; (String(xml || '').match(/<Relationship [^>]+>/g) || []).forEach(r => { const id = (r.match(/Id="([^"]+)"/) || [])[1], t = (r.match(/Target="([^"]+)"/) || [])[1], ty = (r.match(/Type="([^"]+)"/) || [])[1]; if (id) map[id] = { target: t, type: ty }; }); return map; }
+  const joinPath = (base, rel) => { const parts = base.split('/'); parts.pop(); rel.split('/').forEach(p => { if (p === '..') parts.pop(); else if (p !== '.') parts.push(p); }); return parts.join('/'); };
+
+  const MONTH_RX = [['janvier', 'january', 'jan'], ['fevrier', 'february', 'feb', 'fev'], ['mars', 'march', 'mar'], ['avril', 'april', 'apr', 'avr'], ['mai', 'may'], ['juin', 'june', 'jun'], ['juillet', 'july', 'jul', 'juil'], ['aout', 'august', 'aug'], ['septembre', 'september', 'sept', 'sep'], ['octobre', 'october', 'oct'], ['novembre', 'november', 'nov'], ['decembre', 'december', 'dec']];
+  function findDate(text, year) {
+    const t = stripAccents(String(text).toLowerCase());
+    let m = t.match(/\b(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?\b/);
+    if (m && +m[2] >= 1 && +m[2] <= 12 && +m[1] >= 1 && +m[1] <= 31) { let y = m[3] ? +m[3] : year; if (y < 100) y += 2000; return { date: new Date(Date.UTC(y, +m[2] - 1, +m[1])), raw: m[0] }; }
+    for (let i = 0; i < 12; i++) for (const name of MONTH_RX[i]) {
+      const r1 = new RegExp(`\\b(\\d{1,2})(?:er|st|nd|rd|th)?\\s+${name}\\.?(?:\\s+(\\d{4}))?\\b`), r2 = new RegExp(`\\b${name}\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?\\b`);
+      let k = t.match(r1); if (k && +k[1] <= 31) return { date: new Date(Date.UTC(k[2] ? +k[2] : year, i, +k[1])), raw: k[0] };
+      k = t.match(r2); if (k && +k[1] <= 31) return { date: new Date(Date.UTC(k[2] ? +k[2] : year, i, +k[1])), raw: k[0] };
+    }
+    return null;
+  }
+  const LABEL = { theme: /^\s*(th[ée]matique|th[èe]me|rubrique|pilier|sujet|topic)\s*[:\-–]\s*/i, text: /^\s*(texte|wording|caption|l[ée]gende|copy|post|accroche)\s*[:\-–]\s*/i, translation: /^\s*(traduction(?: en)?|translation|english|version anglaise|en)\s*[:\-–]\s*/i, drop: /^\s*(commentaires?|retours?|budget|brief|format|note interne|visuel|visual|m[ée]dia|image)\s*[:\-–]/i, date: /^\s*(date|jour|publication)\s*[:\-–]\s*/i };
+  const DAY_WORDS = /^(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|monday|tuesday|wednesday|thursday|friday|saturday|sunday)[\s,]*/i;
+
+  async function parseSlides(JSZip, arrayBuffer, filename, opts) {
+    opts = opts || {};
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const read = p => zip.file(p) ? zip.file(p).async('string') : Promise.resolve('');
+    const pres = await read('ppt/presentation.xml'), presRels = relsMap(await read('ppt/_rels/presentation.xml.rels'));
+    const order = (pres.match(/<p:sldId [^>]+>/g) || []).map(x => (x.match(/r:id="([^"]+)"/) || [])[1]).map(id => presRels[id] && joinPath('ppt/presentation.xml', presRels[id].target)).filter(Boolean);
+    const fy = String(filename || '').match(/(20\d\d)/);
+    const year = fy ? +fy[1] : (opts.year || new Date().getUTCFullYear());
+    const fileBrand = brandKey(String(filename || '').replace(/[_\-.]+/g, ' '));
+    const slides = [];
+    const mediaUse = {};
+    for (const path of order) {
+      const xml = await read(path), rels = relsMap(await read(path.replace(/slides\/(slide\d+\.xml)$/, 'slides/_rels/$1.rels')));
+      const shapes = (xml.match(/<p:sp>[\s\S]*?<\/p:sp>|<p:sp [\s\S]*?<\/p:sp>/g) || []).map(sp => ({ text: cleanText(paraText((sp.match(/<p:txBody>[\s\S]*?<\/p:txBody>/) || [''])[0])), title: /<p:ph[^>]*type="(title|ctrTitle)"/.test(sp), ...offOf(sp) })).filter(x => x.text);
+      shapes.sort((a, b) => a.y - b.y || a.x - b.x);
+      const pics = (xml.match(/<p:pic>[\s\S]*?<\/p:pic>/g) || []).map(pc => { const id = (pc.match(/r:embed="([^"]+)"/) || [])[1]; const rel = id && rels[id]; return rel ? { media: joinPath(path, rel.target), ...offOf(pc), ...extOf(pc) } : null; }).filter(Boolean);
+      pics.forEach(p => { mediaUse[p.media] = (mediaUse[p.media] || 0) + 1; });
+      const tables = (xml.match(/<a:tbl>[\s\S]*?<\/a:tbl>/g) || []).map(tb => (tb.match(/<a:tr[\s>][\s\S]*?<\/a:tr>/g) || []).map(tr => (tr.match(/<a:tc[\s>][\s\S]*?<\/a:tc>|<a:tc\/>/g) || []).map(tc => cleanText(paraText(tc)))));
+      const notesRel = Object.values(rels).find(r => /notesSlide/.test(r.type || ''));
+      let notes = '';
+      if (notesRel) { const nx = await read(joinPath(path, notesRel.target)); const body = (nx.match(/<p:sp>[\s\S]*?<\/p:sp>/g) || []).filter(sp => /<p:ph[^>]*type="body"/.test(sp)).map(sp => cleanText(paraText(sp))).join('\n'); notes = cleanText(body); }
+      slides.push({ path, shapes, pics, tables, notes });
+    }
+    const nSlides = slides.length || 1;
+    const posts = [];
+    let rowNo = 0;
+    for (const sl of slides) {
+      // a) Tableau Date / Thématique / Texte
+      let usedTable = false;
+      for (const tb of sl.tables) {
+        if (tb.length < 2) continue;
+        const hdr = tb[0].map(h => norm(h));
+        const ci = { date: hdr.findIndex(h => /^(DATE|JOUR)/.test(h)), theme: hdr.findIndex(h => /^TH[EÈ]M|RUBRIQUE|PILIER/.test(h)), text: hdr.findIndex(h => /^(TEXTE|WORDING|CAPTION|LEGENDE|COPY|POST)/.test(h)), translation: hdr.findIndex(h => /^(TRADUCTION|TRANSLATION|ENGLISH|EN$)/.test(h)) };
+        if (ci.date < 0 || (ci.text < 0 && ci.theme < 0)) continue;
+        usedTable = true; let cur = null;
+        for (const row of tb.slice(1)) {
+          const fd = findDate(row[ci.date] || '', year); if (fd) cur = fd.date;
+          const p = { row: ++rowNo, date: cur, dateFromRow: !!fd, theme: ci.theme >= 0 ? row[ci.theme] || '' : '', text: ci.text >= 0 ? row[ci.text] || '' : '', translation: ci.translation >= 0 ? row[ci.translation] || '' : '', comment: '', feedback: '', images: [], brandHint: null };
+          if (!p.text && !p.theme && !p.translation) continue;
+          posts.push(p);
+        }
+      }
+      if (usedTable) continue;
+      // b) Une diapositive = une publication
+      const all = sl.shapes.map(s => s.text);
+      const labeled = { theme: '', text: '', translation: '' };
+      const free = [];
+      let fd = null;
+      for (const s of sl.shapes) {
+        const t = s.text;
+        if (LABEL.drop.test(t)) continue;
+        if (LABEL.date.test(t)) { fd = fd || findDate(t.replace(LABEL.date, ''), year); continue; }
+        let hit = false;
+        for (const k of ['theme', 'text', 'translation']) if (LABEL[k].test(t)) { labeled[k] = cleanText(t.replace(LABEL[k], '')); hit = true; break; }
+        if (!hit) free.push(s);
+      }
+      if (!fd) for (const s of [...free.filter(x => x.title), ...free.filter(x => !x.title && x.text.length < 80)]) { fd = findDate(s.text, year); if (fd) break; }
+      if (!fd) continue; // couverture, sommaire, intercalaires…
+      // Thématique : titre ou texte court (sans la date)
+      const strip = t0 => { let t = t0; const d2 = findDate(t, year); if (d2) { const i = stripAccents(t).toLowerCase().indexOf(d2.raw); if (i >= 0) t = t.slice(0, i) + t.slice(i + d2.raw.length); } return cleanText(t.replace(DAY_WORDS, '').replace(/^[\s\-–—:|·,]+|[\s\-–—:|·,]+$/g, '')); };
+      let theme = labeled.theme;
+      if (!theme) { const cands = [...free.filter(x => x.title), ...free.filter(x => !x.title && x.text.length <= 80)].map(x => strip(x.text)).filter(t => t && !findDate(t, year) && t.length >= 3 && !BRANDS[brandKey(t)]); theme = cands[0] || ''; }
+      const longs = free.map(x => x.text).filter(t => t.length > 40 && t !== theme);
+      if (sl.notes && sl.notes.length > 40) longs.push(sl.notes);
+      let text = labeled.text, translation = labeled.translation;
+      if (!text) { const fr = longs.filter(t => detectLang(t) !== 'en'); text = (fr.length ? fr : longs).sort((a, b) => b.length - a.length)[0] || ''; }
+      if (!translation) translation = longs.filter(t => t !== text && detectLang(t) === 'en').sort((a, b) => b.length - a.length)[0] || '';
+      if (detectLang(text) === 'en' && !translation) { /* texte déjà en anglais */ }
+      const brandHint = (() => { for (const t of all) { const k = brandKey(t); if (BRANDS[k] && norm(t).length < 40) return k; } return null; })();
+      // Visuels : on ignore les logos (petits) et les éléments répétés sur la plupart des diapositives
+      const imgs = [];
+      for (const pc of sl.pics.sort((a, b) => a.y - b.y || a.x - b.x)) {
+        if ((pc.cx && pc.cx < 914400 * 0.9 && pc.cy < 914400 * 0.9) || (nSlides >= 4 && mediaUse[pc.media] / nSlides > 0.5)) continue;
+        const ext = (pc.media.split('.').pop() || '').toLowerCase().replace('jpg', 'jpeg');
+        if (!['png', 'jpeg', 'gif'].includes(ext) || !zip.file(pc.media)) continue;
+        const u8 = await zip.file(pc.media).async('uint8array');
+        imgs.push({ row: rowNo + 1, col: 1, ext, data: u8, size: imageSize(u8) });
+      }
+      posts.push({ row: ++rowNo, date: fd.date, dateFromRow: true, theme, text, translation, comment: '', feedback: '', images: imgs, brandHint });
+    }
+    posts.forEach(p => { p.countries = postCountries(p); p.rejected = false; });
+    // Regroupement par marque
+    const groups = new Map();
+    for (const p of posts) { const k = p.brandHint || (BRANDS[fileBrand] ? fileBrand : 'PLANNING'); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(p); }
+    const sheets = [...groups.entries()].map(([k, ps]) => ({ sheetName: BRANDS[k] ? BRANDS[k].label : 'Planning', brandKey: k, brand: BRANDS[k] ? BRANDS[k].label : 'Planning', sourceColor: null, posts: ps, orphans: [], weekHeaders: [], imageCount: ps.reduce((n, p) => n + p.images.length, 0),
+      columns: { theme: true, text: true, translation: ps.some(p => p.translation), media: true, comment: false, feedback: false, budget: false } }));
+    const parsed = { filename, country: detectCountry(filename), month: detectMonth(filename), sheets, source: 'slides', slideCount: slides.length };
+    if (!parsed.month) parsed.month = detectMonthLoose(filename, sheets);
+    return parsed;
+  }
+  function googleSlidesId(url) { const m = String(url || '').match(/docs\.google\.com\/presentation\/(?:u\/\d+\/)?d\/([a-zA-Z0-9_-]{20,})/); return m ? m[1] : null; }
 
   // ---------- Marronniers (calendrier marketing) ----------
   const FLAG_TO_CODE = { CI: 'CIV', CM: 'CM', CG: 'CG', GN: 'GN', ML: 'ML', SN: 'SN', TD: 'TD', NG: 'NG', GH: 'GH', BF: 'BF', GP: 'GD', VU: 'VU', AR: 'AR' };
@@ -1166,7 +1284,7 @@ select[multiple]{padding:4px}
     return out;
   }
 
-  const api = { TEMPLATE_IDS, defaultTemplateFor, brandList, pourMarques, renderMessage, adaptForCountry, postCountries, b64FromU8, parseCalendarWorkbook, eventsForCountry, eventCoverage, eventCountries, FLAG_TO_CODE, COUNTRIES, BRANDS, L10N, DEFAULT_TEMPLATES, MONTHS_FR, LANG_LABEL, cleanText, detectCountry, detectMonth, parsePlanning, checkCountry, fingerprint, buildWorkbook,
+  const api = { parseSlides, googleSlidesId, findDate, TEMPLATE_IDS, defaultTemplateFor, brandList, pourMarques, renderMessage, adaptForCountry, postCountries, b64FromU8, parseCalendarWorkbook, eventsForCountry, eventCoverage, eventCountries, FLAG_TO_CODE, COUNTRIES, BRANDS, L10N, DEFAULT_TEMPLATES, MONTHS_FR, LANG_LABEL, cleanText, detectCountry, detectMonth, parsePlanning, checkCountry, fingerprint, buildWorkbook,
     parseContactsWorkbook, parseContactCell, splitBrands, fillTemplate, buildEml, monthLabel, countryLabel, fmtDateLong, imageSize, brandKey, ymd, detectLang };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PECore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1476,7 +1594,7 @@ select[multiple]{padding:4px}
       ${e && st.k === 'revision' ? `<div class="banner warn">Planning en révision${stageOf(code).note ? ` : ${esc(stageOf(code).note)}` : ''}. Il ne peut pas être envoyé tant qu'il n'est pas validé.</div>` : ''}
       <div class="row" id="revBox" hidden><input id="revNote" placeholder="Motif de la révision (facultatif) : ex. en attente des vidéos, retours MB à intégrer…" style="flex:1;min-width:240px;border:1px solid var(--line);border-radius:6px;padding:7px 9px;background:var(--paper)"><button class="btn primary small" data-act="revOk">Mettre en révision</button></div>`;
     if (!e) {
-      html += `<div class="note">Aucun planning reçu pour ${esc(nameFor(code))} sur ${esc(cap(C.MONTHS_FR[state.period.m]))} ${state.period.y}. Déposez le fichier de l'agence ci-dessus.${ct && ct.brands && ct.brands.length ? ` Marques attendues : <b>${esc(ct.brands.join(', '))}</b>.` : ''}</div>`;
+      html += `<div class="note">Aucun planning reçu pour ${esc(nameFor(code))} sur ${esc(cap(C.MONTHS_FR[state.period.m]))} ${state.period.y}. Mettez en forme le planning de l'agence dans l'étape 1 · Mise en forme, puis positionnez ce pays.${ct && ct.brands && ct.brands.length ? ` Marques attendues : <b>${esc(ct.brands.join(', '))}</b>.` : ''}</div>`;
       if (st.k === 'sent') html += sentNote(code);
       box.innerHTML = html; bindDetail(box, code); return;
     }
@@ -2132,19 +2250,19 @@ select[multiple]{padding:4px}
     return cs.length ? cs : ORDER.slice();
   }
   async function mefAddFiles(files) {
-    files = files.filter(f => /\.xlsx$/i.test(f.name));
-    if (!files.length) { toast('Déposez des fichiers .xlsx'); return; }
+    files = files.filter(f => /\.(xlsx|pptx)$/i.test(f.name));
+    if (!files.length) { toast('Déposez des fichiers Excel (.xlsx) ou PowerPoint (.pptx)'); return; }
     const st = $('#mefStatus'); st.hidden = false;
     for (const file of files) {
       st.textContent = `Lecture de ${file.name}…`;
       try {
         const ab = await file.arrayBuffer(); const hash = await sha(ab.slice(0));
-        const parsed = await C.parsePlanning(window.ExcelJS, ab, file.name);
-        if (!parsed.sheets.length) { toast(`${file.name} : aucune publication trouvée`); continue; }
+        const parsed = /\.pptx$/i.test(file.name) ? await C.parseSlides(window.JSZip, ab, file.name, { year: state.period.y }) : await C.parsePlanning(window.ExcelJS, ab, file.name);
+        if (!parsed.sheets.length) { toast(`${file.name} : aucune publication datée trouvée${parsed.source === 'slides' ? ' dans les diapositives' : ''}`); continue; }
         const f = { id: Math.random().toString(36).slice(2), filename: file.name, size: file.size, hash, parsed, exclude: new Set(), translationColumn: false };
         const months = mefMonths(f);
         f.month = parsed.month && months.some(m => mKey(m) === mKey(parsed.month)) ? parsed.month : (months.slice().sort((x, y) => y.n - x.n)[0] || null);
-        f.countries = new Set(mefDefaultCountries(f));
+        f.countries = new Set(parsed.country ? [parsed.country] : mefDefaultCountries(f));
         parsed.sheets.forEach((s, si) => s.posts.forEach(p => { if (p.rejected) f.exclude.add(si + ':' + p.row); }));
         state.mef.unshift(f);
       } catch (err) { console.error(err); toast(`${file.name} : lecture impossible (${err.message || err})`); }
@@ -2155,7 +2273,35 @@ select[multiple]{padding:4px}
     const lang = langFor(code);
     return C.adaptForCountry(f.parsed, code, { lang, month: f.month, exclude: f.exclude }).sheets.reduce((n, s) => n + s.posts.length, 0);
   }
+  function renderMefAll() {
+    const bar = $('#mefAll'); if (!bar) return;
+    const n = state.mef.length; bar.hidden = n < 2;
+    if (n >= 2) { const tot = new Set(state.mef.flatMap(f => [...f.countries])).size;
+      bar.innerHTML = `<span style="flex:1"><b>${n} plannings chargés</b> · ${tot} pays au total. Positionner tous les plannings en une fois :</span><button class="btn small" id="mefAllRev">Tout mettre en révision</button><button class="btn small primary" id="mefAllEnv">Tout prêt pour l'envoi</button>`;
+      $('#mefAllRev').addEventListener('click', e => busy(e.currentTarget, async () => { for (const f of state.mef.slice().reverse()) await mefSend(f, 'revision', ''); }));
+      $('#mefAllEnv').addEventListener('click', e => busy(e.currentTarget, async () => { for (const f of state.mef.slice().reverse()) await mefSend(f, 'envoi', ''); })); }
+  }
+  async function importSlidesLink() {
+    const url = $('#gsUrl').value.trim(), id = C.googleSlidesId(url), help = $('#gsHelp');
+    if (!id) { toast('Lien Google Slides non reconnu : il doit ressembler à https://docs.google.com/presentation/d/…'); return; }
+    const exportUrl = `https://docs.google.com/presentation/d/${id}/export/pptx`;
+    const showHelp = why => { help.hidden = false; help.innerHTML = `${why ? `<div style="margin-bottom:6px">${esc(why)}</div>` : ''}<b>1.</b> <a class="btn small primary" href="${esc(exportUrl)}" target="_blank" rel="noopener">Télécharger depuis Google Slides (.pptx)</a> <span class="muted">s'ouvre avec votre compte Google</span><br><b>2.</b> Déposez le fichier .pptx téléchargé dans la zone ci-dessous.`; };
+    if (window.PE_HOSTED) {
+      const b = $('#gsGo');
+      await busy(b, async () => {
+        try {
+          const r = await fetch('/api/import/slides?id=' + encodeURIComponent(id), { credentials: 'same-origin', headers: { 'X-PE': '1' } });
+          if (!r.ok) { let m = ''; try { m = (await r.json()).error; } catch (e) { } showHelp(m || 'La présentation n\'a pas pu être récupérée automatiquement.'); return; }
+          const name = decodeURIComponent(r.headers.get('X-Filename') || '') || `Google Slides ${id}.pptx`;
+          const blob = await r.blob(); help.hidden = true;
+          await mefAddFiles([new File([blob], /\.pptx$/i.test(name) ? name : name + '.pptx')]);
+          $('#gsUrl').value = '';
+        } catch (err) { showHelp('La présentation n\'a pas pu être récupérée automatiquement.'); }
+      });
+    } else showHelp('');
+  }
   function renderMef() {
+    renderMefAll();
     const box = $('#mefBody'); if (!box) return;
     if (!state.mef.length) { box.innerHTML = `<div class="card empty">Aucun planning agence chargé. Déposez un fichier ci-dessus : il peut couvrir plusieurs pays et plusieurs mois.</div>`; return; }
     box.innerHTML = state.mef.map(f => {
@@ -2181,10 +2327,10 @@ select[multiple]{padding:4px}
       const summary = sel.map(c => { const n = mefCountFor(f, c); return `<span class="bchip" title="${esc(nameFor(c))}">${esc(c)} <b>${n}</b>${langFor(c) !== 'fr' ? ` <span class="muted">${langFor(c).toUpperCase()}</span>` : ''}</span>`; }).join('');
       return `<section class="card detail" data-mef="${esc(f.id)}">
         <div class="row"><div style="flex:1;min-width:240px"><h2>${esc(f.filename)}</h2>
-          <div class="brands" style="margin-top:6px">${mefBrands(f).map(b => `<span class="bchip"><i style="background:#${brandInfo(b).color}"></i>${esc(b)}</span>`).join('')}<span class="muted" style="font-size:12.5px">${all.length} publication(s) · ${fmtSize(f.size)}</span></div></div>
+          <div class="brands" style="margin-top:6px">${f.parsed.sheets.map((s, si) => `<label class="bchip" title="Marque de cet onglet"><i style="background:#${brandInfo(s.brand).color}"></i><select data-mefbrand="${si}" aria-label="Marque" style="border:0;background:transparent;font:inherit">${Object.entries(C.BRANDS).map(([k, b]) => `<option value="${k}" ${k === s.brandKey ? 'selected' : ''}>${esc(b.label)}</option>`).join('')}${C.BRANDS[s.brandKey] ? '' : '<option value="" selected>Marque ?</option>'}</select></label>`).join('')}<span class="muted" style="font-size:12.5px">${all.length} publication(s)${f.parsed.source === 'slides' ? ` · ${f.parsed.slideCount} diapositives` : ''}${f.parsed.country ? ` · fichier ${esc(nameFor(f.parsed.country))}` : ''} · ${fmtSize(f.size)}</span></div></div>
           <button class="btn small ghost" data-mefdel>Retirer</button></div>
         <div class="grid2">
-          <div class="note"><b>Colonnes conservées :</b> ${esc(kept.join(', '))}.<br><b>Colonnes retirées :</b> ${removed.length ? esc(removed.join(', ')) : 'aucune'} (jamais transmises aux bottlers).</div>
+          <div class="note">${f.parsed.source === 'slides' ? `<b>Présentation lue diapositive par diapositive :</b> date, thématique, texte (ou notes de l'orateur), traduction anglaise et visuels. Les mentions Commentaire, Retours, Budget et Visuel sont ignorées. Vérifiez les publications ci-dessous.` : `<b>Colonnes conservées :</b> ${esc(kept.join(', '))}.<br><b>Colonnes retirées :</b> ${removed.length ? esc(removed.join(', ')) : 'aucune'} (jamais transmises aux bottlers).`}</div>
           <div class="note">Chaque pays ne reçoit que les publications du mois choisi, les posts communs et ses propres marronniers (repérés par drapeau ou code pays). Les posts refusés dans les retours MB sont écartés ; vous pouvez cocher ou décocher chaque publication.</div>
         </div>
         <div class="row" style="align-items:flex-end;gap:16px">
@@ -2211,6 +2357,7 @@ select[multiple]{padding:4px}
     box.querySelectorAll('[data-mef]').forEach(card => {
       const f = state.mef.find(x => x.id === card.dataset.mef); if (!f) return;
       card.querySelector('[data-mefdel]').addEventListener('click', () => { state.mef = state.mef.filter(x => x !== f); renderMef(); });
+      card.querySelectorAll('[data-mefbrand]').forEach(sel => sel.addEventListener('change', () => { const s = f.parsed.sheets[+sel.dataset.mefbrand]; if (!sel.value) return; s.brandKey = sel.value; s.brand = C.BRANDS[sel.value].label; s.sheetName = s.brand; renderMef(); }));
       const ms = card.querySelector('[data-mefmonth]'); if (ms) ms.addEventListener('change', () => { const [y, m] = ms.value.split('-').map(Number); f.month = { y, m }; renderMef(); });
       const tr = card.querySelector('[data-meftr]'); if (tr) tr.addEventListener('change', () => { f.translationColumn = tr.checked; });
       card.querySelectorAll('[data-mefc]').forEach(cb => cb.addEventListener('change', () => { cb.checked ? f.countries.add(cb.dataset.mefc) : f.countries.delete(cb.dataset.mefc); renderMef(); }));
@@ -2262,6 +2409,8 @@ select[multiple]{padding:4px}
     ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
     ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
     drop.addEventListener('drop', e => mefAddFiles([...e.dataTransfer.files]));
+    $('#gsGo').addEventListener('click', importSlidesLink);
+    $('#gsUrl').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); importSlidesLink(); } });
     renderMef();
   }
 
@@ -2323,7 +2472,7 @@ select[multiple]{padding:4px}
     tb.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(ev.target.closest('tr')); } });
   }
 
-  initPeriod(); initDrop(); initTable(); initGlobal(); initContacts(); initTemplates(); initCalendar(); initSendAll(); initMef(); initViewer();
+  initPeriod(); initTable(); initGlobal(); initContacts(); initTemplates(); initCalendar(); initSendAll(); initMef(); initViewer();
   window.addEventListener('hashchange', route); route();
   renderAll();
   initCaps();

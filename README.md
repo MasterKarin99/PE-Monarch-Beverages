@@ -15,8 +15,14 @@ Le travail se fait en deux étapes enchaînées :
 1. **Mise en forme** : les plannings des agences sont transformés en un fichier propre par pays.
 2. **Pays et envois** : chaque pays est positionné **En révision** (avec un motif, par exemple « en attente des vidéos ») ou **Prêt pour l'envoi**, contrôlé, puis envoyé. Un planning en révision ne peut pas être envoyé tant qu'il n'est pas validé. Les statuts sont conservés, et les plannings mis en forme peuvent être repris plus tard, même après fermeture de la page.
 
-### 1. Dépôt
-Glissez les fichiers des agences (plusieurs à la fois). Le pays et le mois sont reconnus à partir du nom du fichier, par exemple `CIV - PE NOVEMBRE 2026.xlsx`. Textes, thématiques, commentaires et visuels intégrés sont lus automatiquement.
+### 1. Dépôt (étape 1 · Mise en forme)
+Tous les plannings agences entrent par l'onglet **Mise en forme** :
+
+- **Excel** : planning compilé multi-pays, ou un fichier par pays (`CIV - PE NOVEMBRE 2026.xlsx`, pays et mois reconnus dans le nom) ;
+- **Google Slides** : collez le lien de la présentation. La version hébergée la récupère directement si elle est partagée « Tous les utilisateurs disposant du lien ». Sinon, un bouton télécharge le PowerPoint avec votre compte Google, et il suffit de le déposer ;
+- **PowerPoint (.pptx)**.
+
+Les diapositives sont lues une par une : date, thématique, texte (ou notes de l'orateur), traduction anglaise et visuels. Les tableaux Date / Thématique / Texte sont aussi reconnus. Les logos répétés et les mentions Commentaire, Retours, Budget et Visuel sont ignorés.
 
 ### 2. Contrôle
 Pour chaque pays, deux niveaux :
