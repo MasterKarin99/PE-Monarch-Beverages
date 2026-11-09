@@ -1,0 +1,37 @@
+# Plateforme des plannings éditoriaux + HTTPS automatique (Caddy / Let's Encrypt)
+# 1. Copiez .env.example en .env et complétez-le
+# 2. Pointez le nom de domaine (DOMAIN) vers l'adresse IP du serveur
+# 3. docker compose up -d
+services:
+  app:
+    build: .
+    image: plannings-editoriaux:1.0
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PUBLIC_URL: https://${DOMAIN}
+      DATA_DIR: /data
+    volumes:
+      - pe-data:/data
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  pe-data:
+  caddy-data:
+  caddy-config:

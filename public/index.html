@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plannings éditoriaux pays</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Outil d'exploitation : une colonne de travail, tableau des pays en tête, détail du pays sélectionné en dessous. */
+  --ink:#15171c; --muted:#5d6370; --line:#e1e3e8; --paper:#ffffff; --bg:#f3f4f6; --accent:#1f4fd8; --accent-ink:#ffffff; --accent-soft:#e7edfd;
+  --ok:#17803d; --ok-soft:#e3f4e8; --warn:#a55b00; --warn-soft:#fdf0dc; --err:#c0262d; --err-soft:#fde6e6; --info:#4b5563; --info-soft:#eef0f3;
+  --font-display:"Archivo", "Helvetica Neue", Arial, sans-serif; --font-body:"IBM Plex Sans", "Segoe UI", Arial, sans-serif; --font-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --radius:8px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ink:#e8eaee; --muted:#9aa1ad; --line:#2c313b; --paper:#181b21; --bg:#111318; --accent:#7c9cff; --accent-ink:#0d1020; --accent-soft:#1d2440;
+  --ok:#5fd08a; --ok-soft:#14301f; --warn:#f0b35a; --warn-soft:#352612; --err:#ff7b7f; --err-soft:#3a1719; --info:#b4bac4; --info-soft:#22262e; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --ink:#e8eaee; --muted:#9aa1ad; --line:#2c313b; --paper:#181b21; --bg:#111318; --accent:#7c9cff; --accent-ink:#0d1020; --accent-soft:#1d2440;
+  --ok:#5fd08a; --ok-soft:#14301f; --warn:#f0b35a; --warn-soft:#352612; --err:#ff7b7f; --err-soft:#3a1719; --info:#b4bac4; --info-soft:#22262e; color-scheme:dark; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--font-body);}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:22px;font-weight:800} h2{font-size:17px;font-weight:700} h3{font-size:14px;font-weight:700}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 20px 60px;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;justify-content:space-between}
+.brandline{display:flex;flex-direction:column;gap:2px}
+.brandline p{margin:0;color:var(--muted);font-size:13px}
+.period{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.period label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.period select,.period input{border:0;background:transparent;font-weight:600;padding:2px}
+.period input{width:64px}
+nav.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+nav.tabs a{padding:9px 14px;color:var(--muted);text-decoration:none;font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
+nav.tabs a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav.tabs a:focus-visible,button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.spacer{flex:1}
+.btn{text-decoration:none;border:1px solid var(--line);background:var(--paper);border-radius:6px;padding:7px 12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.small{padding:4px 9px;font-size:12.5px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--accent)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.drop{border:2px dashed var(--line);border-radius:var(--radius);padding:22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:var(--paper);transition:border-color .15s, background .15s}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop .big{font-family:var(--font-display);font-weight:700;font-size:16px}
+.drop p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.drop .glyph{width:44px;height:44px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:800;font-family:var(--font-mono);font-size:12px}
+.progress{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px;border-left-width:4px}
+.stat b{display:block;font-family:var(--font-display);font-size:24px;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat span{color:var(--muted);font-size:12.5px}
+.stat.s-wait{border-left-color:var(--line)} .stat.s-check{border-left-color:var(--warn)} .stat.s-ready{border-left-color:var(--accent)} .stat.s-sent{border-left-color:var(--ok)}
+.tablewrap{overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius)}
+table{border-collapse:collapse;width:100%;min-width:820px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;background:var(--paper);position:sticky;top:0}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--bg)}
+tbody tr.sel{background:var(--accent-soft)}
+tbody tr:last-child td{border-bottom:0}
+.code{font-family:var(--font-mono);font-size:12px;color:var(--muted);margin-left:6px}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.p-wait{background:var(--info-soft);color:var(--info)} .p-err{background:var(--err-soft);color:var(--err)} .p-warn{background:var(--warn-soft);color:var(--warn)}
+.p-ready{background:var(--accent-soft);color:var(--accent)} .p-sent{background:var(--ok-soft);color:var(--ok)}
+.brands{display:flex;gap:4px;flex-wrap:wrap}
+.bchip{display:inline-flex;align-items:center;gap:5px;font-size:12px;border:1px solid var(--line);border-radius:4px;padding:1px 6px;white-space:nowrap}
+.bchip i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.bchip.missing{border-style:dashed;color:var(--muted)}
+.counts{display:flex;gap:6px;font-size:12px;font-variant-numeric:tabular-nums}
+.counts span{display:inline-flex;align-items:center;gap:3px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.muted{color:var(--muted)}
+.detail{display:flex;flex-direction:column;gap:14px}
+.detail-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.subtabs{display:flex;gap:2px;background:var(--bg);border-radius:6px;padding:3px;width:max-content;max-width:100%;overflow-x:auto}
+.subtabs button{border:0;background:transparent;padding:6px 12px;border-radius:5px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap}
+.subtabs button[aria-selected="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.issues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.issues li{display:grid;grid-template-columns:86px 1fr;gap:10px;padding:8px 10px;border-radius:6px;background:var(--bg);align-items:start}
+.issues li .where{font-size:12px;color:var(--muted)}
+.lvl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border-radius:4px;text-align:center}
+.lvl.error{background:var(--err-soft);color:var(--err)} .lvl.warn{background:var(--warn-soft);color:var(--warn)} .lvl.info{background:var(--info-soft);color:var(--info)}
+.brandsec{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.brandsec > header{padding:8px 12px;font-family:var(--font-display);font-weight:700;display:flex;gap:10px;align-items:center}
+.posts{display:flex;flex-direction:column}
+.post{display:grid;grid-template-columns:120px 1fr 150px;gap:14px;padding:12px;border-top:1px solid var(--line)}
+.post .d{font-weight:600;font-size:13px}
+.post .t{font-size:12px;color:var(--muted);margin-top:2px}
+.post .txt{white-space:pre-wrap;font-size:13px;max-height:180px;overflow:auto}
+.post .thumbs{display:flex;flex-direction:column;gap:6px}
+.post img{max-width:100%;border-radius:4px;border:1px solid var(--line);background:var(--bg)}
+.noimg{font-size:12px;color:var(--muted);border:1px dashed var(--line);border-radius:4px;padding:10px;text-align:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;font-weight:600;color:var(--muted)}
+.field input,.field textarea,.field select{border:1px solid var(--line);border-radius:6px;padding:7px 9px;background:var(--paper);width:100%}
+.field textarea{min-height:80px;resize:vertical;font-family:var(--font-body)}
+.mono{font-family:var(--font-mono);font-size:12.5px}
+.recips{display:flex;flex-wrap:wrap;gap:4px}
+.recip{background:var(--bg);border-radius:4px;padding:2px 7px;font-size:12.5px}
+.recip small{color:var(--muted)}
+.note{font-size:12.5px;color:var(--muted);background:var(--bg);border-radius:6px;padding:9px 11px}
+.note b{color:var(--ink)}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:6px;font-weight:600;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10;max-width:calc(100% - 32px)}
+.toast.on{opacity:1}
+.ccard{display:grid;grid-template-columns:180px 1fr 1fr;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
+.ccard:first-of-type{border-top:0}
+.hist td{cursor:default}
+body.booting nav.tabs, body.booting section{visibility:hidden}
+body.portal-mode nav.tabs, body.portal-mode header.top .period, body.portal-mode header.top .brandline p{display:none}
+.addr{font-size:12px;line-height:1.45;word-break:break-all;max-width:260px}
+.recip b{font-weight:500}
+.remarks summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;padding:4px 0}
+.remarks[open] summary{margin-bottom:6px}
+tbody.plain tr{cursor:default} tbody.plain tr:hover{background:transparent}
+.bchip.excluded{text-decoration:line-through;color:var(--muted);border-style:dashed}
+.bchip.excluded i{opacity:.4}
+.scope{font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.s-pays{background:var(--accent-soft);color:var(--accent)} .s-marque{background:var(--warn-soft);color:var(--warn)} .s-global{background:var(--info-soft);color:var(--info)}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+select[multiple]{padding:4px}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.opts{display:flex;gap:16px;flex-wrap:wrap;font-size:13px}
+.opts label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.banner{border-radius:6px;padding:9px 12px;font-size:13px}
+.banner.warn{background:var(--warn-soft);color:var(--warn)}
+[hidden]{display:none!important}
+@media (max-width:760px){ .grid2,.ccard,.grid4{grid-template-columns:1fr} .grid4 .field{grid-column:auto!important} .post{grid-template-columns:1fr} .issues li{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body class="booting">
+<div class="wrap">
+  <header class="top">
+    <div class="brandline">
+      <h1>Plannings éditoriaux pays</h1>
+      <p>Dépôt des plannings agences, contrôle, mise en forme et envoi aux bottlers.</p>
+    </div>
+    <div class="row" id="who" style="font-size:12.5px"></div>
+    <div class="period" title="Mois du planning (détecté automatiquement depuis le nom des fichiers)">
+      <label for="pMonth">Mois</label>
+      <select id="pMonth"></select>
+      <input id="pYear" type="number" min="2024" max="2035" aria-label="Année">
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Sections">
+    <a href="#pays" data-view="pays">Pays et envois</a>
+    <a href="#telechargements" data-view="telechargements">Téléchargements</a>
+    <a href="#marronniers" data-view="marronniers">Marronniers</a>
+    <a href="#contacts" data-view="contacts">Contacts</a>
+    <a href="#modele" data-view="modele">Modèle d'email</a>
+    <a href="#historique" data-view="historique">Historique</a>
+  </nav>
+
+  <!-- ============ PAYS ============ -->
+  <section id="v-pays" class="detail">
+    <label class="drop" id="drop" for="fileIn">
+      <div class="glyph">XLSX</div>
+      <div style="flex:1;min-width:220px">
+        <div class="big">Déposez ici les plannings reçus des agences</div>
+        <p>Un fichier par pays, nommé avec le code pays (ex. « CIV - PE NOVEMBRE 2026.xlsx »). Plusieurs fichiers à la fois acceptés. Les fichiers sont traités dans votre navigateur.</p>
+      </div>
+      <span class="btn primary">Choisir des fichiers</span>
+      <input id="fileIn" type="file" accept=".xlsx" multiple hidden>
+    </label>
+    <div class="progress" id="progress" hidden></div>
+    <div id="archStatus"></div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="card row" style="padding:12px 16px">
+      <div class="opts">
+        <label><input type="checkbox" id="optCal"> Calendrier complet (tous les jours du mois)</label>
+        <label><input type="checkbox" id="optImg" checked> Alléger les visuels pour l'email</label>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn" id="zipFiles" disabled>Tous les plannings mis en forme (.zip)</button>
+      <button class="btn primary" id="zipPack" disabled>Pack d'envoi complet (.zip)</button>
+      <button class="btn primary" id="sendAll" hidden>Envoyer tous les pays prêts depuis Outlook</button>
+    </div>
+    <div class="banner warn" id="dlWarn" hidden>Le téléchargement n'est pas disponible dans cette vue. Ouvrez la plateforme sur claude.ai pour récupérer les fichiers.</div>
+
+    <div class="tablewrap">
+      <table aria-label="Pays">
+        <thead><tr><th>Pays</th><th>Statut</th><th>Marques</th><th>Publications</th><th>Contrôle</th><th>Destinataires</th></tr></thead>
+        <tbody id="ctry"></tbody>
+      </table>
+    </div>
+
+    <div class="card detail" id="detail" hidden></div>
+  </section>
+
+  <!-- ============ ESPACE PAYS (externes) ============ -->
+  <section id="v-portail" class="detail" hidden>
+    <div class="detail" id="portalBody"></div>
+  </section>
+
+  <!-- ============ TELECHARGEMENTS ============ -->
+  <section id="v-telechargements" class="detail" hidden>
+    <div class="card row">
+      <div style="flex:1;min-width:240px">
+        <h2>Téléchargements</h2>
+        <p class="muted" style="margin:4px 0 0">Chaque planning déposé est mis en forme et enregistré ici automatiquement, mois par mois. Téléchargez un pays ou une sélection de pays à tout moment, même après avoir fermé la page.</p>
+      </div>
+      <div id="libStatus" class="row"></div>
+    </div>
+    <div class="detail" id="libBody"></div>
+  </section>
+
+  <!-- ============ MARRONNIERS ============ -->
+  <section id="v-marronniers" class="detail" hidden>
+    <div class="card row">
+      <div style="flex:1;min-width:240px">
+        <h2>Calendrier des marronniers</h2>
+        <p class="muted" style="margin:4px 0 0">Chaque marronnier s'applique à tous les pays ou à certains pays, et à toutes les marques ou à certaines. Les plannings reçus sont contrôlés pays par pays : marronnier national non traité, marronnier d'un autre pays, marronnier absent du calendrier.</p>
+      </div>
+      <label class="btn" for="calIn">Importer le calendrier marketing (.xlsx)</label>
+      <input id="calIn" type="file" accept=".xlsx" hidden>
+    </div>
+    <div class="detail" id="calBody"></div>
+  </section>
+
+  <!-- ============ CONTACTS ============ -->
+  <section id="v-contacts" class="detail" hidden>
+    <div class="card row">
+      <div style="flex:1;min-width:240px">
+        <h2>Contacts bottlers</h2>
+        <p class="muted" style="margin:4px 0 0">Une ligne par personne, au format <span class="mono">Nom &lt;email&gt;</span>. La langue définit la langue de l'email, des en-têtes du fichier et le contrôle de langue des textes.</p>
+      </div>
+      <label class="btn" for="ctIn">Importer un fichier contacts (.xlsx)</label>
+      <input id="ctIn" type="file" accept=".xlsx" hidden>
+      <button class="btn" id="ctAdd">Ajouter un pays</button>
+    </div>
+    <div class="card" id="ctList"></div>
+  </section>
+
+  <!-- ============ MODELE ============ -->
+  <section id="v-modele" class="detail" hidden>
+    <div class="card detail">
+      <h2>Modèle d'email</h2>
+      <p class="muted" style="margin:0">Variables disponibles : <span class="mono">{pays} {mois} {marques} {nb} {signature}</span>. Chaque pays reçoit la version de sa langue.</p>
+      <div class="grid2">
+        <div class="field"><label for="fromEmail">Expéditeur : adresse Outlook qui envoie les emails</label><input id="fromEmail" type="email" autocomplete="off"><span id="fromHint" class="muted" style="font-size:12px" hidden>Définie sur le serveur par votre équipe informatique (MAIL_SENDER).</span></div>
+        <div class="field"><label for="fromName">Nom affiché</label><input id="fromName" autocomplete="off"></div>
+      </div>
+      <div class="field" style="max-width:420px"><label for="sig">Signature</label><textarea id="sig" style="min-height:60px"></textarea></div>
+      <div id="tplList" class="detail"></div>
+      <div class="row"><button class="btn primary" id="tplSave">Enregistrer le modèle</button><button class="btn" id="tplReset">Rétablir le modèle par défaut</button></div>
+    </div>
+  </section>
+
+  <!-- ============ HISTORIQUE ============ -->
+  <section id="v-historique" class="detail" hidden>
+    <div class="tablewrap">
+      <table class="hist" aria-label="Historique des envois">
+        <thead><tr><th>Date d'envoi</th><th>Période</th><th>Pays</th><th>Marques</th><th>Publications</th><th>Destinataires</th><th></th></tr></thead>
+        <tbody id="hist"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="/vendor/exceljs.min.js"></script>
+<script src="/vendor/jszip.min.js"></script>
+<script src="/hosted.js"></script>
+<script>
+/* PE Core — lecture, contrôle et mise en forme des plannings éditoriaux.
+   Utilisable dans le navigateur (window.PECore) et sous Node (module.exports). */
+(function (root) {
+  'use strict';
+
+  // ---------- Référentiels ----------
+  const COUNTRIES = {
+    CM:  { name: 'Cameroun',        lang: 'fr', aliases: ['CAMEROUN', 'CAMEROON'] },
+    CG:  { name: 'Congo',           lang: 'fr', aliases: ['CONGO'] },
+    CIV: { name: "Côte d'Ivoire",   lang: 'fr', aliases: ['CI', "COTE D'IVOIRE", 'COTE DIVOIRE', 'IVORY COAST'] },
+    GN:  { name: 'Guinée',          lang: 'fr', aliases: ['GUINEE', 'GUINEA'] },
+    ML:  { name: 'Mali',            lang: 'fr', aliases: ['MALI'] },
+    SN:  { name: 'Sénégal',         lang: 'fr', aliases: ['SENEGAL'] },
+    TD:  { name: 'Tchad',           lang: 'fr', aliases: ['TCHAD', 'CHAD'] },
+    NG:  { name: 'Nigeria',         lang: 'en', aliases: ['NIGERIA'] },
+    GH:  { name: 'Ghana',           lang: 'en', aliases: ['GHANA'] },
+    BF:  { name: 'Burkina Faso',    lang: 'fr', aliases: ['BURKINA', 'BURKINA FASO'] },
+    GD:  { name: 'Guadeloupe',      lang: 'fr', aliases: ['GP', 'GUADELOUPE'] },
+    VU:  { name: 'Vanuatu',         lang: 'en', aliases: ['VANUATU'] },
+    AR:  { name: 'Argentine',       lang: 'es', aliases: ['ARGENTINE', 'ARGENTINA'] },
+  };
+
+  const BRANDS = {
+    'PLANET':        { label: 'Planet',        color: 'FF9900', text: 'FFFFFF' },
+    'AMERICAN COLA': { label: 'American Cola', color: 'D9262C', text: 'FFFFFF' },
+    'BUBBLE UP':     { label: 'Bubble Up',     color: '4E9A3A', text: 'FFFFFF' },
+    'REAKTOR':       { label: 'Reaktor',       color: '111111', text: 'FFFFFF' },
+    'RUSH':          { label: 'Rush',          color: '1F1F1F', text: 'FFFFFF' },
+  };
+
+  const MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const DAYS = {
+    fr: ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'],
+    en: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+    es: ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'],
+  };
+  const MONTHS = { fr: MONTHS_FR, en: MONTHS_EN, es: MONTHS_ES };
+  const LANG_LABEL = { fr: 'français', en: 'anglais', es: 'espagnol' };
+
+  const L10N = {
+    fr: { date: 'DATE', day: 'JOUR', theme: 'THÉMATIQUE', text: 'TEXTE', visual: 'VISUEL', comment: 'COMMENTAIRES', feedback: 'RETOURS / VALIDATION PAYS',
+          title: 'PLANNING ÉDITORIAL', week: 'Semaine du', posts: 'publication(s)', recap: 'Récapitulatif', brand: 'Marque', count: 'Publications', dates: 'Dates de publication',
+          note: 'Merci de nous transmettre vos retours ou votre validation dans la colonne « Retours / Validation pays » de chaque onglet.', generated: 'Version du', country: 'Pays', period: 'Période' },
+    en: { date: 'DATE', day: 'DAY', theme: 'THEME', text: 'COPY', visual: 'VISUAL', comment: 'COMMENTS', feedback: 'COUNTRY FEEDBACK / APPROVAL',
+          title: 'EDITORIAL PLANNING', week: 'Week of', posts: 'post(s)', recap: 'Summary', brand: 'Brand', count: 'Posts', dates: 'Publishing dates',
+          note: 'Please share your feedback or approval in the "Country feedback / approval" column of each tab.', generated: 'Version of', country: 'Country', period: 'Period' },
+    es: { date: 'FECHA', day: 'DÍA', theme: 'TEMÁTICA', text: 'TEXTO', visual: 'VISUAL', comment: 'COMENTARIOS', feedback: 'COMENTARIOS / VALIDACIÓN PAÍS',
+          title: 'PLANIFICACIÓN EDITORIAL', week: 'Semana del', posts: 'publicación(es)', recap: 'Resumen', brand: 'Marca', count: 'Publicaciones', dates: 'Fechas de publicación',
+          note: 'Por favor, envíennos sus comentarios o validación en la columna «Comentarios / Validación país» de cada pestaña.', generated: 'Versión del', country: 'País', period: 'Período' },
+  };
+
+  // ---------- Utilitaires ----------
+  const stripAccents = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const norm = s => stripAccents(s).toUpperCase().replace(/[’`]/g, "'").replace(/\s+/g, ' ').trim();
+
+  function cleanText(v) {
+    if (v == null) return '';
+    let s = cellToString(v);
+    s = s.replace(/[​‌‍⁠﻿]/g, '').replace(/\r\n?/g, '\n').replace(/ /g, ' ');
+    s = s.split('\n').map(l => l.replace(/[ \t]+/g, ' ').trim()).join('\n');
+    s = s.replace(/\n{3,}/g, '\n\n').trim();
+    return s;
+  }
+
+  function cellToString(v) {
+    if (v == null) return '';
+    if (typeof v === 'string') return v;
+    if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+    if (v instanceof Date) return v.toISOString();
+    if (v.richText) return v.richText.map(r => r.text).join('');
+    if (v.text != null) return typeof v.text === 'string' ? v.text : cellToString(v.text);
+    if (v.result != null) return cellToString(v.result);
+    if (v.formula) return '';
+    return String(v);
+  }
+
+  function toDate(v) {
+    if (v instanceof Date && !isNaN(v)) return new Date(Date.UTC(v.getUTCFullYear(), v.getUTCMonth(), v.getUTCDate()));
+    if (typeof v === 'number' && v > 20000 && v < 80000) { const d = new Date(Math.round((v - 25569) * 86400000)); return toDate(d); }
+    if (v && typeof v === 'object' && v.result != null) return toDate(v.result);
+    if (typeof v === 'string') {
+      const m = v.trim().match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/);
+      if (m) { let y = +m[3]; if (y < 100) y += 2000; return new Date(Date.UTC(y, +m[2] - 1, +m[1])); }
+      const iso = v.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (iso) return new Date(Date.UTC(+iso[1], +iso[2] - 1, +iso[3]));
+    }
+    return null;
+  }
+  const ymd = d => d.toISOString().slice(0, 10);
+
+  function fmtDateLong(d, lang) {
+    const day = DAYS[lang][d.getUTCDay()], m = MONTHS[lang][d.getUTCMonth()];
+    if (lang === 'en') return `${day} ${m} ${d.getUTCDate()}`;
+    if (lang === 'es') return `${day} ${d.getUTCDate()} de ${m}`;
+    return `${day} ${d.getUTCDate()} ${m}`;
+  }
+  function weekStart(d) { const x = new Date(d); const wd = (x.getUTCDay() + 6) % 7; x.setUTCDate(x.getUTCDate() - wd); return x; }
+  function weekLabel(d, lang) {
+    const L = L10N[lang], m = MONTHS[lang][d.getUTCMonth()];
+    if (lang === 'en') return `${L.week} ${m} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+    if (lang === 'es') return `${L.week} ${d.getUTCDate()} de ${m} de ${d.getUTCFullYear()}`;
+    return `${L.week} ${d.getUTCDate()} ${m} ${d.getUTCFullYear()}`;
+  }
+  function monthLabel(month, lang) { // month = {y, m}
+    if (!month) return '';
+    const name = MONTHS[lang][month.m];
+    return lang === 'en' ? `${name} ${month.y}` : `${name.charAt(0).toUpperCase() + name.slice(1)} ${month.y}`;
+  }
+
+  // ---------- Détection pays / mois depuis le nom de fichier ----------
+  function detectCountry(filename) {
+    let base = String(filename || '').replace(/\.[a-z0-9]+$/i, '');
+    base = base.replace(/^[0-9a-f]{8}-/i, ''); // préfixe technique éventuel
+    const N = norm(base).replace(/[_\-.]+/g, ' ');
+    for (const [code, c] of Object.entries(COUNTRIES)) {
+      for (const a of c.aliases) if (a.length > 3 && new RegExp(`(^|[^A-Z])${a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^A-Z]|$)`).test(N)) return code;
+    }
+    const tokens = N.split(/[^A-Z]+/).filter(Boolean);
+    for (const t of tokens) {
+      if (COUNTRIES[t]) return t;
+      for (const [code, c] of Object.entries(COUNTRIES)) if (c.aliases.includes(t)) return code;
+    }
+    return null;
+  }
+  function detectMonth(filename) {
+    const N = norm(filename);
+    const names = MONTHS_FR.map(m => norm(m));
+    for (let i = 0; i < 12; i++) {
+      const m = N.match(new RegExp(`${names[i]}[^0-9]*(20\\d\\d)`));
+      if (m) return { y: +m[1], m: i };
+    }
+    return null;
+  }
+
+  // ---------- Dimensions d'image (PNG / JPEG / GIF / WEBP) ----------
+  function imageSize(u8) {
+    try {
+      if (u8[0] === 0x89 && u8[1] === 0x50) return { w: (u8[16] << 24 | u8[17] << 16 | u8[18] << 8 | u8[19]) >>> 0, h: (u8[20] << 24 | u8[21] << 16 | u8[22] << 8 | u8[23]) >>> 0 };
+      if (u8[0] === 0x47 && u8[1] === 0x49) return { w: u8[6] | u8[7] << 8, h: u8[8] | u8[9] << 8 };
+      if (u8[0] === 0xFF && u8[1] === 0xD8) {
+        let i = 2;
+        while (i < u8.length) {
+          if (u8[i] !== 0xFF) { i++; continue; }
+          const mk = u8[i + 1];
+          if (mk >= 0xC0 && mk <= 0xCF && mk !== 0xC4 && mk !== 0xC8 && mk !== 0xCC) return { h: u8[i + 5] << 8 | u8[i + 6], w: u8[i + 7] << 8 | u8[i + 8] };
+          i += 2 + (u8[i + 2] << 8 | u8[i + 3]);
+        }
+      }
+      if (u8[8] === 0x57 && u8[9] === 0x45) { // WEBP VP8X/VP8
+        const t = String.fromCharCode(u8[12], u8[13], u8[14], u8[15]);
+        if (t === 'VP8X') return { w: 1 + (u8[24] | u8[25] << 8 | u8[26] << 16), h: 1 + (u8[27] | u8[28] << 8 | u8[29] << 16) };
+        if (t === 'VP8 ') return { w: (u8[26] | u8[27] << 8) & 0x3fff, h: (u8[28] | u8[29] << 8) & 0x3fff };
+      }
+    } catch (e) { /* ignore */ }
+    return { w: 800, h: 800 };
+  }
+  function imgArg(data, ext) {
+    const e = ext === 'jpg' ? 'jpeg' : ext;
+    if (typeof Buffer !== 'undefined' && typeof window === 'undefined') return { buffer: Buffer.from(toU8(data)), extension: e };
+    return { base64: `data:image/${e};base64,` + b64FromU8(toU8(data)), extension: e };
+  }
+  const toU8 = b => b instanceof Uint8Array ? b : (b && b.buffer ? new Uint8Array(b.buffer, b.byteOffset || 0, b.byteLength) : new Uint8Array(b));
+
+  // ---------- Langue ----------
+  const LANG_WORDS = {
+    fr: ['le','la','les','des','une','est','et','ton','ta','tes','pour','avec','dans','qui','c\'est','du','au','sur','pas','vous','votre','nous','on','ce','cette','mais','plus','tout','sa','quand','comme','aussi','toi'],
+    en: ['the','and','you','your','is','for','with','to','of','this','that','it\'s','on','in','what','who','are','we','our','just','get','be','have','when','it','my','how','if','can','all'],
+    es: ['el','los','las','una','y','para','con','del','por','qué','tu','tus','está','este','esta','pero','más','muy','cuando','como','nosotros','su','sus','al','lo'],
+  };
+  function detectLang(text) {
+    const words = stripAccents(String(text).toLowerCase()).replace(/[’]/g, "'").match(/[a-z']+/g) || [];
+    if (words.length < 4) return null;
+    const sets = {};
+    for (const k in LANG_WORDS) sets[k] = new Set(LANG_WORDS[k].map(w => stripAccents(w)));
+    const score = { fr: 0, en: 0, es: 0 };
+    for (const w of words) for (const k in sets) if (sets[k].has(w)) score[k]++;
+    const best = Object.entries(score).sort((a, b) => b[1] - a[1]);
+    if (best[0][1] < 3 || best[0][1] < best[1][1] * 1.5) return null;
+    return best[0][0];
+  }
+
+  const COUNTRY_MENTIONS = {
+    CIV: [/c[oô]te d.?ivoire/i, /\bCIV\b/, /ivoirien/i, /🇨🇮/],
+    CM: [/cameroun/i, /cameroon/i, /🇨🇲/], CG: [/\bcongo/i, /brazzaville/i, /🇨🇬/],
+    GN: [/guin[ée]e(?!.?bissau)/i, /conakry/i, /🇬🇳/], ML: [/\bmali\b/i, /bamako/i, /🇲🇱/],
+    SN: [/s[ée]n[ée]gal/i, /dakar/i, /🇸🇳/], TD: [/tchad/i, /\bchad\b/i, /n.?djamena/i, /🇹🇩/],
+    NG: [/nigeria/i, /\blagos\b/i, /🇳🇬/], GH: [/\bghana/i, /accra/i, /🇬🇭/], BF: [/burkina/i, /ouagadougou/i, /🇧🇫/],
+    GD: [/guadeloupe/i, /🇬🇵/], VU: [/vanuatu/i, /🇻🇺/], AR: [/argentin/i, /buenos aires/i, /🇦🇷/],
+  };
+
+  // ---------- Lecture d'un planning ----------
+  async function parsePlanning(ExcelJS, arrayBuffer, filename) {
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(arrayBuffer);
+    const sheets = [];
+    wb.eachSheet(ws => {
+      if (ws.state && ws.state !== 'visible') return;
+      const s = parseSheet(wb, ws);
+      if (s) sheets.push(s);
+    });
+    return { filename, country: detectCountry(filename), month: detectMonth(filename), sheets };
+  }
+
+  function brandKey(name) {
+    const N = norm(name);
+    for (const k of Object.keys(BRANDS)) if (N.includes(k)) return k;
+    return N;
+  }
+
+  function parseSheet(wb, ws) {
+    // En-tête
+    let headerRow = null, cols = {};
+    for (let r = 1; r <= Math.min(8, ws.rowCount); r++) {
+      const row = ws.getRow(r); const found = {};
+      row.eachCell({ includeEmpty: false }, (cell, c) => {
+        const t = norm(cellToString(cell.value));
+        if (!t) return;
+        if (/^TH[E]M|^THEME/.test(t) && !found.theme) found.theme = c;
+        else if (/^(TEXTE|TEXT|COPY|TRADUCTION|WORDING|CAPTION|LEGENDE)/.test(t) && !found.text) found.text = c;
+        else if (/^(MEDIA|VISUEL|VISUAL|IMAGE)/.test(t) && !found.media) found.media = c;
+        else if (/^(COMMENT)/.test(t) && !found.comment) found.comment = c;
+        else if (/^(RETOUR|FEEDBACK|VALIDATION)/.test(t) && !found.feedback) found.feedback = c;
+      });
+      if (found.text || found.theme) { headerRow = r; cols = found; break; }
+    }
+    if (!headerRow) { headerRow = 1; cols = { theme: 2, text: 3, media: 4, comment: 5 }; }
+    if (!cols.text) cols.text = (cols.theme || 2) + 1;
+    if (!cols.theme) cols.theme = cols.text - 1;
+    const dateCol = 1;
+
+    const posts = []; let current = null; const weekHeaders = [];
+    const last = ws.rowCount;
+    for (let r = headerRow + 1; r <= last; r++) {
+      const row = ws.getRow(r);
+      const a = row.getCell(dateCol).value;
+      const d = toDate(a);
+      if (d) current = d;
+      else if (typeof a === 'string' && /semaine|week|semana/i.test(a)) weekHeaders.push({ row: r, label: a.trim() });
+      const text = cleanText(row.getCell(cols.text).value);
+      const theme = cleanText(row.getCell(cols.theme).value);
+      const comment = cols.comment ? cleanText(row.getCell(cols.comment).value) : '';
+      const feedback = cols.feedback ? cleanText(row.getCell(cols.feedback).value) : '';
+      if (!text && !theme) continue;
+      posts.push({ row: r, date: d || current, dateFromRow: !!d, theme, text, comment, feedback, images: [] });
+    }
+
+    // Images
+    const imgs = [];
+    for (const im of ws.getImages()) {
+      const media = wb.getImage(+im.imageId);
+      if (!media || !media.buffer) continue;
+      const tl = im.range && im.range.tl;
+      const row = tl ? Math.floor(tl.nativeRow != null ? tl.nativeRow : tl.row) + 1 : 1;
+      const col = tl ? Math.floor(tl.nativeCol != null ? tl.nativeCol : tl.col) + 1 : 1;
+      const u8 = toU8(media.buffer);
+      imgs.push({ row, col, ext: (media.extension || 'png').toLowerCase().replace('jpg', 'jpeg'), data: u8, size: imageSize(u8) });
+    }
+    imgs.sort((a, b) => a.row - b.row || a.col - b.col);
+    const orphans = attachImages(posts, imgs);
+
+    const key = brandKey(ws.name);
+    return {
+      sheetName: ws.name, brandKey: key, brand: BRANDS[key] ? BRANDS[key].label : titleCase(ws.name),
+      sourceColor: sourceColor(ws), posts, orphans, weekHeaders, imageCount: imgs.length,
+    };
+  }
+
+  function attachImages(posts, imgs) {
+    if (!imgs.length) return [];
+    if (posts.length && imgs.length === posts.length) { imgs.forEach((im, i) => posts[i].images.push(im)); return []; }
+    const pairs = [];
+    imgs.forEach((im, i) => posts.forEach((p, j) => { const d = Math.abs(p.row - im.row); if (d <= 4) pairs.push([d, i, j]); }));
+    pairs.sort((a, b) => a[0] - b[0]);
+    const usedI = new Set(), usedP = new Set();
+    for (const [, i, j] of pairs) { if (usedI.has(i) || usedP.has(j)) continue; usedI.add(i); usedP.add(j); posts[j].images.push(imgs[i]); }
+    const orphans = [];
+    imgs.forEach((im, i) => {
+      if (usedI.has(i)) return;
+      let best = null, bd = 99;
+      posts.forEach(p => { const d = Math.abs(p.row - im.row); if (d < bd) { bd = d; best = p; } });
+      if (best && bd <= 2) best.images.push(im); else orphans.push(im);
+    });
+    posts.forEach(p => p.images.sort((a, b) => a.row - b.row || a.col - b.col));
+    return orphans;
+  }
+
+  function sourceColor(ws) {
+    try { const f = ws.getCell('A1').fill; const c = f && f.fgColor && f.fgColor.argb; if (c && !/^(00|FF)?(FFFFFF|000000)$/i.test(c)) return c.slice(-6); } catch (e) { }
+    return null;
+  }
+  const titleCase = s => String(s).toLowerCase().replace(/(^|\s)\S/g, m => m.toUpperCase()).trim();
+
+
+  // ---------- Marronniers (calendrier marketing) ----------
+  const FLAG_TO_CODE = { CI: 'CIV', CM: 'CM', CG: 'CG', GN: 'GN', ML: 'ML', SN: 'SN', TD: 'TD', NG: 'NG', GH: 'GH', BF: 'BF', GP: 'GD', VU: 'VU', AR: 'AR' };
+  function flagsIn(str) {
+    const out = []; const re = /([\u{1F1E6}-\u{1F1FF}])([\u{1F1E6}-\u{1F1FF}])/gu; let m;
+    while ((m = re.exec(String(str)))) out.push(String.fromCharCode(m[1].codePointAt(0) - 0x1F1E6 + 65, m[2].codePointAt(0) - 0x1F1E6 + 65));
+    return out;
+  }
+  function mentionsCountry(text, code) {
+    const regs = COUNTRY_MENTIONS[code] || []; const t = String(text || ''), t2 = stripAccents(t);
+    return regs.some(r => r.test(t) || r.test(t2));
+  }
+  function eventCountries(label) {
+    const codes = new Set(), foreign = [];
+    for (const f of flagsIn(label)) { if (FLAG_TO_CODE[f]) codes.add(FLAG_TO_CODE[f]); else foreign.push(f); }
+    for (const code of Object.keys(COUNTRY_MENTIONS)) if (mentionsCountry(label, code)) codes.add(code);
+    return { countries: [...codes], foreign };
+  }
+  const GENERIC = new Set(['journee', 'journees', 'internationale', 'international', 'mondiale', 'world', 'fete', 'fetes', 'day', 'nationale', 'national', 'debut', 'avec', 'pour', 'dans', 'des', 'les', 'conakry']);
+  function keywords(s, min) {
+    let t = stripAccents(String(s || '').toLowerCase()).replace(/[’']/g, ' ');
+    for (const c of Object.values(COUNTRIES)) for (const a of [c.name, ...c.aliases]) if (a.length > 2) t = t.split(stripAccents(a.toLowerCase()).replace(/[’']/g, ' ')).join(' ');
+    return [...new Set((t.match(/[a-z]+/g) || []).filter(w => w.length >= (min || 4) && !GENERIC.has(w)))];
+  }
+  function similar(a, b) { const A = keywords(a), B = keywords(b); if (!A.length || !B.length) return 0; const inter = A.filter(w => B.includes(w)).length; return inter / Math.min(A.length, B.length); }
+  const pad = n => String(n).padStart(2, '0');
+  const isoOf = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+  function makeEvent(y, m, d, rawLabel, brands) {
+    let label = cleanText(rawLabel).replace(/\s+/g, ' ').trim();
+    let end = null;
+    const r = label.match(/\(\s*du\s+(\d{1,2})\s+au\s+(\d{1,2})\s*\)/i);
+    if (r) { const d2 = +r[2]; const em = d2 < +r[1] ? m + 1 : m; const dt = new Date(Date.UTC(y, em, d2)); end = ymd(dt); label = label.replace(r[0], '').trim(); }
+    const { countries, foreign } = eventCountries(label);
+    return { id: '', start: isoOf(y, m, d), end: end || isoOf(y, m, d), label, countries, foreign, brands: brands || [] };
+  }
+  function brandsFromCell(v) {
+    const t = cleanText(v); if (!t || /multi/i.test(t) || /toutes/i.test(t)) return [];
+    return splitBrands(t);
+  }
+
+  async function parseCalendarWorkbook(ExcelJS, arrayBuffer, filename) {
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(arrayBuffer);
+    const monthNames = MONTHS_FR.map(m => norm(m));
+    let year = null; const fy = String(filename || '').match(/(20\d\d)/); if (fy) year = +fy[1];
+    const grid = [], list = [];
+    wb.eachSheet(ws => {
+      if (ws.state && ws.state !== 'visible') return;
+      // Liste (Date | Evénement | Marques)
+      let hdr = null;
+      for (let r = 1; r <= Math.min(5, ws.rowCount) && !hdr; r++) {
+        const cols = {}; ws.getRow(r).eachCell((c, i) => { const t = norm(cellToString(c.value)); if (t === 'DATE' && !cols.date) cols.date = i; else if (/^EV[EÉ]?NEMENT|^EVENT/.test(t) && !cols.label) cols.label = i; else if (/MARQUE|BRAND/.test(t) && !cols.brands) cols.brands = i; });
+        if (cols.date && cols.label) hdr = { r, ...cols };
+      }
+      if (hdr) {
+        for (let r = hdr.r + 1; r <= ws.rowCount; r++) {
+          const row = ws.getRow(r); const d = toDate(row.getCell(hdr.date).value); const lab = cleanText(row.getCell(hdr.label).value);
+          if (!d || !lab) continue;
+          list.push({ y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate(), label: lab, brands: hdr.brands ? brandsFromCell(row.getCell(hdr.brands).value) : [] });
+        }
+        return;
+      }
+      // Grille (mois en en-tête, colonne jour + colonne événement)
+      const blocks = [];
+      ws.eachRow((row, r) => row.eachCell((c, i) => {
+        const v = c.value; if (typeof v === 'string') { const k = monthNames.indexOf(norm(v)); if (k >= 0) blocks.push({ r, m: k, col: i }); const yy = v.match(/\b(20\d\d)\b/); if (yy && !year) year = +yy[1]; }
+      }));
+      const seen = new Set();
+      for (const b of blocks) {
+        const cands = [b.col, b.col - 1];
+        let dc = null;
+        for (const cc of cands) { if (cc < 1) continue; for (let r = b.r + 1; r <= b.r + 4; r++) { const v = ws.getCell(r, cc).value; const dv = v && v.result !== undefined ? v.result : v; if (dv instanceof Date || typeof dv === 'number') { dc = cc; break; } } if (dc) break; }
+        if (!dc || seen.has(b.r + ':' + dc)) continue;
+        seen.add(b.r + ':' + dc);
+        let lastDay = 0;
+        for (let r = b.r + 1; r <= b.r + 34; r++) {
+          const v0 = ws.getCell(r, dc).value; const v = v0 && v0.result !== undefined ? v0.result : v0;
+          let day = null;
+          if (v instanceof Date) day = v.getUTCFullYear() <= 1900 ? Math.round((v - Date.UTC(1899, 11, 31)) / 864e5) : (v.getUTCMonth() === b.m ? v.getUTCDate() : null);
+          else if (typeof v === 'number' && v >= 1 && v <= 31) day = v;
+          if (typeof ws.getCell(r, dc).value === 'string' && monthNames.includes(norm(ws.getCell(r, dc).value))) break;
+          if (day && day <= lastDay) break;
+          if (day) lastDay = day;
+          const lab = cleanText(ws.getCell(r, dc + 1).value);
+          if (!day || day > 31 || !lab) continue;
+          lab.split(/\s+\/\s+/).forEach(part => grid.push({ m: b.m, d: day, label: part }));
+        }
+      }
+    });
+    if (!year) { const ys = list.map(x => x.y); year = ys.length ? ys.sort((a, b) => ys.filter(v => v === b).length - ys.filter(v => v === a).length)[0] : new Date().getFullYear(); }
+    const events = [];
+    for (const g of grid) { const ev = makeEvent(year, g.m, g.d, g.label, []); if (!events.some(e => e.start === ev.start && e.label === ev.label)) events.push(ev); }
+    const sameEvent = (a, b) => (a.countries.join() !== b.countries.join() && a.countries.length && b.countries.length) ? false : similar(a.label, b.label) >= 0.5 || (a.countries.length && a.countries.join() === b.countries.join() && !keywords(a.label).length) || norm(a.label).replace(/[^A-Z0-9]/g, '') === norm(b.label).replace(/[^A-Z0-9]/g, '');
+    const conflicts = [];
+    for (const it of list) {
+      const ev = makeEvent(year, it.m, it.d, it.label, it.brands);
+      const same = events.find(e => e.start === ev.start && sameEvent(e, ev));
+      if (same) { if (ev.brands.length) same.brands = ev.brands; continue; }
+      const other = events.find(e => e.start !== ev.start && similar(e.label, ev.label) >= 0.6 && e.countries.join() === ev.countries.join() && ev.countries.length);
+      if (other) { conflicts.push({ label: ev.label, listDate: ev.start, gridDate: other.start, kept: other.start }); if (ev.brands.length) other.brands = ev.brands; continue; }
+      events.push(ev);
+    }
+    events.sort((a, b) => a.start.localeCompare(b.start) || a.label.localeCompare(b.label));
+    events.forEach((e, i) => e.id = 'e' + (i + 1));
+    return { year, events, conflicts };
+  }
+
+  function eventsForCountry(events, code, period, brands) {
+    const from = isoOf(period.y, period.m, 1), to = isoOf(period.y, period.m, new Date(Date.UTC(period.y, period.m + 1, 0)).getUTCDate());
+    const bk = (brands || []).map(brandKey);
+    return (events || []).filter(e => e.end >= from && e.start <= to)
+      .filter(e => e.countries.length ? e.countries.includes(code) : !(e.foreign && e.foreign.length))
+      .filter(e => !e.brands.length || !bk.length || e.brands.some(b => bk.includes(brandKey(b))))
+      .map(e => Object.assign({}, e, { scope: e.countries.includes(code) ? 'pays' : (e.brands.length ? 'marque' : 'global') }));
+  }
+  function dayDiff(a, b) { return Math.round((Date.parse(a) - Date.parse(b)) / 864e5); }
+  function postMatchesEvent(p, e) {
+    if (!p.date) return false;
+    const d = ymd(p.date);
+    if (dayDiff(d, e.start) < -2 || dayDiff(d, e.end) > 1) return false;
+    const txt = p.theme + ' ' + p.text;
+    const kw = keywords(e.label, 5); const pk = keywords(txt, 5);
+    if (kw.some(w => pk.includes(w))) return true;
+    if (e.countries.length && e.countries.some(c => mentionsCountry(txt, c)) && /marronnier|independ|national|f[eê]te/i.test(stripAccents(txt))) return true;
+    return false;
+  }
+  function eventCoverage(entry, e) {
+    const out = [];
+    for (const s of entry.sheets) for (const p of s.posts) if (postMatchesEvent(p, e)) out.push({ brand: s.brand, date: p.date });
+    return out;
+  }
+
+  // ---------- Contrôles ----------
+  // contacts: { [code]: { brands:[], lang, to:[], cc:[] } }
+  function checkCountry(entry, ctx) {
+    const issues = [];
+    const add = (level, msg, where) => issues.push({ level, msg, where: where || '' });
+    const code = entry.country, contact = ctx.contacts && ctx.contacts[code];
+    const lang = (contact && contact.lang) || (COUNTRIES[code] && COUNTRIES[code].lang) || 'fr';
+    const month = ctx.month || entry.month;
+
+    if (!code) add('error', "Pays non reconnu dans le nom du fichier : choisissez-le manuellement.");
+    if (code && !contact) add('error', 'Aucun contact enregistré pour ce pays.');
+    if (contact && !(contact.to || []).length) add('error', 'Aucun destinataire principal pour ce pays.');
+    if (entry.duplicateOf && entry.duplicateOf.length) add('info', `Fichier identique à celui de ${entry.duplicateOf.join(', ')} (copie renommée) : normal si ces pays partagent le même planning ce mois-ci.`);
+
+    // Marques (référentiel par pays)
+    const all = entry.allSheets || entry.sheets;
+    const got = all.map(s => s.brandKey);
+    const included = entry.sheets.map(s => s.brandKey);
+    const cname = (COUNTRIES[code] || {}).name || code;
+    if (contact && contact.brands && contact.brands.length) {
+      const exp = contact.brands.map(b => brandKey(b));
+      for (const e of exp) if (!got.includes(e)) add('error', `Marque distribuée en ${cname} absente du planning : ${BRANDS[e] ? BRANDS[e].label : titleCase(e)}.`);
+      for (const g of got) if (!exp.includes(g)) {
+        const lbl = BRANDS[g] ? BRANDS[g].label : titleCase(g);
+        if (included.includes(g)) add('info', `${lbl} n'est pas prévue pour ${cname} dans les contacts, mais vous l'avez incluse dans le fichier envoyé.`);
+        else add('info', `${lbl} n'est pas prévue pour ${cname} dans les contacts : onglet exclu du fichier envoyé (vous pouvez l'inclure).`);
+      }
+    }
+    // Marronniers du mois pour ce pays
+    if (ctx.events && code && month) {
+      const brands = entry.sheets.map(s => s.brand);
+      const evs = eventsForCountry(ctx.events, code, month, brands);
+      for (const e of evs) {
+        if (e.scope === 'global') continue;
+        if (eventCoverage(entry, e).length) continue;
+        const when = e.start === e.end ? fmtShort(e.start) : `${fmtShort(e.start)} au ${fmtShort(e.end)}`;
+        if (e.scope === 'pays') add('info', `Marronnier ${cname} non traité : ${e.label} (${when}).`);
+        else add('info', `Marronnier ${e.brands.join(', ')} non traité : ${e.label} (${when}).`);
+      }
+      // Marronniers d'autres pays ou absents du calendrier
+      for (const s of entry.sheets) for (const p of s.posts) {
+        if (!p.date) continue;
+        const where = `${s.brand} · ${fmtDateLong(p.date, 'fr')}`;
+        const foreignEv = (ctx.events || []).find(e => e.countries.length && !e.countries.includes(code) && postMatchesEvent(p, e) && keywords(e.label, 5).some(w => keywords(p.theme + ' ' + p.text, 5).includes(w)));
+        if (foreignEv) add('info', `Marronnier propre à ${foreignEv.countries.map(c => (COUNTRIES[c] || {}).name || c).join(', ')} : « ${foreignEv.label} ».`, where);
+        else if ((/marronnier/i.test(p.theme) || flagsIn(p.theme + ' ' + p.text.slice(0, 6)).some(f => FLAG_TO_CODE[f] === code)) && !(ctx.events || []).some(e => (!e.countries.length || e.countries.includes(code)) && postMatchesEvent(p, e)))
+          add('info', `Marronnier absent du calendrier marketing : « ${p.theme.replace(/^marronnier\s*:?\s*/i, '')} ». À ajouter au calendrier s'il est récurrent.`, where);
+      }
+    }
+
+    const badWeeks = new Set();
+    for (const s of entry.sheets) {
+      if (!s.posts.length) add('info', 'Onglet sans aucune publication.', s.brand);
+      s.weekHeaders.forEach(w => {
+        const y = w.label.match(/(20\d\d)/);
+        if (y && month && +y[1] !== month.y && !(month.m === 0 && +y[1] === month.y - 1) && !(month.m === 11 && +y[1] === month.y + 1)) badWeeks.add(w.label);
+      });
+      if (s.orphans.length) add('info', `${s.orphans.length} visuel(s) impossible(s) à rattacher à une publication (ajoutés en fin d'onglet).`, s.brand);
+      const langMismatch = [];
+      for (const p of s.posts) {
+        const where = `${s.brand} · ${p.date ? fmtDateLong(p.date, 'fr') : 'ligne ' + p.row}`;
+        if (!p.text) add('info', 'Publication sans texte.', where);
+        if (!p.date) add('info', 'Publication sans date.', where);
+        if (p.date && month && (p.date.getUTCMonth() !== month.m || p.date.getUTCFullYear() !== month.y)) add('info', 'Publication hors du mois du planning.', where);
+        if (!p.images.length && !/partag|shared|drive|lien|link|wetransfer|dropbox/i.test(p.comment)) add('info', 'Aucun visuel intégré ni fichier partagé mentionné.', where);
+        const ph = (p.text + ' ' + p.theme).match(/\[[^\]]{2,40}\]|\bXXX+\b|\bTBD\b|à compléter|to be confirmed/i);
+        if (ph) add('info', `Élément à compléter dans le texte : « ${ph[0]} ».`, where);
+        const dl = detectLang(p.text);
+        if (dl && dl !== lang) langMismatch.push(where.split(' · ')[1]);
+        for (const [oc, regs] of Object.entries(COUNTRY_MENTIONS)) {
+          if (oc === code) continue;
+          if (regs.some(r => r.test(p.text) || r.test(p.theme))) add('info', `Mentionne un autre pays (${COUNTRIES[oc].name}).`, where);
+        }
+      }
+      if (langMismatch.length) add('info', `${langMismatch.length} texte(s) qui ne semblent pas en ${LANG_LABEL[lang]} (${langMismatch.join(', ')}).`, s.brand);
+    }
+    if (badWeeks.size) add('info', `Libellé(s) de semaine avec une année erronée (${[...badWeeks].join(', ')}) : régénérés automatiquement à partir des dates.`);
+    return issues;
+  }
+
+  function fmtShort(iso) { const [y, m, d] = iso.split('-'); return `${+d}/${+m}`; }
+
+  function fingerprint(entry) {
+    return entry.sheets.map(s => s.brandKey + '|' + s.posts.map(p => (p.date ? ymd(p.date) : '') + p.text).join('§')).join('##');
+  }
+
+  // ---------- Génération du fichier mis en forme ----------
+  /* opts: { lang, month:{y,m}, countryName, fullCalendar:bool, transformImage: async (img)=>({data,ext,size}) } */
+  async function buildWorkbook(ExcelJS, entry, opts) {
+    const lang = opts.lang || 'fr', L = L10N[lang];
+    const month = opts.month || entry.month;
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Plateforme PE'; wb.created = new Date();
+    const countryName = opts.countryName || (COUNTRIES[entry.country] || {}).name || entry.country || '';
+    const periodLabel = monthLabel(month, lang);
+    const thin = { style: 'thin', color: { argb: 'FFD9D9D9' } };
+    const border = { top: thin, left: thin, bottom: thin, right: thin };
+    const font = { name: 'Arial', size: 10, color: { argb: 'FF222222' } };
+
+    // Récap
+    const rc = wb.addWorksheet(L.recap, { views: [{ showGridLines: false }], pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 1, paperSize: 9 } });
+    rc.columns = [{ width: 4 }, { width: 22 }, { width: 16 }, { width: 70 }];
+    rc.mergeCells('B2:D2');
+    Object.assign(rc.getCell('B2'), { value: `${L.title} — ${countryName.toUpperCase()}` });
+    rc.getCell('B2').font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF111111' } };
+    rc.getRow(2).height = 28;
+    rc.getCell('B3').value = `${L.period} : ${periodLabel}`; rc.getCell('B3').font = { ...font, size: 11, color: { argb: 'FF555555' } };
+    rc.getCell('B4').value = `${L.generated} ${new Date().toLocaleDateString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : 'fr-FR')}`; rc.getCell('B4').font = { ...font, color: { argb: 'FF888888' } };
+    const hdr = rc.getRow(6); hdr.values = [null, L.brand, L.count, L.dates]; hdr.height = 22;
+    [2, 3, 4].forEach(c => { const cell = hdr.getCell(c); cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } }; cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2B2B2B' } }; cell.alignment = { vertical: 'middle', horizontal: c === 3 ? 'center' : 'left', indent: c === 3 ? 0 : 1 }; });
+    let rr = 7, total = 0;
+    for (const s of entry.sheets) {
+      const b = BRANDS[s.brandKey] || { color: s.sourceColor || '444444', text: 'FFFFFF' };
+      const row = rc.getRow(rr);
+      const dates = s.posts.filter(p => p.date).map(p => `${p.date.getUTCDate()}/${p.date.getUTCMonth() + 1}`);
+      row.values = [null, s.brand, s.posts.length, dates.join(' · ')];
+      row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + b.color } };
+      row.getCell(2).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF' + b.text } };
+      row.getCell(2).alignment = { vertical: 'middle', indent: 1 };
+      row.getCell(3).alignment = { horizontal: 'center', vertical: 'middle' }; row.getCell(3).font = { ...font, bold: true };
+      row.getCell(4).font = font; row.getCell(4).alignment = { vertical: 'middle', wrapText: true, indent: 1 };
+      [2, 3, 4].forEach(c => row.getCell(c).border = border);
+      row.height = 22; rr++; total += s.posts.length;
+    }
+    const tr = rc.getRow(rr); tr.values = [null, 'TOTAL', total]; tr.getCell(2).font = { ...font, bold: true }; tr.getCell(3).font = { ...font, bold: true }; tr.getCell(3).alignment = { horizontal: 'center' };
+    rc.mergeCells(`B${rr + 2}:D${rr + 2}`);
+    rc.getCell(`B${rr + 2}`).value = L.note; rc.getCell(`B${rr + 2}`).font = { ...font, italic: true, color: { argb: 'FF555555' } }; rc.getCell(`B${rr + 2}`).alignment = { wrapText: true };
+    rc.getRow(rr + 2).height = 30;
+
+    // Onglets marques
+    const IMG_MAX_W = 230, IMG_MAX_H = 260;
+    for (const s of entry.sheets) {
+      const b = BRANDS[s.brandKey] || { color: s.sourceColor || '444444', text: 'FFFFFF' };
+      const tint = tintHex(b.color, 0.86);
+      const ws = wb.addWorksheet(s.brand.slice(0, 31), { views: [{ state: 'frozen', ySplit: 4, showGridLines: false }], pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 } });
+      ws.columns = [{ width: 12 }, { width: 21 }, { width: 22 }, { width: 62 }, { width: 35 }, { width: 22 }, { width: 30 }];
+      ws.mergeCells('A1:G1');
+      const t = ws.getCell('A1');
+      t.value = `${L.title} · ${countryName.toUpperCase()} · ${s.brand.toUpperCase()} · ${periodLabel.toUpperCase()}`;
+      t.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF' + b.text } };
+      t.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + b.color } };
+      t.alignment = { vertical: 'middle', indent: 1 };
+      ws.getRow(1).height = 34;
+      ws.mergeCells('A2:G2');
+      ws.getCell('A2').value = `${s.posts.length} ${L.posts}`;
+      ws.getCell('A2').font = { ...font, color: { argb: 'FF666666' } }; ws.getCell('A2').alignment = { indent: 1, vertical: 'middle' };
+      ws.getRow(2).height = 18;
+      const h = ws.getRow(4);
+      h.values = [L.date, L.day, L.theme, L.text, L.visual, L.comment, L.feedback];
+      h.height = 24;
+      h.eachCell((c, i) => {
+        c.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i === 7 ? 'FF7A6A00' : 'FF2B2B2B' } };
+        c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }; c.border = border;
+      });
+      ws.autoFilter = { from: 'A4', to: 'G4' };
+
+      // Lignes : regroupées par semaine
+      const items = buildRows(s.posts, month, !!opts.fullCalendar);
+      let r = 5; let lastWeek = null;
+      for (const it of items) {
+        const wk = it.date ? ymd(weekStart(it.date)) : 'none';
+        if (wk !== lastWeek) {
+          lastWeek = wk;
+          ws.mergeCells(`A${r}:G${r}`);
+          const c = ws.getCell(`A${r}`);
+          c.value = it.date ? weekLabel(weekStart(it.date), lang) : '—';
+          c.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF' + darkHex(b.color) } };
+          c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + tint } };
+          c.alignment = { vertical: 'middle', indent: 1 };
+          ws.getRow(r).height = 20; r++;
+        }
+        const row = ws.getRow(r);
+        const p = it.post;
+        row.getCell(1).value = it.date || null; row.getCell(1).numFmt = 'dd/mm/yyyy';
+        row.getCell(2).value = it.date ? fmtDateLong(it.date, lang) : '';
+        if (p) {
+          row.getCell(3).value = p.theme; row.getCell(4).value = p.text; row.getCell(6).value = p.comment; row.getCell(7).value = p.feedback || null;
+        }
+        for (let c = 1; c <= 7; c++) {
+          const cell = row.getCell(c);
+          cell.font = c === 3 ? { ...font, bold: true } : font;
+          cell.alignment = { vertical: 'top', horizontal: c <= 2 ? 'center' : 'left', wrapText: true };
+          cell.border = border;
+          if (c === 7) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF8D6' } };
+          else if (!p) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFAFAFA' } };
+        }
+        let height = p ? textHeight(p.text, 62) : 16;
+        if (p && p.images.length) {
+          const n = p.images.length; let y = 4;
+          let imgsH = 0;
+          for (const img0 of p.images) {
+            const img = opts.transformImage ? await opts.transformImage(img0) : img0;
+            const sz = img.size || imageSize(img.data);
+            const maxH = n === 1 ? IMG_MAX_H : Math.max(110, Math.floor((IMG_MAX_H * 1.6) / n));
+            const k = Math.min(IMG_MAX_W / sz.w, maxH / sz.h, 1);
+            const w = Math.round(sz.w * k), hh = Math.round(sz.h * k);
+            const id = wb.addImage(imgArg(img.data, img.ext));
+            ws.addImage(id, { tl: { col: 4 + (IMG_MAX_W - w) / 2 / 245 * 1 + 0.02, row: r - 1 + y / 20 }, ext: { width: w, height: hh }, editAs: 'oneCell' });
+            y += hh * 0.75 + 6; imgsH += hh * 0.75 + 6;
+          }
+          height = Math.max(height, imgsH + 8);
+        }
+        row.height = Math.min(409, Math.max(p ? 40 : 16, height));
+        r++;
+      }
+      if (s.orphans.length) {
+        r++;
+        ws.mergeCells(`A${r}:G${r}`);
+        ws.getCell(`A${r}`).value = lang === 'en' ? 'Additional visuals' : lang === 'es' ? 'Visuales adicionales' : 'Visuels complémentaires';
+        ws.getCell(`A${r}`).font = { ...font, bold: true }; r++;
+        for (const img0 of s.orphans) {
+          const img = opts.transformImage ? await opts.transformImage(img0) : img0;
+          const sz = img.size || imageSize(img.data); const k = Math.min(IMG_MAX_W / sz.w, IMG_MAX_H / sz.h, 1);
+          const id = wb.addImage(imgArg(img.data, img.ext));
+          ws.addImage(id, { tl: { col: 4.02, row: r - 1 + 0.2 }, ext: { width: Math.round(sz.w * k), height: Math.round(sz.h * k) }, editAs: 'oneCell' });
+          ws.getRow(r).height = Math.min(409, sz.h * k * 0.75 + 10); r++;
+        }
+      }
+    }
+    return wb;
+  }
+
+  function buildRows(posts, month, full) {
+    const dated = posts.filter(p => p.date).sort((a, b) => a.date - b.date || a.row - b.row);
+    const undated = posts.filter(p => !p.date);
+    if (!full) return [...dated.map(p => ({ date: p.date, post: p })), ...undated.map(p => ({ date: null, post: p }))];
+    // Calendrier complet : tous les jours de la (des) semaine(s) couvrant le mois + publications
+    let start, end;
+    if (month) { start = weekStart(new Date(Date.UTC(month.y, month.m, 1))); end = new Date(Date.UTC(month.y, month.m + 1, 0)); }
+    else if (dated.length) { start = weekStart(dated[0].date); end = dated[dated.length - 1].date; }
+    else return undated.map(p => ({ date: null, post: p }));
+    if (dated.length && dated[0].date < start) start = weekStart(dated[0].date);
+    if (dated.length && dated[dated.length - 1].date > end) end = dated[dated.length - 1].date;
+    const e2 = new Date(end); e2.setUTCDate(e2.getUTCDate() + (7 - ((e2.getUTCDay() + 6) % 7) - 1));
+    const out = [];
+    for (let d = new Date(start); d <= e2; d.setUTCDate(d.getUTCDate() + 1)) {
+      const day = new Date(d); const ps = dated.filter(p => ymd(p.date) === ymd(day));
+      if (ps.length) ps.forEach(p => out.push({ date: day, post: p })); else out.push({ date: day, post: null });
+    }
+    return [...out, ...undated.map(p => ({ date: null, post: p }))];
+  }
+
+  function textHeight(text, widthChars) {
+    if (!text) return 30;
+    const lines = String(text).split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / (widthChars * 1.05))), 0);
+    return lines * 13 + 10;
+  }
+  function tintHex(hex, k) { const n = parseInt(hex, 16); const f = c => Math.round(c + (255 - c) * k); return [f(n >> 16 & 255), f(n >> 8 & 255), f(n & 255)].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase(); }
+  function darkHex(hex) { const n = parseInt(hex, 16); const r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255; const lum = 0.299 * r + 0.587 * g + 0.114 * b; const k = lum > 140 ? 0.55 : 1; return [r, g, b].map(c => Math.round(c * k).toString(16).padStart(2, '0')).join('').toUpperCase(); }
+
+  // ---------- Contacts ----------
+  function parseContactCell(v) {
+    const s = cleanText(v); if (!s) return [];
+    const lines = s.split('\n').map(l => l.trim()).filter(Boolean);
+    const out = []; let pendingName = '';
+    for (const line of lines) {
+      const emails = line.match(/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/g);
+      if (!emails) { pendingName = line.replace(/[;:,]+$/, '').trim(); continue; }
+      const before = line.slice(0, line.indexOf(emails[0])).replace(/[;:,\-–<(\s]+$/, '').replace(/^["']|["']$/g, '').trim();
+      emails.forEach((e, i) => {
+        const email = e.replace(/\.+$/, '').toLowerCase();
+        if (out.some(x => x.email === email)) return;
+        out.push({ name: (i === 0 ? (before || pendingName) : '') || '', email });
+      });
+      pendingName = '';
+    }
+    return out;
+  }
+  function countryFromName(name) {
+    const N = norm(name);
+    for (const [code, c] of Object.entries(COUNTRIES)) if (norm(c.name) === N || c.aliases.includes(N) || code === N) return code;
+    for (const [code, c] of Object.entries(COUNTRIES)) if (c.aliases.some(a => a.length > 3 && N.includes(a))) return code;
+    return null;
+  }
+  function splitBrands(s) {
+    const t = cleanText(s).replace(/\([^)]*\)/g, '').replace(/&| et | and /gi, ',');
+    return t.split(/[,;\/]+/).map(x => x.trim()).filter(Boolean).map(x => { const k = brandKey(x); return BRANDS[k] ? BRANDS[k].label : titleCase(x); })
+      .filter((x, i, a) => a.indexOf(x) === i);
+  }
+  async function parseContactsWorkbook(ExcelJS, arrayBuffer) {
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(arrayBuffer);
+    const ws = wb.worksheets[0]; const res = {};
+    let cols = null;
+    ws.eachRow((row, r) => {
+      const vals = []; row.eachCell({ includeEmpty: true }, (c, i) => vals[i] = cleanText(c.value));
+      if (!cols) {
+        const idx = {}; vals.forEach((v, i) => { const n = norm(v); if (/^PAYS|^COUNTRY/.test(n)) idx.pays = i; else if (/MARQUE|BRAND/.test(n)) idx.brands = i; else if (/PRINCIPAL|MAIN|TO\b/.test(n)) idx.to = i; else if (/\bCC\b|COPIE/.test(n)) idx.cc = i; });
+        if (idx.pays) cols = idx; return;
+      }
+      const code = countryFromName(vals[cols.pays]); if (!code) return;
+      res[code] = { code, name: COUNTRIES[code].name, lang: COUNTRIES[code].lang, brands: splitBrands(vals[cols.brands] || ''), to: parseContactCell(vals[cols.to]), cc: cols.cc ? parseContactCell(vals[cols.cc]) : [] };
+    });
+    return res;
+  }
+
+  // ---------- Email ----------
+  const DEFAULT_TEMPLATES = {
+    fr: { subject: 'Planning éditorial {mois} – {pays}', body: 'Bonjour à toutes et à tous,\n\nVeuillez trouver ci-joint le planning éditorial de {mois} pour {pays} ({marques}), soit {nb} publications.\n\nMerci de nous faire part de vos retours ou de votre validation directement dans la colonne « Retours / Validation pays » du fichier, ou en réponse à cet email.\n\nBelle journée,\n{signature}' },
+    en: { subject: 'Editorial planning {mois} – {pays}', body: 'Hello everyone,\n\nPlease find attached the {mois} editorial planning for {pays} ({marques}), {nb} posts in total.\n\nPlease share your feedback or approval directly in the "Country feedback / approval" column of the file, or by replying to this email.\n\nBest regards,\n{signature}' },
+    es: { subject: 'Planificación editorial {mois} – {pays}', body: 'Hola a todos,\n\nAdjuntamos la planificación editorial de {mois} para {pays} ({marques}), con un total de {nb} publicaciones.\n\nPor favor, envíennos sus comentarios o validación en la columna «Comentarios / Validación país» del archivo, o respondiendo a este correo.\n\nSaludos cordiales,\n{signature}' },
+  };
+  const COUNTRY_NAMES_I18N = { en: { CM: 'Cameroon', CG: 'Congo', CIV: "Côte d'Ivoire", GN: 'Guinea', ML: 'Mali', SN: 'Senegal', TD: 'Chad', NG: 'Nigeria', GH: 'Ghana', BF: 'Burkina Faso', GD: 'Guadeloupe', VU: 'Vanuatu', AR: 'Argentina' },
+    es: { CM: 'Camerún', CG: 'Congo', CIV: 'Costa de Marfil', GN: 'Guinea', ML: 'Malí', SN: 'Senegal', TD: 'Chad', NG: 'Nigeria', GH: 'Ghana', BF: 'Burkina Faso', GD: 'Guadalupe', VU: 'Vanuatu', AR: 'Argentina' } };
+  function countryLabel(code, lang) { return (COUNTRY_NAMES_I18N[lang] && COUNTRY_NAMES_I18N[lang][code]) || (COUNTRIES[code] || {}).name || code; }
+
+  function fillTemplate(tpl, vars) { return String(tpl).replace(/\{(\w+)\}/g, (m, k) => vars[k] != null ? vars[k] : m); }
+
+  function b64FromU8(u8) {
+    if (typeof Buffer !== 'undefined' && typeof window === 'undefined') return Buffer.from(u8).toString('base64');
+    let s = ''; const CH = 0x8000; for (let i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH)); return btoa(s);
+  }
+  function utf8(s) { return new TextEncoder().encode(s); }
+  const wrap76 = s => s.replace(/.{1,76}/g, '$&\r\n');
+  const encWord = s => /^[\x20-\x7E]*$/.test(s) ? s : `=?UTF-8?B?${b64FromU8(utf8(s))}?=`;
+  const addrList = list => list.map(c => c.name ? `${encWord(c.name.replace(/["<>]/g, ''))} <${c.email}>` : c.email).join(', ');
+
+  function buildEml({ from, to, cc, subject, body, attachment }) {
+    const boundary = '----=_PE_' + Math.random().toString(36).slice(2);
+    const lines = [
+      'MIME-Version: 1.0', 'X-Unsent: 1', from && from.email ? `From: ${addrList([from])}` : null, `To: ${addrList(to)}`, cc && cc.length ? `Cc: ${addrList(cc)}` : null,
+      `Subject: ${encWord(subject)}`, `Content-Type: multipart/mixed; boundary="${boundary}"`, '', `--${boundary}`,
+      'Content-Type: text/plain; charset="UTF-8"', 'Content-Transfer-Encoding: base64', '', wrap76(b64FromU8(utf8(body))),
+    ].filter(l => l !== null);
+    let head = lines.join('\r\n');
+    if (attachment) {
+      head += `\r\n--${boundary}\r\nContent-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; name="${encWord(attachment.filename)}"\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="${encWord(attachment.filename)}"\r\n\r\n`;
+      head += wrap76(b64FromU8(toU8(attachment.data)));
+    }
+    head += `\r\n--${boundary}--\r\n`;
+    return head;
+  }
+
+  const api = { b64FromU8, parseCalendarWorkbook, eventsForCountry, eventCoverage, eventCountries, FLAG_TO_CODE, COUNTRIES, BRANDS, L10N, DEFAULT_TEMPLATES, MONTHS_FR, LANG_LABEL, cleanText, detectCountry, detectMonth, parsePlanning, checkCountry, fingerprint, buildWorkbook,
+    parseContactsWorkbook, parseContactCell, splitBrands, fillTemplate, buildEml, monthLabel, countryLabel, fmtDateLong, imageSize, brandKey, ymd, detectLang };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PECore = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function () {
+  'use strict';
+  const C = window.PECore;
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const ORDER = Object.keys(C.COUNTRIES);
+  const LEVEL_LABEL = { error: 'Erreur', warn: 'Remarque', info: 'Remarque' };
+
+  const state = {
+    db: null, dl: null, contacts: {}, contactsReady: false, settings: null, envois: {},
+    mail: null, mailCfg: null, access: null, accessLinks: {}, portal: {}, mode: 'admin', me: null, myHashes: [], previewCountry: null, library: {}, assets: null, archiveQ: { total: 0, done: 0, running: false, failed: [] }, libAll: false, libSel: new Set(), usage: null, calendars: {}, calPreview: null, calAll: false, entries: [], sel: null, subtab: 'controle', period: null, overrides: {}, building: {}, importPreview: null,
+  };
+
+  // ---------- Utilitaires ----------
+  let toastT;
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 3200); }
+  const periodKey = () => `${state.period.y}-${String(state.period.m + 1).padStart(2, '0')}`;
+  const monthUpper = () => C.MONTHS_FR[state.period.m].toUpperCase();
+  const fmtDate = iso => { try { return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return iso; } };
+  const fmtSize = n => n > 1048576 ? (n / 1048576).toFixed(1) + ' Mo' : Math.round(n / 1024) + ' Ko';
+  const brandInfo = label => C.BRANDS[C.brandKey(label)] || { label, color: '777777' };
+  async function copy(text, what) { try { await navigator.clipboard.writeText(text); toast(`${what} copié(s)`); } catch (e) { toast('Copie refusée par le navigateur : sélectionnez le texte manuellement.'); } }
+  function lineList(list) { return (list || []).map(c => c.name ? `${c.name} <${c.email}>` : c.email).join('\n'); }
+
+  // ---------- Période ----------
+  function initPeriod() {
+    const sel = $('#pMonth');
+    sel.innerHTML = C.MONTHS_FR.map((m, i) => `<option value="${i}">${cap(m)}</option>`).join('');
+    const now = new Date();
+    setPeriod({ y: now.getFullYear(), m: now.getMonth() });
+    sel.addEventListener('change', () => { setPeriod({ y: state.period.y, m: +sel.value }); refresh(); archivePending(); });
+    $('#pYear').addEventListener('change', e => { const y = +e.target.value; if (y > 2000) { setPeriod({ y, m: state.period.m }); refresh(); } });
+  }
+  function setPeriod(p) { state.period = p; $('#pMonth').value = String(p.m); $('#pYear').value = String(p.y); state.entries.forEach(e => e.built = null); }
+
+  // ---------- Capacités ----------
+  async function initCaps() {
+    setTimeout(() => document.body.classList.remove('booting'), 4000);
+    if (!window.claude || !window.claude.use) { document.body.classList.remove('booting'); $('#dlWarn').hidden = false; renderContacts(); return; }
+    window.claude.use('downloads').then(dl => { state.dl = dl; $('#dlWarn').hidden = !!dl; }).catch(() => { $('#dlWarn').hidden = false; });
+    let db = null;
+    try { db = await window.claude.use('db'); } catch (e) { db = null; }
+    state.db = db;
+    let user = null; try { user = await window.claude.use('user'); } catch (e) { user = null; }
+    if (user) {
+      const [canEdit, dw] = await Promise.all([user.canEdit(), user.can('data.write')]);
+      if (!canEdit && dw !== true && dw !== null) state.mode = 'portal';
+      else if (!canEdit && dw === null && !(await user.isOwner())) state.mode = 'portal';
+      try { state.me = await user.me(); } catch (e) { state.me = null; }
+    }
+    document.body.classList.remove('booting');
+    renderWho();
+    if (state.mode === 'portal') { await initPortalMode(db); return; }
+    window.claude.use('access').then(x => { state.access = x; renderContacts(); }).catch(() => { });
+    window.claude.use('mail').then(m => { state.mail = m; if (m) m.config().then(c => { state.mailCfg = c; renderTemplates(); renderAll(); }).catch(() => { }); }).catch(() => { });
+    if (!db) { state.contactsReady = true; renderAll(); return; }
+    db.collection('portal').onSnapshot(snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); state.portal = p; schedulePortalSync(); renderPortal(); }, () => { });
+    const timer = setTimeout(() => { if (!state.contactsReady) { state.contactsReady = true; state.dbSlow = true; renderAll(); } }, 10000);
+    db.collection('contacts').onSnapshot(snap => {
+      const c = {}; snap.docs.forEach(d => { c[d.id] = d.data(); });
+      state.contacts = c; if (!snap.metadata.fromCache) { clearTimeout(timer); state.dbSlow = false; }
+      state.contactsReady = true; refresh(); schedulePortalSync();
+    }, () => { clearTimeout(timer); state.contactsReady = true; renderAll(); });
+    db.doc('settings/email').onSnapshot(d => { state.settings = d.exists ? d.data() : null; renderTemplates(); if (state.sel) renderDetail(); }, () => { });
+    window.claude.use('assets').then(as => { state.assets = as; renderLibrary(); if (as) { refreshUsage(); archivePending(); } }).catch(() => { });
+    db.collection('library').onSnapshot(snap => { const l = {}; snap.docs.forEach(d => l[d.id] = d.data()); state.library = l; renderLibrary(); renderTable(); schedulePortalSync(); }, () => { });
+    db.collection('calendars').onSnapshot(snap => { const c = {}; snap.docs.forEach(d => c[d.id] = d.data()); state.calendars = c; refresh(); renderCalendar(); }, () => { });
+    db.collection('envois').onSnapshot(snap => { const e = {}; snap.docs.forEach(d => e[d.id] = d.data()); state.envois = e; renderAll(); schedulePortalSync(); }, () => { });
+  }
+
+  async function save(filename, blob) {
+    if (!state.dl) { toast("Téléchargement indisponible ici : ouvrez la page sur claude.ai."); return false; }
+    try { await state.dl.save({ filename, data: blob }); toast('Fichier enregistré : ' + filename); return true; }
+    catch (e) { if (e && e.code === 'declined') return false; toast('Téléchargement impossible (' + (e && e.code || 'erreur') + ').'); return false; }
+  }
+
+  // ---------- Dépôt ----------
+  function initDrop() {
+    const drop = $('#drop'), inp = $('#fileIn');
+    inp.addEventListener('change', () => { handleFiles([...inp.files]); inp.value = ''; });
+    ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+    ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+    drop.addEventListener('drop', e => handleFiles([...e.dataTransfer.files]));
+  }
+  async function sha(ab) { try { const h = await crypto.subtle.digest('SHA-256', ab); return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join(''); } catch (e) { return String(ab.byteLength); } }
+
+  async function handleFiles(files) {
+    files = files.filter(f => /\.xlsx$/i.test(f.name));
+    if (!files.length) { toast('Déposez des fichiers .xlsx'); return; }
+    const prog = $('#progress'); prog.hidden = false; prog.innerHTML = '';
+    const months = [];
+    for (const f of files) {
+      const line = document.createElement('div'); line.textContent = `… ${f.name}`; prog.appendChild(line);
+      try {
+        if (/BOTTLER|CONTACT|EMAIL/i.test(f.name) && !C.detectCountry(f.name)) { line.textContent = `↪ ${f.name} : fichier contacts, à importer depuis l'onglet Contacts.`; continue; }
+        const ab = await f.arrayBuffer();
+        const hash = await sha(ab.slice(0));
+        const parsed = await C.parsePlanning(window.ExcelJS, ab, f.name);
+        const entry = Object.assign(parsed, { id: Math.random().toString(36).slice(2), size: f.size, hash, validated: false, built: null, allSheets: parsed.sheets, excluded: [], userBrands: false });
+        if (parsed.month) months.push(parsed.month);
+        const prev = entry.country ? state.entries.findIndex(e => e.country === entry.country) : -1;
+        if (prev >= 0) state.entries.splice(prev, 1, entry); else state.entries.push(entry);
+        const n = entry.sheets.reduce((a, s) => a + s.posts.length, 0);
+        line.textContent = `✓ ${f.name} → ${entry.country || 'pays non reconnu'} · ${entry.sheets.length} marque(s) · ${n} publication(s)${prev >= 0 ? ' · remplace le fichier précédent' : ''}`;
+      } catch (err) {
+        console.error(err); line.textContent = `✗ ${f.name} : lecture impossible (${err.message || err}).`;
+      }
+      await new Promise(r => setTimeout(r, 0));
+    }
+    if (months.length) {
+      const counts = {}; months.forEach(m => { const k = m.y * 12 + m.m; counts[k] = (counts[k] || 0) + 1; });
+      const best = +Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+      setPeriod({ y: Math.floor(best / 12), m: best % 12 });
+    }
+    refresh();
+    archivePending();
+    const first = state.entries.find(e => e.country);
+    if (!state.sel && first) { state.sel = first.country; renderAll(); }
+  }
+
+  // ---------- Contrôles ----------
+  function contactFor(code) { return state.contacts[code] || null; }
+  function langFor(code) { const c = contactFor(code); return (c && c.lang) || (C.COUNTRIES[code] || {}).lang || 'fr'; }
+  function nameFor(code) { const c = contactFor(code); return (c && c.name) || (C.COUNTRIES[code] || {}).name || code; }
+  function entryFor(code) { return state.entries.find(e => e.country === code) || null; }
+
+  function calEvents() { const c = state.calendars[String(state.period.y)]; return (c && c.events) || []; }
+  function recompute() {
+    for (const e of state.entries) {
+      if (!e.userBrands) {
+        const ct = contactFor(e.country); const exp = ((ct && ct.brands) || []).map(C.brandKey);
+        e.excluded = exp.length ? e.allSheets.map(s => s.brandKey).filter(k => !exp.includes(k)) : [];
+      }
+      e.sheets = e.allSheets.filter(s => !e.excluded.includes(s.brandKey));
+      e.duplicateOf = state.entries.filter(x => x !== e && x.hash === e.hash).map(x => x.country || x.filename);
+      e.issues = C.checkCountry(e, { contacts: state.contacts, month: state.period, events: calEvents() });
+    }
+  }
+  function statusOf(code) {
+    const sent = state.envois[`${periodKey()}_${code}`];
+    if (sent) return { k: 'sent', label: 'Envoyé le ' + fmtDate(sent.sentAt), cls: 'p-sent' };
+    const e = entryFor(code);
+    if (!e) return { k: 'wait', label: 'En attente du planning', cls: 'p-wait' };
+    if (e.issues.some(i => i.level === 'error')) return { k: 'err', label: 'À corriger', cls: 'p-err' };
+    return { k: 'ready', label: 'Prêt à envoyer', cls: 'p-ready' };
+  }
+  function codes() {
+    const set = new Set([...Object.keys(state.contacts), ...state.entries.filter(e => e.country).map(e => e.country)]);
+    return [...set].sort((a, b) => (ORDER.indexOf(a) + 1 || 99) - (ORDER.indexOf(b) + 1 || 99));
+  }
+
+  // ---------- Rendu principal ----------
+  function refresh() { recompute(); renderAll(); }
+  function renderAll() { renderStats(); renderTable(); renderDetail(); renderContacts(); renderHistory(); renderCalendar(); renderLibrary(); }
+
+  function renderStats() {
+    const cs = codes(); const c = { wait: 0, check: 0, ready: 0, sent: 0 };
+    cs.forEach(code => { const k = statusOf(code).k; if (k === 'wait') c.wait++; else if (k === 'err' || k === 'warn') c.check++; else if (k === 'ready') c.ready++; else c.sent++; });
+    $('#stats').innerHTML = `
+      <div class="stat s-wait"><b>${c.wait}</b><span>en attente du planning</span></div>
+      <div class="stat s-check"><b>${c.check}</b><span>à corriger</span></div>
+      <div class="stat s-ready"><b>${c.ready}</b><span>prêts à envoyer</span></div>
+      <div class="stat s-sent"><b>${c.sent}</b><span>envoyés · ${esc(cap(C.MONTHS_FR[state.period.m]))} ${state.period.y}</span></div>`;
+    const any = state.entries.some(e => e.country);
+    $('#zipFiles').disabled = !any; $('#zipPack').disabled = !any;
+    const sa = $('#sendAll'); if (sa) { sa.hidden = !(state.mailCfg && state.mailCfg.enabled); if (!sa.dataset.busy) sa.disabled = !codes().some(c => statusOf(c).k === 'ready'); }
+  }
+
+  function renderTable() {
+    const tb = $('#ctry'); const cs = codes();
+    const unknown = state.entries.filter(e => !e.country);
+    if (!cs.length && !unknown.length) {
+      tb.innerHTML = `<tr><td colspan="6" class="empty">${state.contactsReady ? 'Aucun pays enregistré. Importez votre fichier de contacts dans l\'onglet Contacts, puis déposez les plannings.' : 'Chargement des pays…'}</td></tr>`;
+      return;
+    }
+    let html = '';
+    for (const code of cs) {
+      const e = entryFor(code), ct = contactFor(code), st = statusOf(code);
+      const exp = (ct && ct.brands) || [];
+      const got = e ? e.sheets : [];
+      const gotKeys = (e ? e.allSheets : []).map(s => s.brandKey);
+      const chips = (e ? e.allSheets : []).map(s => { const b = C.BRANDS[s.brandKey] || { color: s.sourceColor || '777777' }; const ex = e.excluded.includes(s.brandKey); return `<span class="bchip${ex ? ' excluded' : ''}" title="${ex ? 'Marque non distribuée dans ce pays : exclue du fichier envoyé' : ''}"><i style="background:#${b.color}"></i>${esc(s.brand)} <b>${s.posts.length}</b></span>`; }).join('') +
+        exp.filter(b => !gotKeys.includes(C.brandKey(b))).map(b => `<span class="bchip missing" title="${e ? 'Marque attendue absente du fichier' : 'Marque attendue'}"><i style="background:#${brandInfo(b).color};opacity:.45"></i>${esc(b)}</span>`).join('');
+      const n = got.reduce((a, s) => a + s.posts.length, 0);
+      const iss = e ? e.issues : [];
+      const ce = iss.filter(i => i.level === 'error').length, cw = iss.filter(i => i.level === 'warn').length;
+      const ci = iss.filter(i => i.level !== 'error').length;
+      const ctrl = e ? `<div class="counts">${ce ? `<span style="color:var(--err)"><i class="dot" style="background:var(--err)"></i>${ce} erreur${ce > 1 ? 's' : ''}</span>` : '<span style="color:var(--ok)">OK</span>'}${ci ? `<span class="muted">· ${ci} remarque${ci > 1 ? 's' : ''}</span>` : ''}</div>` : '<span class="muted">—</span>';
+      const rc = ct ? `<div class="addr">${(ct.to || []).map(c => `<div>${esc(c.email)}</div>`).join('')}${(ct.cc || []).length ? `<div class="muted">cc ${(ct.cc || []).map(c => esc(c.email)).join(', ')}</div>` : ''}</div>` : '<span style="color:var(--err)">aucun contact</span>';
+      html += `<tr data-code="${esc(code)}" class="${state.sel === code ? 'sel' : ''}" tabindex="0">
+        <td><b>${esc(nameFor(code))}</b><span class="code">${esc(code)}</span></td>
+        <td><span class="pill ${st.cls}">${esc(st.label)}</span></td>
+        <td><div class="brands">${chips || '<span class="muted">—</span>'}</div></td>
+        <td style="font-variant-numeric:tabular-nums">${e ? n : '<span class="muted">—</span>'}</td>
+        <td>${ctrl}</td><td>${rc}</td></tr>`;
+    }
+    for (const e of unknown) {
+      html += `<tr data-entry="${e.id}" class="${state.sel === 'id:' + e.id ? 'sel' : ''}" tabindex="0"><td><b>${esc(e.filename)}</b></td><td><span class="pill p-err">Pays non reconnu</span></td><td colspan="4" class="muted">Ouvrez la ligne pour choisir le pays.</td></tr>`;
+    }
+    tb.innerHTML = html;
+  }
+
+  function select(key) { state.sel = key; state.subtab = state.subtab || 'controle'; renderTable(); renderDetail(); const d = $('#detail'); if (!d.hidden) d.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); }
+
+  // ---------- Détail pays ----------
+  function emailFor(code) {
+    const e = entryFor(code), lang = langFor(code), ct = contactFor(code) || {};
+    const tpls = (state.settings && state.settings.templates) || C.DEFAULT_TEMPLATES;
+    const tpl = tpls[lang] || C.DEFAULT_TEMPLATES[lang] || C.DEFAULT_TEMPLATES.fr;
+    const brands = e ? e.sheets.map(s => s.brand) : (ct.brands || []);
+    const nb = e ? e.sheets.reduce((a, s) => a + s.posts.length, 0) : 0;
+    const monthTxt = C.monthLabel(state.period, lang); const mois = lang === 'en' ? monthTxt : monthTxt.toLowerCase();
+    const vars = { pays: C.countryLabel(code, lang), mois, marques: brands.join(', '), nb, signature: (state.settings && state.settings.signature) || '' };
+    const ov = state.overrides[code] || {};
+    return {
+      to: ct.to || [], cc: ct.cc || [], lang,
+      subject: ov.subject != null ? ov.subject : C.fillTemplate(tpl.subject, vars),
+      body: ov.body != null ? ov.body : C.fillTemplate(tpl.body, vars).replace(/\n+$/, ''),
+    };
+  }
+  const DEFAULT_SENDER = { name: 'Équipe marketing', email: 'contact20@exemple.example' };
+  function senderOf() {
+    const s = state.settings && state.settings.sender;
+    if (state.mailCfg && state.mailCfg.sender) return { name: (s && s.name) || DEFAULT_SENDER.name, email: state.mailCfg.sender };
+    return s && s.email ? s : DEFAULT_SENDER;
+  }
+  function renderWho() {
+    const el = $('#who'); if (!el || !window.PE_HOSTED) return;
+    const email = state.me && state.me.email;
+    el.innerHTML = email ? `<span class="muted">${esc(email)}</span> <a class="btn small ghost" href="${esc(window.PE_LOGOUT_URL || '/.auth/logout?post_logout_redirect_uri=/')}">Se déconnecter</a>` : '';
+  }
+  function mailtoHref(m) {
+    const q = [];
+    if (m.cc.length) q.push('cc=' + encodeURIComponent(m.cc.map(c => c.email).join(',')));
+    q.push('subject=' + encodeURIComponent(m.subject)); q.push('body=' + encodeURIComponent(m.body));
+    return 'mailto:' + m.to.map(c => c.email).join(',') + '?' + q.join('&');
+  }
+
+  function renderDetail() {
+    const box = $('#detail');
+    if (!state.sel) { box.hidden = true; return; }
+    box.hidden = false;
+    if (state.sel.startsWith('id:')) { renderUnknown(box, state.entries.find(e => 'id:' + e.id === state.sel)); return; }
+    const code = state.sel, e = entryFor(code), st = statusOf(code), ct = contactFor(code);
+    const nIss = e ? e.issues.filter(i => i.level === 'error').length : 0;
+    const tabs = [['controle', `Contrôle${e ? ` (${nIss})` : ''}`], ['apercu', 'Aperçu'], ['email', 'Email et envoi']];
+    let html = `<div class="detail-head"><h2>${esc(nameFor(code))}</h2><span class="code">${esc(code)}</span><span class="pill ${st.cls}">${esc(st.label)}</span><span class="spacer"></span>
+      ${e ? `<button class="btn" data-act="xlsx">Télécharger le planning mis en forme</button>` : ''}
+      </div>`;
+    if (!e) {
+      html += `<div class="note">Aucun planning reçu pour ${esc(nameFor(code))} sur ${esc(cap(C.MONTHS_FR[state.period.m]))} ${state.period.y}. Déposez le fichier de l'agence ci-dessus.${ct && ct.brands && ct.brands.length ? ` Marques attendues : <b>${esc(ct.brands.join(', '))}</b>.` : ''}</div>`;
+      if (st.k === 'sent') html += sentNote(code);
+      box.innerHTML = html; bindDetail(box, code); return;
+    }
+    html += `<div class="subtabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${state.subtab === k}" data-tab="${k}">${esc(l)}</button>`).join('')}</div>`;
+    if (state.subtab === 'controle') html += renderControl(e);
+    else if (state.subtab === 'apercu') html += renderPreview(e);
+    else html += renderEmail(code, e, st);
+    box.innerHTML = html; bindDetail(box, code);
+  }
+
+  function renderControl(e) {
+    const item = i => `<li><span class="lvl ${i.level}">${LEVEL_LABEL[i.level]}</span><div>${esc(i.msg)}${i.where ? `<div class="where">${esc(i.where)}</div>` : ''}</div></li>`;
+    const errs = e.issues.filter(i => i.level === 'error'), rem = e.issues.filter(i => i.level !== 'error');
+    const list = (errs.length ? `<ul class="issues">${errs.map(item).join('')}</ul>` : `<div class="note" style="color:var(--ok)">Aucune erreur : le planning peut être envoyé.</div>`)
+      + (rem.length ? `<details class="remarks"><summary>${rem.length} remarque${rem.length > 1 ? 's' : ''} pour information (n'empêchent pas l'envoi)</summary><ul class="issues">${rem.map(item).join('')}</ul></details>` : '');
+    const lang = langFor(e.country);
+    const brandsBox = `<div class="detail" style="gap:8px"><h3>Marques envoyées à ${esc(nameFor(e.country))}</h3>
+      <div class="opts">${e.allSheets.map(s => { const b = C.BRANDS[s.brandKey] || { color: s.sourceColor || '777777' }; return `<label><input type="checkbox" data-brand="${esc(s.brandKey)}" ${e.excluded.includes(s.brandKey) ? '' : 'checked'}> <span class="bchip"><i style="background:#${b.color}"></i>${esc(s.brand)} <b>${s.posts.length}</b></span></label>`; }).join('')}</div>
+      <p class="muted" style="margin:0;font-size:12.5px">Par défaut, seules les marques distribuées dans le pays (onglet Contacts) sont incluses dans le fichier mis en forme et dans l'email.</p></div>`;
+    return `${list}${brandsBox}${renderMarronniers(e)}
+      <div class="note">Fichier reçu : <b>${esc(e.filename)}</b> (${fmtSize(e.size)}) · ${e.sheets.length} onglet(s) : ${e.sheets.map(s => esc(s.sheetName)).join(', ')} · langue attendue : ${C.LANG_LABEL[lang]}.
+      La mise en forme régénère les semaines à partir des dates, nettoie les textes (caractères invisibles, sauts de ligne), aligne chaque visuel sur sa publication et ajoute une colonne de retours pour le pays.</div>
+      <div class="row"><label class="field" style="flex-direction:row;align-items:center;gap:8px"><span class="muted" style="font-size:12px">Ce fichier concerne</span>
+      <select data-act="reassign" class="btn small">${ORDER.concat(Object.keys(state.contacts).filter(c => !ORDER.includes(c))).map(c => `<option value="${c}" ${c === e.country ? 'selected' : ''}>${esc(nameFor(c))} (${c})</option>`).join('')}</select></label>
+      <button class="btn small ghost" data-act="remove">Retirer ce fichier</button></div>`;
+  }
+
+  function renderMarronniers(e) {
+    const evs = C.eventsForCountry(calEvents(), e.country, state.period, e.sheets.map(s => s.brand));
+    const hasCal = !!state.calendars[String(state.period.y)];
+    if (!hasCal) return `<div class="note">Aucun calendrier marketing ${state.period.y} chargé : importez-le dans l'onglet Marronniers pour contrôler les marronniers de chaque pays.</div>`;
+    const scopeLbl = { pays: 'Pays', marque: 'Marque', global: 'Tous pays' };
+    const rows = evs.map(ev => {
+      const cov = C.eventCoverage(e, ev);
+      const when = ev.start === ev.end ? fmtDM(ev.start) : `${fmtDM(ev.start)} → ${fmtDM(ev.end)}`;
+      const status = cov.length ? `<span class="pill p-sent">Traité · ${esc(cov.map(c => `${c.brand} ${c.date.getUTCDate()}/${c.date.getUTCMonth() + 1}`).join(', '))}</span>` : `<span class="pill p-wait">Non traité</span>`;
+      return `<tr><td class="mono">${when}</td><td>${esc(ev.label)}${ev.brands.length ? ` <span class="muted">· ${esc(ev.brands.join(', '))}</span>` : ''}</td><td><span class="scope s-${ev.scope}">${scopeLbl[ev.scope]}</span></td><td>${status}</td></tr>`;
+    }).join('');
+    return `<div class="detail" style="gap:8px"><h3>Marronniers de ${esc(C.MONTHS_FR[state.period.m])} pour ${esc(nameFor(e.country))}</h3>
+      ${evs.length ? `<div class="tablewrap"><table style="min-width:560px"><tbody class="plain">${rows}</tbody></table></div>` : '<p class="muted" style="margin:0">Aucun marronnier au calendrier ce mois-ci pour ce pays.</p>'}</div>`;
+  }
+  function fmtDM(iso) { const [, m, d] = iso.split('-'); return `${d}/${m}`; }
+
+  function thumb(img) {
+    if (!img._url) img._url = URL.createObjectURL(new Blob([img.data], { type: 'image/' + img.ext }));
+    return `<img src="${img._url}" alt="Visuel" loading="lazy">`;
+  }
+  function renderPreview(e) {
+    return e.sheets.map(s => {
+      const b = C.BRANDS[s.brandKey] || { color: s.sourceColor || '555555', text: 'FFFFFF' };
+      const posts = s.posts.slice().sort((a, b2) => (a.date || 0) - (b2.date || 0));
+      return `<section class="brandsec"><header style="background:#${b.color};color:#${b.text || 'FFFFFF'}">${esc(s.brand)}<span style="font-weight:500;opacity:.85">${s.posts.length} publication(s)</span></header>
+        <div class="posts">${posts.map(p => `<div class="post"><div><div class="d">${p.date ? esc(C.fmtDateLong(p.date, 'fr')) : 'Sans date'}</div><div class="t">${esc(p.theme)}</div>${p.comment ? `<div class="t">${esc(p.comment)}</div>` : ''}</div>
+          <div class="txt">${esc(p.text) || '<span class="muted">Pas de texte</span>'}</div>
+          <div class="thumbs">${p.images.length ? p.images.map(thumb).join('') : '<div class="noimg">Pas de visuel intégré</div>'}</div></div>`).join('') || '<div class="empty">Aucune publication</div>'}</div></section>`;
+    }).join('');
+  }
+
+  function sentNote(code) {
+    const s = state.envois[`${periodKey()}_${code}`];
+    return `<div class="note">Marqué comme envoyé le <b>${fmtDate(s.sentAt)}</b> à ${esc((s.to || []).join(', '))}${(s.cc || []).length ? ` (cc ${esc(s.cc.join(', '))})` : ''}. <button class="btn small ghost" data-act="unsend">Annuler ce statut</button></div>`;
+  }
+
+  function renderEmail(code, e, st) {
+    const m = emailFor(code);
+    const chip = c => `<span class="recip">${c.name ? `${esc(c.name)} ` : ''}<b class="mono">${esc(c.email)}</b></span>`;
+    const from = senderOf();
+    const hasTo = m.to.length > 0;
+    const built = e.built;
+    return `<div class="field"><label>De (compte Outlook d'envoi)</label><div class="recips">${chip(from)} <a class="btn small ghost" href="#modele">Modifier</a></div></div>
+      <div class="grid2">
+      <div class="field"><label>À</label><div class="recips">${hasTo ? m.to.map(chip).join('') : '<span style="color:var(--err)">Aucun destinataire : complétez l\'onglet Contacts.</span>'}</div></div>
+      <div class="field"><label>Copie</label><div class="recips">${m.cc.length ? m.cc.map(chip).join('') : '<span class="muted">—</span>'}</div></div></div>
+      <div class="field"><label for="mSubj">Objet</label><input id="mSubj" value="${esc(m.subject)}"></div>
+      <div class="field"><label for="mBody">Message (${C.LANG_LABEL[m.lang]})</label><textarea id="mBody" style="min-height:200px">${esc(m.body)}</textarea></div>
+      <div class="field"><label>Pièce jointe</label><div class="mono">${esc(fileName(code))}${built ? ` · ${fmtSize(built.blob.size)}` : ''}</div></div>
+      ${state.mailCfg && !state.mailCfg.enabled ? `<div class="banner warn">L'envoi direct depuis Outlook n'est pas encore configuré sur le serveur : utilisez l'email prêt à envoyer.</div>` : ''}
+      <div class="row">
+        ${state.mailCfg && state.mailCfg.enabled && st.k !== 'sent' ? `<button class="btn primary" data-act="outlook" ${hasTo ? '' : 'disabled'}>Envoyer depuis Outlook</button>` : ''}
+        <button class="btn ${state.mailCfg && state.mailCfg.enabled ? '' : 'primary'}" data-act="pack" ${hasTo ? '' : 'disabled'}>Télécharger l'email prêt à envoyer</button>
+        <button class="btn" data-act="copyTo">Copier les destinataires</button>
+        <button class="btn" data-act="copyMsg">Copier l'objet et le message</button>
+        <a class="btn" href="${esc(mailtoHref(m))}" target="_blank" rel="noopener">Ouvrir dans ma messagerie</a>
+        <span class="spacer"></span>
+        ${st.k === 'sent' ? '' : `<button class="btn" data-act="sent" ${hasTo ? '' : 'disabled'}>Marquer comme envoyé</button>`}
+      </div>
+      ${st.k === 'sent' ? sentNote(code) : ''}
+      ${state.mailCfg && state.mailCfg.enabled ? `<div class="note"><b>Envoyer depuis Outlook</b> envoie immédiatement l'email et le planning mis en forme depuis la boîte <b>${esc(from.email)}</b> (il apparaît dans ses éléments envoyés) et marque le pays comme envoyé.${state.mailCfg.mode === 'dryrun' ? ' <b>Mode test : aucun email ne part réellement.</b>' : ''}</div>` : `<div class="note"><b>Envoi en un clic.</b> « Télécharger l'email prêt à envoyer » fournit un .zip contenant le planning mis en forme et un fichier <span class="mono">.eml</span>. Ouvrez le <span class="mono">.eml</span> : Outlook l'affiche comme un brouillon envoyé depuis <b>${esc(from.email)}</b>, avec destinataires, objet, message et pièce jointe déjà remplis. Il ne reste qu'à cliquer sur Envoyer, puis à revenir ici pour « Marquer comme envoyé ».
+      « Ouvrir dans ma messagerie » prépare le message sans pièce jointe (les liens mailto ne permettent pas d'en ajouter).</div>`}`;
+  }
+
+  function renderUnknown(box, e) {
+    if (!e) { box.hidden = true; return; }
+    box.innerHTML = `<div class="detail-head"><h2>${esc(e.filename)}</h2><span class="pill p-err">Pays non reconnu</span></div>
+      <div class="note">Le nom du fichier ne contient pas de code pays reconnu. Indiquez le pays concerné :</div>
+      <div class="row"><select data-act="reassign" class="btn"><option value="">Choisir…</option>${ORDER.concat(Object.keys(state.contacts).filter(c => !ORDER.includes(c))).map(c => `<option value="${c}">${esc(nameFor(c))} (${c})</option>`).join('')}</select>
+      <button class="btn ghost" data-act="remove">Retirer ce fichier</button></div>`;
+    bindDetail(box, null, e);
+  }
+
+  function bindDetail(box, code, entryOverride) {
+    const e = entryOverride || (code && entryFor(code));
+    box.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { state.subtab = b.dataset.tab; renderDetail(); }));
+    box.querySelectorAll('[data-brand]').forEach(cb => cb.addEventListener('change', () => {
+      const k = cb.dataset.brand; e.userBrands = true;
+      e.excluded = cb.checked ? e.excluded.filter(x => x !== k) : [...new Set([...e.excluded, k])];
+      e.built = null; e.archivedKey = null; delete state.overrides[code]; refresh(); archivePending();
+    }));
+    const subj = box.querySelector('#mSubj'), body = box.querySelector('#mBody');
+    if (subj) subj.addEventListener('input', () => { (state.overrides[code] = state.overrides[code] || {}).subject = subj.value; updateMailto(box, code); });
+    if (body) body.addEventListener('input', () => { (state.overrides[code] = state.overrides[code] || {}).body = body.value; updateMailto(box, code); });
+    box.querySelectorAll('[data-act]').forEach(el => {
+      const act = el.dataset.act;
+      if (act === 'reassign') { el.addEventListener('change', () => { if (!el.value) return; const other = entryFor(el.value); if (other && other !== e) state.entries.splice(state.entries.indexOf(other), 1); e.country = el.value; e.built = null; state.sel = el.value; refresh(); }); return; }
+      el.addEventListener('click', async () => {
+        if (act === 'validate') { e.validated = true; refresh(); toast('Contrôle validé'); }
+        else if (act === 'remove') { state.entries.splice(state.entries.indexOf(e), 1); state.sel = null; refresh(); }
+        else if (act === 'xlsx') { await busy(el, async () => { const b = await build(e); await save(b.filename, b.blob); renderDetail(); }); }
+        else if (act === 'outlook') {
+          const m = emailFor(code);
+          if (el.dataset.confirm !== '1') { el.dataset.confirm = '1'; el.textContent = `Confirmer l'envoi à ${m.to.length + m.cc.length} destinataire(s)`; setTimeout(() => { if (el.isConnected && el.dataset.confirm === '1') { el.dataset.confirm = ''; el.textContent = 'Envoyer depuis Outlook'; } }, 6000); return; }
+          await busy(el, async () => { await sendOutlook(code); });
+        }
+        else if (act === 'pack') { await busy(el, async () => { const z = await packZip([code]); await save(`${code} - Envoi PE ${monthUpper()} ${state.period.y}.zip`, z); renderDetail(); }); }
+        else if (act === 'copyTo') { const m = emailFor(code); copy(`De : ${senderOf().email}\nÀ : ${m.to.map(c => c.email).join('; ')}${m.cc.length ? `\nCc : ${m.cc.map(c => c.email).join('; ')}` : ''}`, 'Destinataires'); }
+        else if (act === 'copyMsg') { const m = emailFor(code); copy(`${m.subject}\n\n${m.body}`, 'Message'); }
+        else if (act === 'sent') { await markSent(code); }
+        else if (act === 'unsend') { await unmark(`${periodKey()}_${code}`); }
+      });
+    });
+  }
+  function updateMailto(box, code) { const a = box.querySelector('a[href^="mailto:"]'); if (a) a.href = mailtoHref(emailFor(code)); }
+  async function busy(btn, fn) { const t = btn.textContent; btn.disabled = true; btn.textContent = 'Préparation…'; try { await fn(); } catch (err) { console.error(err); toast('Erreur : ' + (err.message || err)); } finally { btn.disabled = false; btn.textContent = t; } }
+
+  // ---------- Génération ----------
+  const imgCache = new WeakMap();
+  async function lighten(img) {
+    if (imgCache.has(img)) return imgCache.get(img);
+    let out = img;
+    try {
+      const big = Math.max(img.size.w, img.size.h);
+      if (img.data.length > 300 * 1024 || big > 1400) {
+        const bmp = await createImageBitmap(new Blob([img.data], { type: 'image/' + img.ext }));
+        const k = Math.min(1, 1080 / Math.max(bmp.width, bmp.height));
+        const w = Math.round(bmp.width * k), h = Math.round(bmp.height * k);
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); ctx.drawImage(bmp, 0, 0, w, h);
+        const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.85));
+        if (blob && blob.size < img.data.length) out = { data: new Uint8Array(await blob.arrayBuffer()), ext: 'jpeg', size: { w, h } };
+      }
+    } catch (e) { out = img; }
+    imgCache.set(img, out); return out;
+  }
+  function fileName(code) { return `${code} - PE ${monthUpper()} ${state.period.y}.xlsx`; }
+  function buildKey() { return [periodKey(), $('#optCal').checked, $('#optImg').checked].join('|'); }
+  function build(e) {
+    const k = buildKey() + '|' + e.country + '|' + langFor(e.country) + '|' + e.excluded.join(',');
+    if (e.built && e.built.key === k) return Promise.resolve(e.built);
+    if (e.buildP && e.buildK === k) return e.buildP;
+    e.buildK = k; e.buildP = buildNow(e).finally(() => { e.buildP = null; });
+    return e.buildP;
+  }
+  async function buildNow(e) {
+    const key = buildKey() + '|' + e.country + '|' + langFor(e.country) + '|' + e.excluded.join(',');
+    if (e.built && e.built.key === key) return e.built;
+    const lang = langFor(e.country);
+    const wb = await C.buildWorkbook(window.ExcelJS, e, { lang, month: state.period, countryName: C.countryLabel(e.country, lang), fullCalendar: $('#optCal').checked, transformImage: $('#optImg').checked ? lighten : null });
+    const buf = await wb.xlsx.writeBuffer();
+    const u8 = new Uint8Array(buf);
+    e.built = { key, u8, blob: new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename: fileName(e.country) };
+    return e.built;
+  }
+  function readme() {
+    return `PACK D'ENVOI DES PLANNINGS ÉDITORIAUX — ${monthUpper()} ${state.period.y}\r\n\r\nChaque dossier pays contient :\r\n - le planning mis en forme (.xlsx)\r\n - l'email prêt à envoyer (.eml) : destinataires, copie, objet, message et pièce jointe déjà remplis.\r\n\r\nPour envoyer : double-cliquez sur le fichier .eml. Outlook (Windows/Mac) ou Mail l'ouvre comme un brouillon ; vérifiez puis cliquez sur Envoyer.\r\nAvec Gmail dans un navigateur : créez un message, utilisez « Copier les destinataires » et « Copier l'objet et le message » depuis la plateforme, puis joignez le .xlsx.\r\n\r\nPensez à cliquer sur « Marquer comme envoyé » dans la plateforme après chaque envoi.\r\n`;
+  }
+  async function packZip(list, withEml = true) {
+    const zip = new JSZip(); let skipped = [];
+    for (const code of list) {
+      const e = entryFor(code); if (!e) continue;
+      const b = await build(e);
+      const folder = list.length > 1 ? zip.folder(`${code} - ${nameFor(code).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9 '\-]/g, '')}`) : zip;
+      folder.file(b.filename, b.u8);
+      if (withEml) {
+        const m = emailFor(code);
+        if (!m.to.length) { skipped.push(code); continue; }
+        folder.file(`${code} - Email ${monthUpper()} ${state.period.y}.eml`, C.buildEml({ from: senderOf(), to: m.to, cc: m.cc, subject: m.subject, body: m.body, attachment: { filename: b.filename, data: b.u8 } }));
+      }
+    }
+    if (withEml) zip.file('LISEZ-MOI.txt', readme());
+    if (skipped.length) toast(`Email non généré (aucun destinataire) : ${skipped.join(', ')}`);
+    return zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 3 } });
+  }
+  function initGlobal() {
+    $('#zipFiles').addEventListener('click', e => busy(e.currentTarget, async () => { const z = await packZip(codes().filter(entryFor), false); await save(`Plannings PE ${monthUpper()} ${state.period.y}.zip`, z); }));
+    $('#zipPack').addEventListener('click', e => busy(e.currentTarget, async () => {
+      const list = codes().filter(c => entryFor(c) && statusOf(c).k !== 'sent');
+      if (!list.length) { toast('Tous les plannings reçus sont déjà marqués comme envoyés.'); return; }
+      const z = await packZip(list, true); await save(`Pack envoi PE ${monthUpper()} ${state.period.y}.zip`, z);
+    }));
+    ['#optCal', '#optImg'].forEach(s => $(s).addEventListener('change', () => { state.entries.forEach(e => e.built = null); renderDetail(); }));
+  }
+
+  // ---------- Envoi direct (version hébergée) ----------
+  async function sendOutlook(code) {
+    const e = entryFor(code), m = emailFor(code);
+    if (!e || !state.mail) return false;
+    const b = await build(e);
+    const payload = { code, pays: nameFor(code), period: periodKey(), to: m.to, cc: m.cc, subject: m.subject, body: m.body, filename: b.filename, contentBase64: C.b64FromU8(b.u8),
+      brands: e.sheets.map(s => s.brand), posts: e.sheets.reduce((n, s) => n + s.posts.length, 0), source: e.filename };
+    try {
+      const r = await state.mail.send(payload);
+      state.envois[`${periodKey()}_${code}`] = { code, pays: nameFor(code), period: periodKey(), sentAt: r.sentAt, to: m.to.map(c => c.email), cc: m.cc.map(c => c.email), brands: payload.brands, posts: payload.posts };
+      toast(r.mode === 'dryrun' ? `${nameFor(code)} : envoi simulé (mode test)` : `${nameFor(code)} : email envoyé depuis Outlook`);
+      renderAll(); schedulePortalSync();
+      return true;
+    } catch (err) { toast(`${nameFor(code)} : envoi impossible. ${err.message || ''}`); return false; }
+  }
+  function initSendAll() {
+    const btn = $('#sendAll'); if (!btn) return;
+    btn.addEventListener('click', async () => {
+      const list = codes().filter(c => statusOf(c).k === 'ready' && emailFor(c).to.length);
+      if (!list.length) { toast('Aucun pays prêt à envoyer.'); return; }
+      if (btn.dataset.confirm !== '1') { btn.dataset.confirm = '1'; btn.textContent = `Confirmer l'envoi à ${list.length} pays (${list.join(', ')})`; setTimeout(() => { if (btn.dataset.confirm === '1') { btn.dataset.confirm = ''; btn.textContent = 'Envoyer tous les pays prêts depuis Outlook'; } }, 8000); return; }
+      btn.dataset.confirm = ''; btn.dataset.busy = '1'; btn.disabled = true; let ok = 0, i = 0;
+      for (const c of list) { i++; btn.textContent = `Envoi ${i}/${list.length} : ${nameFor(c)}…`; if (await sendOutlook(c)) ok++; }
+      btn.dataset.busy = ''; btn.disabled = false; btn.textContent = 'Envoyer tous les pays prêts depuis Outlook'; renderStats();
+      toast(`${ok} email(s) envoyé(s) sur ${list.length}`);
+    });
+  }
+
+  // ---------- Envois ----------
+  async function markSent(code) {
+    const e = entryFor(code), m = emailFor(code);
+    const doc = { code, pays: nameFor(code), period: periodKey(), sentAt: new Date().toISOString(), brands: e ? e.sheets.map(s => s.brand) : [], posts: e ? e.sheets.reduce((a, s) => a + s.posts.length, 0) : 0,
+      from: senderOf().email, to: m.to.map(c => c.email), cc: m.cc.map(c => c.email), subject: m.subject, file: e ? e.filename : '' };
+    const id = `${periodKey()}_${code}`;
+    if (state.db) { try { await state.db.doc('envois/' + id).set(doc); toast(`${nameFor(code)} marqué comme envoyé`); } catch (err) { toast('Enregistrement impossible : ' + (err.code || err.message)); } }
+    else { state.envois[id] = doc; renderAll(); toast('Marqué comme envoyé (non synchronisé)'); }
+  }
+  async function unmark(id) {
+    if (state.db) { try { await state.db.doc('envois/' + id).delete(); } catch (err) { toast('Modification impossible : ' + (err.code || err.message)); } }
+    else { delete state.envois[id]; renderAll(); }
+  }
+  function renderHistory() {
+    const tb = $('#hist'); const rows = Object.entries(state.envois).sort((a, b) => String(b[1].sentAt).localeCompare(String(a[1].sentAt)));
+    if (!rows.length) { tb.innerHTML = `<tr><td colspan="7" class="empty">Aucun envoi enregistré pour le moment.</td></tr>`; return; }
+    tb.innerHTML = rows.map(([id, s]) => {
+      const [y, mm] = String(s.period).split('-');
+      return `<tr><td>${fmtDate(s.sentAt)}</td><td>${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</td><td><b>${esc(s.pays)}</b><span class="code">${esc(s.code)}</span></td><td>${esc((s.brands || []).join(', '))}</td><td>${esc(s.posts)}</td>
+      <td class="muted" style="font-size:12.5px">${esc((s.to || []).join(', '))}${(s.cc || []).length ? `<br>cc ${esc(s.cc.join(', '))}` : ''}</td><td><button class="btn small ghost" data-unsend="${esc(id)}">Annuler</button></td></tr>`;
+    }).join('');
+    tb.querySelectorAll('[data-unsend]').forEach(b => b.addEventListener('click', () => unmark(b.dataset.unsend)));
+  }
+
+  // ---------- Contacts ----------
+  function renderContacts() {
+    const box = $('#ctList');
+    let html = '';
+    if (!state.db) html += `<div class="banner warn" style="margin-bottom:10px">Les contacts ne peuvent pas être enregistrés dans cette vue : les modifications resteront valables jusqu'à la fermeture de la page.</div>`;
+    if (state.importPreview) {
+      const n = Object.keys(state.importPreview).length;
+      html += `<div class="note" style="margin-bottom:12px"><b>${n} pays trouvés dans le fichier importé</b> : ${Object.values(state.importPreview).map(c => esc(c.name)).join(', ')}.<div class="row" style="margin-top:8px"><button class="btn primary small" data-imp="ok">Remplacer les contacts par ce fichier</button><button class="btn small" data-imp="no">Annuler</button></div></div>`;
+    }
+    const cs = Object.keys(state.contacts).sort((a, b) => (ORDER.indexOf(a) + 1 || 99) - (ORDER.indexOf(b) + 1 || 99));
+    if (!cs.length && !state.importPreview) html += `<div class="empty">${state.contactsReady ? 'Aucun contact. Importez le fichier des emails bottlers (.xlsx) ou ajoutez un pays.' : 'Chargement des contacts…'}</div>`;
+    for (const code of cs) {
+      const c = state.contacts[code];
+      html += `<div class="ccard" data-code="${esc(code)}">
+        <div class="detail" style="gap:8px">
+          <div><b>${esc(c.name)}</b><span class="code">${esc(code)}</span></div>
+          <div class="field"><label for="cl-${code}">Langue</label><select id="cl-${code}" data-f="lang">${['fr', 'en', 'es'].map(l => `<option value="${l}" ${c.lang === l ? 'selected' : ''}>${cap(C.LANG_LABEL[l])}</option>`).join('')}</select></div>
+          <div class="field"><label for="cb-${code}">Marques distribuées</label><input id="cb-${code}" data-f="brands" value="${esc((c.brands || []).join(', '))}"></div>
+        </div>
+        <div class="field"><label for="ct-${code}">Destinataires principaux</label><textarea id="ct-${code}" data-f="to" class="mono" rows="5">${esc(lineList(c.to))}</textarea></div>
+        <div class="field"><label for="cc-${code}">En copie</label><textarea id="cc-${code}" data-f="cc" class="mono" rows="5">${esc(lineList(c.cc))}</textarea>
+          <div class="row" style="justify-content:flex-end;margin-top:4px">${state.access ? '<button class="btn small" data-links>Liens d\'accès</button>' : ''}<button class="btn small ghost" data-del>Supprimer</button><button class="btn small primary" data-save>Enregistrer</button></div></div>
+        ${state.accessLinks[code] ? `<div class="note" style="grid-column:1/-1"><b>Liens d'accès à l'Espace pays (valables 7 jours, utilisables une fois)</b> : transmettez à chaque personne son propre lien. Sa connexion reste ouverte 30 jours.${window.PE_SMTP ? ' Ensuite, elle se reconnecte seule depuis la page de connexion.' : ' Ensuite, générez-lui un nouveau lien (aucun service d\'envoi d\'emails n\'est configuré pour qu\'elle le demande elle-même).'}
+          <div class="detail" style="gap:6px;margin-top:8px">${state.accessLinks[code].map(l => `<div class="row" style="gap:8px"><span style="min-width:220px">${esc(l.email)}</span>${l.url ? `<input class="mono" readonly value="${esc(l.url)}" style="flex:1;min-width:200px;border:1px solid var(--line);border-radius:5px;padding:4px 6px;background:var(--paper)"><button class="btn small" data-copylink="${esc(l.url)}">Copier</button>` : `<span style="color:var(--err)">${esc(l.error || 'Lien impossible')}</span>`}</div>`).join('')}</div></div>` : ''}
+      </div>`;
+    }
+    const missing = ORDER.filter(c => !state.contacts[c]);
+    html += `<div class="row" id="addRow" hidden style="margin-top:12px"><select id="addSel" class="btn">${missing.map(c => `<option value="${c}">${esc(C.COUNTRIES[c].name)} (${c})</option>`).join('')}</select><button class="btn primary small" id="addOk">Ajouter</button></div>`;
+    box.innerHTML = html;
+    box.querySelectorAll('.ccard').forEach(card => {
+      const code = card.dataset.code;
+      card.querySelector('[data-save]').addEventListener('click', () => {
+        const old = state.contacts[code];
+        const doc = { code, name: old.name, lang: card.querySelector('[data-f=lang]').value, brands: C.splitBrands(card.querySelector('[data-f=brands]').value),
+          to: C.parseContactCell(card.querySelector('[data-f=to]').value), cc: C.parseContactCell(card.querySelector('[data-f=cc]').value) };
+        writeContact(code, doc);
+      });
+      card.querySelector('[data-del]').addEventListener('click', () => deleteContact(code));
+      const lk = card.querySelector('[data-links]');
+      if (lk) lk.addEventListener('click', () => busy(lk, async () => {
+        const c = state.contacts[code]; const out = [];
+        for (const p of [...(c.to || []), ...(c.cc || [])]) { try { const r = await state.access.link(p.email, 7); out.push({ email: p.email, url: r.url }); } catch (err) { out.push({ email: p.email, error: err.message }); } }
+        state.accessLinks[code] = out; renderContacts();
+      }));
+      card.querySelectorAll('[data-copylink]').forEach(b => b.addEventListener('click', () => copy(b.dataset.copylink, 'Lien')));
+    });
+    box.querySelectorAll('[data-imp]').forEach(b => b.addEventListener('click', async () => {
+      if (b.dataset.imp === 'ok') { const p = state.importPreview; state.importPreview = null; for (const [code, doc] of Object.entries(p)) await writeContact(code, doc, true); toast(`${Object.keys(p).length} pays importés`); }
+      else state.importPreview = null;
+      renderContacts();
+    }));
+    const addOk = box.querySelector('#addOk');
+    if (addOk) addOk.addEventListener('click', () => { const code = box.querySelector('#addSel').value; if (!code) return; const cc = C.COUNTRIES[code]; writeContact(code, { code, name: cc.name, lang: cc.lang, brands: [], to: [], cc: [] }); });
+  }
+  async function writeContact(code, doc, silent) {
+    if (state.db) { try { await state.db.doc('contacts/' + code).set(doc); if (!silent) toast(`Contacts ${doc.name} enregistrés`); } catch (err) { toast('Enregistrement impossible : ' + (err.code || err.message)); } }
+    else { state.contacts[code] = doc; if (!silent) toast('Enregistré pour cette session'); refresh(); }
+  }
+  async function deleteContact(code) {
+    if (state.db) { try { await state.db.doc('contacts/' + code).delete(); } catch (err) { toast('Suppression impossible : ' + (err.code || err.message)); } }
+    else { delete state.contacts[code]; refresh(); }
+  }
+  function initContacts() {
+    $('#ctIn').addEventListener('change', async ev => {
+      const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
+      try { const res = await C.parseContactsWorkbook(window.ExcelJS, await f.arrayBuffer()); if (!Object.keys(res).length) { toast('Aucun pays reconnu dans ce fichier (colonnes PAYS, MARQUES, CONTACT PRINCIPAL, CC attendues).'); return; } state.importPreview = res; renderContacts(); }
+      catch (err) { toast('Lecture impossible : ' + (err.message || err)); }
+    });
+    $('#ctAdd').addEventListener('click', () => { const r = $('#addRow'); if (r) r.hidden = !r.hidden; });
+  }
+
+  // ---------- Modèle ----------
+  function renderTemplates() {
+    const tpls = (state.settings && state.settings.templates) || C.DEFAULT_TEMPLATES;
+    $('#sig').value = (state.settings && state.settings.signature) || '';
+    $('#fromName').value = senderOf().name || ''; $('#fromEmail').value = senderOf().email || '';
+    $('#fromEmail').readOnly = !!(state.mailCfg && state.mailCfg.sender);
+    $('#fromHint').hidden = !(state.mailCfg && state.mailCfg.sender);
+    $('#tplList').innerHTML = ['fr', 'en', 'es'].map(l => `<div class="detail" style="gap:8px"><h3>${cap(C.LANG_LABEL[l])}</h3>
+      <div class="field"><label for="ts-${l}">Objet</label><input id="ts-${l}" value="${esc((tpls[l] || C.DEFAULT_TEMPLATES[l]).subject)}"></div>
+      <div class="field"><label for="tb-${l}">Message</label><textarea id="tb-${l}" style="min-height:170px">${esc((tpls[l] || C.DEFAULT_TEMPLATES[l]).body)}</textarea></div></div>`).join('');
+  }
+  function initTemplates() {
+    renderTemplates();
+    $('#tplSave').addEventListener('click', async () => {
+      const fe = $('#fromEmail').value.trim();
+      if (fe && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(fe)) { toast("L'adresse de l'expéditeur n'est pas valide."); return; }
+      const doc = { signature: $('#sig').value, sender: { name: $('#fromName').value.trim(), email: fe || DEFAULT_SENDER.email }, templates: {} };
+      ['fr', 'en', 'es'].forEach(l => doc.templates[l] = { subject: $('#ts-' + l).value, body: $('#tb-' + l).value });
+      state.overrides = {};
+      if (state.db) { try { await state.db.doc('settings/email').set(doc); toast('Modèle enregistré'); } catch (err) { toast('Enregistrement impossible : ' + (err.code || err.message)); } }
+      else { state.settings = doc; toast('Modèle appliqué pour cette session'); renderDetail(); }
+    });
+    $('#tplReset').addEventListener('click', () => { state.settings = Object.assign({}, state.settings || {}, { templates: C.DEFAULT_TEMPLATES }); renderTemplates(); toast('Modèle par défaut rétabli : cliquez sur Enregistrer pour le conserver.'); });
+  }
+
+
+  // ---------- Marronniers ----------
+  const SCOPE_CODES = () => ORDER.concat(Object.keys(state.contacts).filter(c => !ORDER.includes(c)));
+  function renderCalendar() {
+    const box = $('#calBody'); if (!box) return;
+    const year = String(state.period.y); const cal = state.calendars[year];
+    let html = '';
+    if (state.calPreview) {
+      const p = state.calPreview;
+      html += `<div class="note"><b>${p.events.length} marronniers ${p.year} trouvés dans le fichier importé.</b>${p.conflicts.length ? `<br>Incohérence${p.conflicts.length > 1 ? 's' : ''} entre les onglets du fichier : ${p.conflicts.map(c => `« ${esc(c.label)} » daté du ${fmtDM(c.listDate)} dans la liste et du ${fmtDM(c.gridDate)} dans la grille (date de la grille conservée)`).join(' ; ')}.` : ''}
+        <div class="row" style="margin-top:8px"><button class="btn primary small" data-cal="ok">Remplacer le calendrier ${p.year}</button><button class="btn small" data-cal="no">Annuler</button></div></div>`;
+    }
+    if (!cal) html += `<div class="empty">Aucun calendrier marketing pour ${year}. Importez le fichier « Calendrier Marketing » (.xlsx).</div>`;
+    else {
+      const from = `${year}-${String(state.period.m + 1).padStart(2, '0')}-01`, to = `${year}-${String(state.period.m + 1).padStart(2, '0')}-31`;
+      const list = (cal.events || []).filter(ev => state.calAll || (ev.end >= from && ev.start <= to));
+      const received = state.entries.filter(e => e.country);
+      html += `<div class="row"><h2 style="flex:1">${state.calAll ? `Calendrier ${year}` : `${cap(C.MONTHS_FR[state.period.m])} ${year}`} · ${list.length} marronnier(s)</h2>
+        <label class="opts"><label><input type="checkbox" id="calAll" ${state.calAll ? 'checked' : ''}> Toute l'année</label></label></div>`;
+      html += `<div class="tablewrap"><table><thead><tr><th>Date</th><th>Marronnier</th><th>Pays</th><th>Marques</th><th>Plannings reçus</th><th></th></tr></thead><tbody class="plain">`;
+      html += list.map(ev => {
+        const scope = ev.countries.length ? ev.countries.map(c => `<span class="bchip">${esc(nameFor(c))}</span>`).join(' ') : (ev.foreign && ev.foreign.length ? '<span class="muted">Hors périmètre</span>' : '<span class="muted">Tous pays</span>');
+        let cov = '<span class="muted">—</span>';
+        const concerned = received.filter(e => C.eventsForCountry([ev], e.country, { y: +ev.start.slice(0, 4), m: +ev.start.slice(5, 7) - 1 }, e.sheets.map(s => s.brand)).length);
+        if (concerned.length && !state.calAll) cov = `<div class="brands">${concerned.map(e => { const ok = C.eventCoverage(e, ev).length > 0; return `<span class="bchip" title="${ok ? 'Traité' : 'Non traité'}"><i class="dot" style="background:var(${ok ? '--ok' : (ev.countries.length ? '--warn' : '--line')})"></i>${esc(e.country)}</span>`; }).join('')}</div>`;
+        const when = ev.start === ev.end ? fmtDM(ev.start) : `${fmtDM(ev.start)} → ${fmtDM(ev.end)}`;
+        return `<tr><td class="mono">${when}</td><td>${esc(ev.label)}</td><td>${scope}</td><td>${ev.brands.length ? esc(ev.brands.join(', ')) : '<span class="muted">Toutes</span>'}</td><td>${cov}</td><td><button class="btn small ghost" data-del-ev="${esc(ev.id)}" aria-label="Supprimer ${esc(ev.label)}">Supprimer</button></td></tr>`;
+      }).join('') || `<tr><td colspan="6" class="empty">Aucun marronnier ce mois-ci.</td></tr>`;
+      html += `</tbody></table></div>`;
+      html += `<div class="card detail" style="gap:10px"><h3>Ajouter un marronnier</h3>
+        <div class="grid4">
+          <div class="field"><label for="evStart">Date</label><input id="evStart" type="date" value="${from}"></div>
+          <div class="field"><label for="evEnd">Fin (facultatif)</label><input id="evEnd" type="date"></div>
+          <div class="field" style="grid-column:span 2"><label for="evLabel">Marronnier</label><input id="evLabel" placeholder="Ex. Proclamation de la République"></div>
+          <div class="field" style="grid-column:span 2"><label for="evCountries">Pays (vide = tous)</label><select id="evCountries" multiple size="4">${SCOPE_CODES().map(c => `<option value="${c}">${esc(nameFor(c))} (${c})</option>`).join('')}</select></div>
+          <div class="field" style="grid-column:span 2"><label for="evBrands">Marques (vide = toutes)</label><input id="evBrands" placeholder="Ex. Planet, Bubble Up"></div>
+        </div>
+        <div class="row"><button class="btn primary small" id="evAdd">Ajouter au calendrier ${year}</button><span class="muted" style="font-size:12.5px">Maintenez Ctrl ou Cmd pour choisir plusieurs pays.</span></div></div>`;
+    }
+    box.innerHTML = html;
+    box.querySelectorAll('[data-cal]').forEach(b => b.addEventListener('click', async () => {
+      const p = state.calPreview; state.calPreview = null;
+      if (b.dataset.cal === 'ok') { await writeCalendar(String(p.year), p.events, 'import'); if (String(p.year) !== year) setPeriod({ y: p.year, m: state.period.m }); }
+      refresh();
+    }));
+    const all = box.querySelector('#calAll'); if (all) all.addEventListener('change', () => { state.calAll = all.checked; renderCalendar(); });
+    box.querySelectorAll('[data-del-ev]').forEach(b => b.addEventListener('click', () => { const evs = (cal.events || []).filter(x => x.id !== b.dataset.delEv); writeCalendar(year, evs, 'edit'); }));
+    const add = box.querySelector('#evAdd');
+    if (add) add.addEventListener('click', () => {
+      const start = box.querySelector('#evStart').value, end = box.querySelector('#evEnd').value || start, label = box.querySelector('#evLabel').value.trim();
+      if (!start || !label) { toast('Indiquez au moins une date et un libellé.'); return; }
+      if (start.slice(0, 4) !== year) { toast(`La date doit être en ${year} (changez le mois en haut de page pour une autre année).`); return; }
+      const countries = [...box.querySelector('#evCountries').selectedOptions].map(o => o.value);
+      const brands = C.splitBrands(box.querySelector('#evBrands').value);
+      const ev = { id: 'u' + Date.now().toString(36), start, end: end < start ? start : end, label, countries, foreign: [], brands };
+      const evs = [...(cal.events || []), ev].sort((x, y) => x.start.localeCompare(y.start));
+      writeCalendar(year, evs, 'edit');
+    });
+  }
+  async function writeCalendar(year, events, source) {
+    const doc = { year: +year, events, updatedAt: new Date().toISOString(), source };
+    if (state.db) { try { await state.db.doc('calendars/' + year).set(doc); toast('Calendrier enregistré'); } catch (err) { toast('Enregistrement impossible : ' + (err.code || err.message)); } }
+    else { state.calendars[year] = doc; toast('Calendrier appliqué pour cette session'); refresh(); }
+  }
+  function initCalendar() {
+    $('#calIn').addEventListener('change', async ev => {
+      const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
+      try { const res = await C.parseCalendarWorkbook(window.ExcelJS, await f.arrayBuffer(), f.name); if (!res.events.length) { toast('Aucun marronnier reconnu dans ce fichier.'); return; } state.calPreview = res; renderCalendar(); }
+      catch (err) { toast('Lecture impossible : ' + (err.message || err)); }
+    });
+  }
+
+
+  // ---------- Téléchargements (plannings enregistrés) ----------
+  const libId = (period, code) => `${period}_${code}`;
+  function archiveKey(e) { return [e.hash, periodKey(), e.excluded.join(','), langFor(e.country), $('#optCal').checked, $('#optImg').checked].join('|'); }
+  function archivePending() {
+    if (!state.assets || !state.db) return;
+    const todo = state.entries.filter(e => e.country && e.archivedKey !== archiveKey(e) && (state.library[libId(periodKey(), e.country)] || {}).key !== archiveKey(e));
+    todo.forEach(e => { if (!state.archiveQ.list) state.archiveQ.list = []; if (!state.archiveQ.list.includes(e)) { state.archiveQ.list.push(e); state.archiveQ.total++; } });
+    if (!state.archiveQ.running) runArchive();
+    renderLibStatus();
+  }
+  async function runArchive() {
+    const q = state.archiveQ; q.running = true;
+    while (q.list && q.list.length) {
+      const e = q.list.shift();
+      try { await archive(e); } catch (err) { console.error(err); q.failed.push(`${e.country} (${(err && (err.code || err.message)) || 'erreur'})`); }
+      q.done++; renderLibStatus();
+    }
+    q.running = false; renderLibStatus(); refreshUsage();
+    if (q.failed.length) toast(`Enregistrement impossible pour : ${q.failed.join(', ')}`);
+    setTimeout(() => { if (!q.running) { q.total = 0; q.done = 0; q.failed = []; renderLibStatus(); } }, 4000);
+  }
+  async function archive(e) {
+    if (!e.country || !state.assets || !state.db) return;
+    const key = archiveKey(e), period = periodKey(), id = libId(period, e.country);
+    const cur = state.library[id];
+    if (cur && cur.key === key) { e.archivedKey = key; return; }
+    const b = await build(e);
+    const text = C.b64FromU8(b.u8);
+    if (text.length > 20 * 1048576) throw { code: 'fichier trop lourd, cochez « Alléger les visuels »' };
+    const res = await state.assets.upload(new Blob([text], { type: 'text/plain' }), { type: 'text/plain' });
+    const doc = { code: e.country, pays: nameFor(e.country), period, filename: b.filename, assetId: res.id, size: b.blob.size, brands: e.sheets.map(s => s.brand), posts: e.sheets.reduce((n, s) => n + s.posts.length, 0), source: e.filename, key, savedAt: new Date().toISOString() };
+    await state.db.doc('library/' + id).set(doc);
+    if (cur && cur.assetId && cur.assetId !== res.id) { try { await state.assets.delete(cur.assetId); } catch (err) { /* ancien fichier déjà supprimé */ } }
+    e.archivedKey = key;
+  }
+  async function refreshUsage() { if (!state.assets) return; try { const r = await state.assets.list(); state.usage = r.usage; renderLibStatus(); } catch (e) { } }
+  async function fetchLib(doc) {
+    const r = await fetch('/_blob/' + doc.assetId); if (!r.ok) throw new Error('fichier introuvable (' + r.status + ')');
+    const bin = atob((await r.text()).trim()); const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return u8;
+  }
+  function renderLibStatus() {
+    const el = $('#libStatus'); if (!el) return;
+    const q = state.archiveQ; const parts = [];
+    if (q.total && q.done < q.total) parts.push(`<span class="pill p-ready">Enregistrement des plannings mis en forme : ${q.done}/${q.total}</span>`);
+    else if (q.total) parts.push(`<span class="pill p-sent">${q.done - q.failed.length} planning(s) enregistré(s)</span>`);
+    if (state.usage) parts.push(`<span class="muted" style="font-size:12.5px">Espace utilisé : ${fmtSize(state.usage.bytes)} sur ${fmtSize(state.usage.maxBytes)}</span>`);
+    el.innerHTML = parts.join(' ');
+    const ps = $('#archStatus'); if (ps) ps.innerHTML = q.total && q.done < q.total ? `<span class="pill p-ready">Enregistrement sur la plateforme : ${q.done}/${q.total}</span>` : '';
+  }
+  function libRows() {
+    const p = periodKey();
+    return Object.entries(state.library).filter(([, d]) => state.libAll || d.period === p)
+      .sort((a, b) => String(b[1].period).localeCompare(String(a[1].period)) || (ORDER.indexOf(a[1].code) + 1 || 99) - (ORDER.indexOf(b[1].code) + 1 || 99));
+  }
+  function renderLibrary() {
+    const box = $('#libBody'); if (!box) return;
+    let html = '';
+    if (!state.db) html += `<div class="banner warn">L'enregistrement des plannings n'est pas disponible dans cette vue.</div>`;
+    else if (!state.assets) html += `<div class="note">Seuls le propriétaire et les éditeurs de la plateforme peuvent enregistrer de nouveaux plannings. Les plannings déjà enregistrés restent téléchargeables.</div>`;
+    const rows = libRows();
+    const monthTxt = `${cap(C.MONTHS_FR[state.period.m])} ${state.period.y}`;
+    const pvCodes = [...new Set(Object.values(state.library).map(d => d.code))];
+    html += `<div class="note row"><span style="flex:1">Les personnes externes (bottlers) ${window.PE_ACCESS_LINKS ? 'dont l\'adresse figure dans les Contacts' : window.PE_HOSTED ? 'invitées dans Microsoft 365' : 'avec qui vous partagez la plateforme'} ne voient qu'un <b>Espace pays</b> : les plannings et l'historique de leur pays, à télécharger. ${window.PE_ACCESS_LINKS ? 'Elles se connectent avec un lien reçu par email (bouton « Liens d\'accès » dans l\'onglet Contacts).' : 'Elles sont reconnues par leur adresse email, qui doit figurer dans l\'onglet Contacts.'}</span>
+      <select id="pvSel" class="btn small" aria-label="Pays à prévisualiser">${pvCodes.map(c => `<option value="${esc(c)}">${esc(nameFor(c))}</option>`).join('')}</select><button class="btn small" id="pvGo" ${pvCodes.length ? '' : 'disabled'}>Voir l'espace de ce pays</button></div>`;
+    html += `<div class="row"><h2 style="flex:1">${state.libAll ? 'Tous les plannings enregistrés' : `Plannings de ${monthTxt}`} · ${rows.length}</h2>
+      <label class="opts"><label><input type="checkbox" id="libAll" ${state.libAll ? 'checked' : ''}> Tous les mois</label></label>
+      <button class="btn" id="libSelAll" ${rows.length ? '' : 'disabled'}>${rows.length && rows.every(([id]) => state.libSel.has(id)) ? 'Tout désélectionner' : 'Tout sélectionner'}</button>
+      <button class="btn primary" id="libZip" ${state.libSel.size ? '' : 'disabled'}>Télécharger la sélection (${state.libSel.size}) en .zip</button></div>`;
+    if (!rows.length) html += `<div class="card empty">Aucun planning enregistré${state.libAll ? '' : ` pour ${monthTxt}`}. Déposez les plannings des agences dans « Pays et envois » : ils sont mis en forme et enregistrés ici automatiquement.</div>`;
+    else {
+      html += `<div class="tablewrap"><table><thead><tr><th style="width:36px"></th><th>Pays</th><th>Mois</th><th>Marques</th><th>Publications</th><th>Taille</th><th>Enregistré le</th><th>Envoi</th><th></th></tr></thead><tbody class="plain">`;
+      html += rows.map(([id, d]) => {
+        const [y, mm] = String(d.period).split('-'); const sent = state.envois[id];
+        return `<tr><td><input type="checkbox" data-lsel="${esc(id)}" aria-label="Sélectionner ${esc(d.pays)}" ${state.libSel.has(id) ? 'checked' : ''}></td>
+          <td><b>${esc(d.pays)}</b><span class="code">${esc(d.code)}</span></td><td>${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</td>
+          <td><div class="brands">${(d.brands || []).map(b => `<span class="bchip"><i style="background:#${brandInfo(b).color}"></i>${esc(b)}</span>`).join('')}</div></td>
+          <td>${esc(d.posts)}</td><td class="mono">${fmtSize(d.size || 0)}</td><td>${fmtDate(d.savedAt)}</td>
+          <td>${sent ? `<span class="pill p-sent">Envoyé le ${fmtDate(sent.sentAt)}</span>` : '<span class="pill p-wait">Non envoyé</span>'}</td>
+          <td style="white-space:nowrap"><button class="btn small primary" data-ldl="${esc(id)}">Télécharger</button> ${state.assets ? `<button class="btn small ghost" data-ldel="${esc(id)}">Supprimer</button>` : ''}</td></tr>`;
+      }).join('');
+      html += `</tbody></table></div>`;
+    }
+    box.innerHTML = html;
+    renderLibStatus();
+    const pvGo = box.querySelector('#pvGo'); if (pvGo) pvGo.addEventListener('click', () => openPreview(box.querySelector('#pvSel').value));
+    box.querySelector('#libAll').addEventListener('change', ev => { state.libAll = ev.target.checked; state.libSel.clear(); renderLibrary(); });
+    box.querySelector('#libSelAll').addEventListener('click', () => { const ids = rows.map(([id]) => id); const all = ids.every(id => state.libSel.has(id)); ids.forEach(id => all ? state.libSel.delete(id) : state.libSel.add(id)); renderLibrary(); });
+    box.querySelectorAll('[data-lsel]').forEach(cb => cb.addEventListener('change', () => { cb.checked ? state.libSel.add(cb.dataset.lsel) : state.libSel.delete(cb.dataset.lsel); renderLibrary(); }));
+    box.querySelectorAll('[data-ldl]').forEach(b => b.addEventListener('click', () => busy(b, async () => { const d = state.library[b.dataset.ldl]; const u8 = await fetchLib(d); await save(d.filename, new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); })));
+    box.querySelectorAll('[data-ldel]').forEach(b => b.addEventListener('click', async () => {
+      const id = b.dataset.ldel, d = state.library[id];
+      if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Confirmer la suppression'; setTimeout(() => { if (b.isConnected) { b.dataset.confirm = ''; b.textContent = 'Supprimer'; } }, 4000); return; }
+      try { await state.db.doc('library/' + id).delete(); if (d.assetId) await state.assets.delete(d.assetId); state.libSel.delete(id); state.entries.forEach(e => { if (libId(periodKey(), e.country) === id) e.archivedKey = null; }); toast(`Planning ${d.pays} supprimé`); refreshUsage(); }
+      catch (err) { toast('Suppression impossible : ' + (err.code || err.message)); }
+    }));
+    const z = box.querySelector('#libZip');
+    if (z) z.addEventListener('click', () => busy(z, async () => {
+      const zip = new JSZip(); const ids = [...state.libSel].filter(id => state.library[id]); const periods = new Set();
+      for (const id of ids) { const d = state.library[id]; periods.add(d.period); zip.file(d.filename, await fetchLib(d)); }
+      const name = periods.size === 1 ? `Plannings PE ${C.MONTHS_FR[+[...periods][0].split('-')[1] - 1].toUpperCase()} ${[...periods][0].split('-')[0]}.zip` : 'Plannings PE.zip';
+      await save(name, await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 3 } }));
+    }));
+  }
+
+
+  // ---------- Espace pays (personnes externes : téléchargement seul) ----------
+  const SALT = 'pe-portail-v1:';
+  async function hashEmail(email) {
+    const data = new TextEncoder().encode(SALT + String(email || '').trim().toLowerCase());
+    const h = await crypto.subtle.digest('SHA-256', data);
+    return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  let syncT = null, syncing = false;
+  function schedulePortalSync() { if (state.mode !== 'admin' || !state.db) return; clearTimeout(syncT); syncT = setTimeout(syncPortal, 1500); }
+  async function syncPortal() {
+    if (syncing || !state.contactsReady) return; syncing = true;
+    try {
+      const hashCache = {};
+      const hashesFor = async code => { if (hashCache[code]) return hashCache[code]; const ct = state.contacts[code]; const list = ct ? [...(ct.to || []), ...(ct.cc || [])].map(c => c.email) : []; const hs = []; for (const e of list) hs.push(await hashEmail(e)); return (hashCache[code] = hs.sort()); };
+      for (const [id, d] of Object.entries(state.library)) {
+        const sent = state.envois[id];
+        const want = { code: d.code, pays: d.pays, period: d.period, filename: d.filename, assetId: d.assetId, size: d.size || 0, brands: d.brands || [], posts: d.posts || 0, savedAt: d.savedAt || '', sentAt: sent ? sent.sentAt : null, access: await hashesFor(d.code) };
+        const cur = state.portal[id];
+        if (!cur || JSON.stringify(normPortal(cur)) !== JSON.stringify(normPortal(want))) await state.db.doc('portal/' + id).set(want);
+      }
+      for (const id of Object.keys(state.portal)) if (!state.library[id]) await state.db.doc('portal/' + id).delete();
+    } catch (e) { console.error(e); } finally { syncing = false; }
+  }
+  const normPortal = d => ({ code: d.code, pays: d.pays, period: d.period, filename: d.filename, assetId: d.assetId, size: d.size || 0, brands: d.brands || [], posts: d.posts || 0, savedAt: d.savedAt || '', sentAt: d.sentAt || null, access: (d.access || []).slice().sort() });
+
+  async function initPortalMode(db) {
+    document.body.classList.add('portal-mode');
+    $('#v-portail').hidden = false;
+    VIEWS.forEach(x => { $('#v-' + x).hidden = true; });
+    if (state.me && state.me.email) state.myHashes = [await hashEmail(state.me.email)];
+    if (!db) { renderPortal(); return; }
+    const timer = setTimeout(() => { state.portalSlow = true; renderPortal(); }, 10000);
+    db.collection('portal').onSnapshot(snap => { clearTimeout(timer); state.portalSlow = false; const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); state.portal = p; state.portalLoaded = true; renderPortal(); }, () => { clearTimeout(timer); state.portalLoaded = true; renderPortal(); });
+    renderPortal();
+  }
+  function portalDocs() {
+    const all = Object.entries(state.portal);
+    if (state.previewCountry) return all.filter(([, d]) => d.code === state.previewCountry);
+    if (state.mode !== 'portal') return [];
+    return all.filter(([, d]) => (d.access || []).some(h => state.myHashes.includes(h)));
+  }
+  function renderPortal() {
+    const box = $('#portalBody'); if (!box) return;
+    const preview = !!state.previewCountry;
+    if (state.mode !== 'portal' && !preview) { $('#v-portail').hidden = true; return; }
+    const docs = portalDocs().sort((x, y) => String(y[1].period).localeCompare(String(x[1].period)) || String(x[1].pays).localeCompare(String(y[1].pays)));
+    const countries = [...new Set(docs.map(([, d]) => d.pays))];
+    let html = '';
+    if (preview) html += `<div class="banner warn row"><span style="flex:1">Aperçu de ce que voit une personne de <b>${esc(nameFor(state.previewCountry))}</b> en ouvrant la plateforme.</span><button class="btn small" id="pvExit">Quitter l'aperçu</button></div>`;
+    html += `<div class="card"><h2>${countries.length ? `Plannings éditoriaux · ${esc(countries.join(', '))}` : 'Plannings éditoriaux'}</h2>
+      <p class="muted" style="margin:4px 0 0">Téléchargez les plannings éditoriaux de votre pays. Pour toute question, écrivez à <b>${esc(senderOf().email)}</b>.</p></div>`;
+    if (!preview && !state.myHashes.length) html += `<div class="card empty">Nous n'avons pas pu identifier l'adresse email de votre compte. Contactez ${esc(senderOf().email)} pour obtenir l'accès à vos plannings.</div>`;
+    else if (!preview && !state.portalLoaded) html += `<div class="card empty">${state.portalSlow ? 'Les plannings ne sont pas encore accessibles. Réessayez dans un instant.' : 'Chargement de vos plannings…'}</div>`;
+    else if (!docs.length) html += `<div class="card empty">Aucun planning n'est disponible pour votre pays pour le moment.${preview ? '' : ` Si vous pensez qu'il s'agit d'une erreur, contactez ${esc(senderOf().email)}.`}</div>`;
+    else {
+      const latest = docs[0][1];
+      html += `<div class="card row" style="gap:16px"><div style="flex:1;min-width:220px"><div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em">Dernier planning</div>
+        <h2 style="margin-top:2px">${esc(cap(C.MONTHS_FR[+latest.period.split('-')[1] - 1]))} ${esc(latest.period.split('-')[0])}${countries.length > 1 ? ` · ${esc(latest.pays)}` : ''}</h2>
+        <div class="brands" style="margin-top:6px">${(latest.brands || []).map(b => `<span class="bchip"><i style="background:#${brandInfo(b).color}"></i>${esc(b)}</span>`).join('')}</div></div>
+        <button class="btn primary" data-pdl="${esc(docs[0][0])}">Télécharger le planning</button></div>`;
+      html += `<h3>Historique</h3><div class="tablewrap"><table><thead><tr><th>Mois</th>${countries.length > 1 ? '<th>Pays</th>' : ''}<th>Marques</th><th>Publications</th><th>Mis à disposition le</th><th>Envoyé par email le</th><th></th></tr></thead><tbody class="plain">`;
+      html += docs.map(([id, d]) => { const [y, mm] = String(d.period).split('-'); return `<tr><td><b>${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</b></td>${countries.length > 1 ? `<td>${esc(d.pays)}</td>` : ''}
+        <td><div class="brands">${(d.brands || []).map(b => `<span class="bchip"><i style="background:#${brandInfo(b).color}"></i>${esc(b)}</span>`).join('')}</div></td><td>${esc(d.posts)}</td>
+        <td>${d.savedAt ? fmtDate(d.savedAt) : '—'}</td><td>${d.sentAt ? fmtDate(d.sentAt) : '<span class="muted">—</span>'}</td>
+        <td style="white-space:nowrap"><button class="btn small" data-pdl="${esc(id)}">Télécharger</button> <span class="muted mono" style="font-size:11.5px">${fmtSize(d.size || 0)}</span></td></tr>`; }).join('');
+      html += `</tbody></table></div>`;
+    }
+    box.innerHTML = html;
+    const ex = box.querySelector('#pvExit'); if (ex) ex.addEventListener('click', () => { state.previewCountry = null; document.body.classList.remove('portal-mode'); $('#v-portail').hidden = true; route(); });
+    box.querySelectorAll('[data-pdl]').forEach(b => b.addEventListener('click', () => busy(b, async () => { const d = state.portal[b.dataset.pdl]; const u8 = await fetchLib(d); await save(d.filename, new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); })));
+  }
+  function openPreview(code) { state.previewCountry = code; document.body.classList.add('portal-mode'); VIEWS.forEach(x => { $('#v-' + x).hidden = true; }); $('#v-portail').hidden = false; renderPortal(); window.scrollTo(0, 0); }
+
+  // ---------- Navigation ----------
+  const VIEWS = ['pays', 'telechargements', 'marronniers', 'contacts', 'modele', 'historique'];
+  function route() {
+    if (state.mode === 'portal' || state.previewCountry) return;
+    const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'pays';
+    VIEWS.forEach(x => { $('#v-' + x).hidden = x !== v; });
+    document.querySelectorAll('nav.tabs a').forEach(a => { if (a.dataset.view === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  }
+
+  function initTable() {
+    const tb = $('#ctry');
+    const go = tr => { if (!tr) return; if (tr.dataset.code) select(tr.dataset.code); else if (tr.dataset.entry) select('id:' + tr.dataset.entry); };
+    tb.addEventListener('click', ev => go(ev.target.closest('tr')));
+    tb.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(ev.target.closest('tr')); } });
+  }
+
+  initPeriod(); initDrop(); initTable(); initGlobal(); initContacts(); initTemplates(); initCalendar(); initSendAll();
+  window.addEventListener('hashchange', route); route();
+  renderAll();
+  initCaps();
+})();
+
+</script>
+</body>
+</html>
