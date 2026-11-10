@@ -1660,7 +1660,7 @@ select[multiple]{padding:4px}
     const k = linkKey(code); state.links[k] = url;
     if (state.db) { try { if (url) await state.db.doc('liens/' + k).set({ code, period: periodKey(), url, updatedAt: new Date().toISOString() }); else await state.db.doc('liens/' + k).delete(); } catch (err) { toast('Lien non enregistré : ' + (err.code || err.message)); } }
   }
-  const DEFAULT_SENDER = { name: 'Équipe marketing', email: 'contact20@exemple.example' };
+  const DEFAULT_SENDER = { name: 'Équipe marketing', email: 'planning@monarch-demo.example' };
   function senderOf() {
     const s = state.settings && state.settings.sender;
     if (state.mailCfg && state.mailCfg.sender) return { name: (s && s.name) || DEFAULT_SENDER.name, email: state.mailCfg.sender };

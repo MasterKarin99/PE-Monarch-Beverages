@@ -74,7 +74,7 @@ Chaque pays reçoit l'un des trois modèles d'email, choisi dans l'onglet Contac
 
 Le mois et la liste des marques (« Planet, Bubble Up et American Cola ») sont remplis automatiquement. Le **lien de téléchargement** (SwissTransfer, WeTransfer…) se renseigne par pays et devient cliquable dans l'email. Un bouton le reporte sur tous les pays du même modèle. Joindre aussi le fichier Excel est facultatif.
 
-La plateforme fournit un **brouillon Outlook (.eml)** prêt à envoyer depuis contact20@exemple.example. Un pack réunit tous les pays en une fois. Chaque envoi est enregistré dans l'historique.
+La plateforme fournit un **brouillon Outlook (.eml)** prêt à envoyer depuis prenom.nom@exemple.com. Un pack réunit tous les pays en une fois. Chaque envoi est enregistré dans l'historique.
 
 ### 6. Téléchargements et Espace pays
 Tous les plannings mis en forme sont conservés, mois par mois. Le bouton **Visualiser** les ouvre dans la plateforme, marque par marque, avec les textes et les visuels, sans téléchargement. On peut aussi les télécharger à tout moment.
@@ -110,7 +110,7 @@ La plateforme s'installe avec **Docker** chez n'importe quel hébergeur : serveu
 ```bash
 cp .env.example .env            # nom de domaine, adresses de l'équipe
 docker compose up -d --build
-docker compose exec app node server/index.js lien contact20@exemple.example
+docker compose exec app node server/index.js lien prenom.nom@exemple.com
 ```
 
 Guide complet : **[docs/INSTALLATION.md](docs/INSTALLATION.md)**. Il couvre les prérequis, la première connexion, l'accès des bottlers, le SMTP facultatif, les sauvegardes et les mises à jour.

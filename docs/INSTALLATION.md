@@ -5,7 +5,7 @@ Application web interne de Monarch Beverages pour :
 - **déposer** les plannings éditoriaux reçus des agences (un fichier Excel par pays) ;
 - les **contrôler** (marques distribuées par pays, marronniers du calendrier marketing, langue, textes à compléter) ;
 - les **mettre en forme** (un fichier Excel propre par pays, visuels compris) ;
-- **préparer les emails** : brouillons Outlook (.eml) avec destinataires, message et planning en pièce jointe, envoyés depuis contact20@exemple.example ;
+- **préparer les emails** : brouillons Outlook (.eml) avec destinataires, message et planning en pièce jointe, envoyés depuis prenom.nom@exemple.com ;
 - les mettre à disposition des **bottlers**, qui ne voient et ne téléchargent que les plannings de leur pays.
 
 Fonctionne chez n'importe quel hébergeur qui exécute Docker : serveur ou VPS (OVH, Scaleway…), serveur interne, ou plateforme comme Render ou Railway.
@@ -61,7 +61,7 @@ Au premier démarrage, les 13 pays, leurs contacts, le calendrier 2026 des marro
 Générez le lien de connexion de l'équipe :
 
 ```bash
-docker compose exec app node server/index.js lien contact20@exemple.example
+docker compose exec app node server/index.js lien prenom.nom@exemple.com
 ```
 
 Ouvrez le lien affiché, puis cliquez sur « Se connecter ».
@@ -81,9 +81,9 @@ docker build -t plannings-editoriaux .
 docker run -d --name plannings --restart unless-stopped -p 8080:8080 \
   -v plannings-data:/data \
   -e PUBLIC_URL=http://<adresse-du-serveur>:8080 \
-  -e ADMIN_EMAILS=contact20@exemple.example \
+  -e ADMIN_EMAILS=prenom.nom@exemple.com \
   plannings-editoriaux
-docker exec plannings node server/index.js lien contact20@exemple.example
+docker exec plannings node server/index.js lien prenom.nom@exemple.com
 ```
 
 N'exposez pas cette variante sur Internet : sans HTTPS, les liens et les sessions circulent en clair.
@@ -129,8 +129,8 @@ Pour le SMTP, n'importe quel service convient : relais de votre messagerie, Brev
 
 ```bash
 npm install
-PUBLIC_URL=http://localhost:8080 ADMIN_EMAILS=contact20@exemple.example npm start
-node server/index.js lien contact20@exemple.example    # dans un autre terminal
+PUBLIC_URL=http://localhost:8080 ADMIN_EMAILS=prenom.nom@exemple.com npm start
+node server/index.js lien prenom.nom@exemple.com    # dans un autre terminal
 ```
 
 ## 7. Structure
