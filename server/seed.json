@@ -1,0 +1,984 @@
+{
+ "contacts/CM": {
+  "code": "CM",
+  "name": "Cameroun",
+  "lang": "fr",
+  "brands": [
+   "Planet",
+   "American Cola",
+   "Bubble Up",
+   "Reaktor"
+  ],
+  "to": [
+   {
+    "name": "Paul Mbarga",
+    "email": "paul.mbarga@bottler-cm.example"
+   }
+  ],
+  "cc": [
+   {
+    "name": "Aline Ngo",
+    "email": "aline.ngo@bottler-cm.example"
+   }
+  ]
+ },
+ "contacts/CG": {
+  "code": "CG",
+  "name": "Congo",
+  "lang": "fr",
+  "brands": [
+   "Planet",
+   "American Cola",
+   "Bubble Up",
+   "Reaktor"
+  ],
+  "to": [
+   {
+    "name": "Grâce Mavoungou",
+    "email": "grace.mavoungou@bottler-cg.example"
+   }
+  ],
+  "cc": [
+   {
+    "name": "Serge Okemba",
+    "email": "serge.okemba@bottler-cg.example"
+   }
+  ]
+ },
+ "contacts/CIV": {
+  "code": "CIV",
+  "name": "Côte d'Ivoire",
+  "lang": "fr",
+  "brands": [
+   "Planet",
+   "American Cola",
+   "Bubble Up",
+   "Reaktor"
+  ],
+  "to": [
+   {
+    "name": "Awa Koné",
+    "email": "awa.kone@bottler-civ.example"
+   }
+  ],
+  "cc": [
+   {
+    "name": "Yao Kouassi",
+    "email": "yao.kouassi@bottler-civ.example"
+   }
+  ]
+ },
+ "contacts/GN": {
+  "code": "GN",
+  "name": "Guinée",
+  "lang": "fr",
+  "brands": [
+   "Planet",
+   "American Cola",
+   "Bubble Up",
+   "Reaktor"
+  ],
+  "to": [
+   {
+    "name": "Mariama Diallo",
+    "email": "mariama.diallo@bottler-gn.example"
+   }
+  ],
+  "cc": [
+   {
+    "name": "Ibrahima Camara",
+    "email": "ibrahima.camara@bottler-gn.example"
+   }
+  ]
+ },
+ "contacts/ML": {
+  "code": "ML",
+  "name": "Mali",
+  "lang": "fr",
+  "brands": [
+   "Planet",
+   "American Cola",
+   "Bubble Up",
+   "Reaktor"
+  ],
+  "to": [
+   {
+    "name": "Fanta Traoré",
+    "email": "fanta.traore@bottler-ml.example"
+   }
+  ],
+  "cc": [
+   {
+    "name": "Moussa Keïta",
+    "email": "moussa.keita@bottler-ml.example"
+   }
+  ]
+ },
+ "contacts/SN": {
+  "code": "SN",
+  "name": "Sénégal",
+  "lang": "fr",
+  "brands": [
+   "Planet",
+   "American Cola",
+   "Bubble Up",
+   "Reaktor"
+  ],
+  "to": [
+   {
+    "name": "Aminata Ndiaye",
+    "email": "aminata.ndiaye@bottler-sn.example"
+   }
+  ],
+  "cc": [
+   {
+    "name": "Cheikh Fall",
+    "email": "cheikh.fall@bottler-sn.example"
+   }
+  ]
+ },
+ "contacts/TD": {
+  "code": "TD",
+  "name": "Tchad",
+  "lang": "fr",
+  "brands": [
+   "Planet"
+  ],
+  "to": [
+   {
+    "name": "Achta Mahamat",
+    "email": "achta.mahamat@bottler-td.example"
+   }
+  ],
+  "cc": [
+   {
+    "name": "Djimet Ngaba",
+    "email": "djimet.ngaba@bottler-td.example"
+   }
+  ]
+ },
+ "contacts/NG": {
+  "code": "NG",
+  "name": "Nigeria",
+  "lang": "en",
+  "brands": [
+   "Planet",
+   "American Cola",
+   "Bubble Up",
+   "Reaktor"
+  ],
+  "to": [
+   {
+    "name": "Chioma Okafor",
+    "email": "chioma.okafor@bottler-ng.example"
+   }
+  ],
+  "cc": [
+   {
+    "name": "Tunde Adeyemi",
+    "email": "tunde.adeyemi@bottler-ng.example"
+   }
+  ]
+ },
+ "contacts/GH": {
+  "code": "GH",
+  "name": "Ghana",
+  "lang": "en",
+  "brands": [
+   "Planet",
+   "American Cola",
+   "Bubble Up",
+   "Rush"
+  ],
+  "to": [
+   {
+    "name": "Ama Mensah",
+    "email": "ama.mensah@bottler-gh.example"
+   }
+  ],
+  "cc": [
+   {
+    "name": "Kwame Boateng",
+    "email": "kwame.boateng@bottler-gh.example"
+   }
+  ]
+ },
+ "contacts/BF": {
+  "code": "BF",
+  "name": "Burkina Faso",
+  "lang": "fr",
+  "brands": [
+   "Bubble Up",
+   "Planet",
+   "American Cola"
+  ],
+  "to": [
+   {
+    "name": "Salif Ouédraogo",
+    "email": "salif.ouedraogo@bottler-bf.example"
+   }
+  ],
+  "cc": [
+   {
+    "name": "Mariam Kaboré",
+    "email": "mariam.kabore@bottler-bf.example"
+   }
+  ]
+ },
+ "contacts/GD": {
+  "code": "GD",
+  "name": "Guadeloupe",
+  "lang": "fr",
+  "brands": [
+   "Bubble Up"
+  ],
+  "to": [
+   {
+    "name": "Léa Bernard",
+    "email": "lea.bernard@bottler-gd.example"
+   }
+  ],
+  "cc": [
+   {
+    "name": "Hugo Petit",
+    "email": "hugo.petit@bottler-gd.example"
+   }
+  ]
+ },
+ "contacts/VU": {
+  "code": "VU",
+  "name": "Vanuatu",
+  "lang": "en",
+  "brands": [
+   "American Cola",
+   "Reaktor"
+  ],
+  "to": [
+   {
+    "name": "Marie Tabi",
+    "email": "marie.tabi@bottler-vu.example"
+   }
+  ],
+  "cc": [
+   {
+    "name": "John Kalo",
+    "email": "john.kalo@bottler-vu.example"
+   }
+  ]
+ },
+ "contacts/AR": {
+  "code": "AR",
+  "name": "Argentine",
+  "lang": "en",
+  "brands": [
+   "American Cola",
+   "Reaktor",
+   "Planet"
+  ],
+  "to": [
+   {
+    "name": "Lucía Gómez",
+    "email": "lucia.gomez@bottler-ar.example"
+   }
+  ],
+  "cc": [
+   {
+    "name": "Martín Díaz",
+    "email": "martin.diaz@bottler-ar.example"
+   }
+  ]
+ },
+ "calendars/2026": {
+  "year": 2026,
+  "events": [
+   {
+    "id": "e1",
+    "start": "2026-01-01",
+    "end": "2026-01-01",
+    "label": "Jour de l'An",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e2",
+    "start": "2026-01-07",
+    "end": "2026-01-07",
+    "label": "Constitution Day - Ghana 🇬🇭",
+    "countries": [
+     "GH"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e3",
+    "start": "2026-02-08",
+    "end": "2026-02-08",
+    "label": "Journée culturelle ADLaM Pulaaku - Guinée 🇬🇳",
+    "countries": [
+     "GN"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e4",
+    "start": "2026-02-11",
+    "end": "2026-02-11",
+    "label": "Fête de la Jeunesse - Cameroun 🇨🇲",
+    "countries": [
+     "CM"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e5",
+    "start": "2026-02-12",
+    "end": "2026-02-12",
+    "label": "Festival international du Wassulu (FIWA) - Mali 🇲🇱",
+    "countries": [
+     "ML"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e6",
+    "start": "2026-02-14",
+    "end": "2026-02-14",
+    "label": "Saint-Valentin",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e7",
+    "start": "2026-02-17",
+    "end": "2026-02-17",
+    "label": "Fête de l'Athlétisme - Course de l'espoir trek du Mont Cameroun - Cameroun 🇨🇲",
+    "countries": [
+     "CM"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e8",
+    "start": "2026-02-17",
+    "end": "2026-02-17",
+    "label": "Ramadan Début - 🌙",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e9",
+    "start": "2026-02-23",
+    "end": "2026-02-23",
+    "label": "Festival Kalamon Yepafori de Doropo (https://kalamonfestival.com, art, la danse et la gastronomie des peuples Lobi, Koulango, Lohon et Mossi) - Côte d'Ivoire 🇨🇮",
+    "countries": [
+     "CIV"
+    ],
+    "foreign": [],
+    "brands": [
+     "Planet"
+    ]
+   },
+   {
+    "id": "e10",
+    "start": "2026-03-01",
+    "end": "2026-03-01",
+    "label": "Fête des Grands-Mères",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e11",
+    "start": "2026-03-06",
+    "end": "2026-03-06",
+    "label": "Fête de l'Indépendance du Ghana - 🇬🇭",
+    "countries": [
+     "GH"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e12",
+    "start": "2026-03-08",
+    "end": "2026-03-08",
+    "label": "Journée internationale des droits des femmes",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e13",
+    "start": "2026-03-19",
+    "end": "2026-03-19",
+    "label": "Aïd el-Fitr - 🌙",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e14",
+    "start": "2026-03-20",
+    "end": "2026-03-20",
+    "label": "Journée internationale du bonheur",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e15",
+    "start": "2026-04-03",
+    "end": "2026-04-06",
+    "label": "Festival sur le fleuve Casamance - Sénégal 🇸🇳",
+    "countries": [
+     "SN"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e16",
+    "start": "2026-04-04",
+    "end": "2026-04-04",
+    "label": "Fête nationale - Sénégal 🇸🇳",
+    "countries": [
+     "SN"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e17",
+    "start": "2026-04-05",
+    "end": "2026-04-05",
+    "label": "Pâques",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e18",
+    "start": "2026-04-11",
+    "end": "2026-04-11",
+    "label": "Festival MASA - Zone Street Arts - Côte d'Ivoire 🇨🇮",
+    "countries": [
+     "CIV"
+    ],
+    "foreign": [],
+    "brands": [
+     "American Cola"
+    ]
+   },
+   {
+    "id": "e19",
+    "start": "2026-04-15",
+    "end": "2026-04-15",
+    "label": "World Art Day",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e20",
+    "start": "2026-04-21",
+    "end": "2026-04-21",
+    "label": "Journée mondiale de la créativité et de l’innovation",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e21",
+    "start": "2026-04-22",
+    "end": "2026-04-22",
+    "label": "Accra Jazz & World Music Festival - Ghana 🇬🇭",
+    "countries": [
+     "GH"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e22",
+    "start": "2026-04-25",
+    "end": "2026-04-25",
+    "label": "Journée mondiale contre le paludisme",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e23",
+    "start": "2026-05-01",
+    "end": "2026-05-01",
+    "label": "Fête du travail",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e24",
+    "start": "2026-05-14",
+    "end": "2026-05-14",
+    "label": "Ascension",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e25",
+    "start": "2026-05-15",
+    "end": "2026-05-15",
+    "label": "Journée internationale des familles",
+    "countries": [],
+    "foreign": [],
+    "brands": [
+     "Planet"
+    ]
+   },
+   {
+    "id": "e26",
+    "start": "2026-05-20",
+    "end": "2026-05-20",
+    "label": "Festival des Arts du Sahel et de sa Diaspora (FESADI) - Burkina Faso 🇧🇫",
+    "countries": [
+     "BF"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e27",
+    "start": "2026-05-20",
+    "end": "2026-05-20",
+    "label": "Fête de l'Indépendance - Cameroun 🇨🇲",
+    "countries": [
+     "CM"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e28",
+    "start": "2026-05-21",
+    "end": "2026-05-21",
+    "label": "Journée mondiale de la diversité culturelle",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e29",
+    "start": "2026-05-25",
+    "end": "2026-05-25",
+    "label": "Journée du Panafricanisme/de l'Afrique",
+    "countries": [],
+    "foreign": [],
+    "brands": [
+     "Planet"
+    ]
+   },
+   {
+    "id": "e30",
+    "start": "2026-05-26",
+    "end": "2026-05-26",
+    "label": "Aïd el-Kébir - 🌙",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e31",
+    "start": "2026-05-31",
+    "end": "2026-05-31",
+    "label": "Fête des Mères",
+    "countries": [],
+    "foreign": [],
+    "brands": [
+     "Planet"
+    ]
+   },
+   {
+    "id": "e32",
+    "start": "2026-06-01",
+    "end": "2026-06-01",
+    "label": "Journée mondiale des parents",
+    "countries": [],
+    "foreign": [],
+    "brands": [
+     "Planet"
+    ]
+   },
+   {
+    "id": "e33",
+    "start": "2026-06-05",
+    "end": "2026-06-05",
+    "label": "Journée mondiale de l’environnement",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e34",
+    "start": "2026-06-11",
+    "end": "2026-06-11",
+    "label": "Coupe du Monde de Football 2026 - Coup d'envoi ⚽",
+    "countries": [],
+    "foreign": [],
+    "brands": [
+     "Planet"
+    ]
+   },
+   {
+    "id": "e35",
+    "start": "2026-06-12",
+    "end": "2026-06-12",
+    "label": "Democracy Day - Nigeria 🇳🇬",
+    "countries": [
+     "NG"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e36",
+    "start": "2026-06-15",
+    "end": "2026-06-15",
+    "label": "Fête des Pères",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e37",
+    "start": "2026-06-16",
+    "end": "2026-06-16",
+    "label": "Journée de l'enfant africain",
+    "countries": [],
+    "foreign": [],
+    "brands": [
+     "Planet"
+    ]
+   },
+   {
+    "id": "e38",
+    "start": "2026-06-21",
+    "end": "2026-06-21",
+    "label": "Journée internationale du skateboard",
+    "countries": [],
+    "foreign": [],
+    "brands": [
+     "American Cola"
+    ]
+   },
+   {
+    "id": "e39",
+    "start": "2026-07-30",
+    "end": "2026-07-30",
+    "label": "Journée internationale de l'amitié",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e40",
+    "start": "2026-08-02",
+    "end": "2026-08-02",
+    "label": "Grand Magal de Touba - Sénégal 🇸🇳",
+    "countries": [
+     "SN"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e41",
+    "start": "2026-08-07",
+    "end": "2026-08-07",
+    "label": "Fête de l'Indépendance - Côte d'Ivoire 🇨🇮",
+    "countries": [
+     "CIV"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e42",
+    "start": "2026-08-11",
+    "end": "2026-08-11",
+    "label": "Fête de l'Indépendance - Tchad 🇹🇩",
+    "countries": [
+     "TD"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e43",
+    "start": "2026-08-12",
+    "end": "2026-08-12",
+    "label": "Journée internationale de la jeunesse",
+    "countries": [],
+    "foreign": [],
+    "brands": [
+     "Planet"
+    ]
+   },
+   {
+    "id": "e44",
+    "start": "2026-08-15",
+    "end": "2026-08-15",
+    "label": "Assomption",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e45",
+    "start": "2026-08-15",
+    "end": "2026-08-15",
+    "label": "Fête de l'Indépendance - Congo 🇨🇬",
+    "countries": [
+     "CG"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e46",
+    "start": "2026-09-07",
+    "end": "2026-09-09",
+    "label": "Kundum Festival Nzema - Ghana 🇬🇭",
+    "countries": [
+     "GH"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e47",
+    "start": "2026-09-08",
+    "end": "2026-09-08",
+    "label": "Journée internationale de l’alphabétisation",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e48",
+    "start": "2026-09-21",
+    "end": "2026-09-21",
+    "label": "Journée internationale de la paix",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e49",
+    "start": "2026-09-22",
+    "end": "2026-09-22",
+    "label": "Fête de l'Indépendance - Mali 🇲🇱",
+    "countries": [
+     "ML"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e50",
+    "start": "2026-09-23",
+    "end": "2026-09-23",
+    "label": "Journée internationale des langues des signes",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e51",
+    "start": "2026-10-01",
+    "end": "2026-10-01",
+    "label": "Fête de l'Indépendance - Nigéria 🇳🇬",
+    "countries": [
+     "NG"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e52",
+    "start": "2026-10-01",
+    "end": "2026-10-01",
+    "label": "Fête des Grands-Pères",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e53",
+    "start": "2026-10-01",
+    "end": "2026-10-01",
+    "label": "Journée internationale des personnes âgées",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e54",
+    "start": "2026-10-02",
+    "end": "2026-10-02",
+    "label": "Fête nationale - Guinée-Conakry 🇬🇳",
+    "countries": [
+     "GN"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e55",
+    "start": "2026-10-16",
+    "end": "2026-10-16",
+    "label": "Journée mondiale de l’alimentation",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e56",
+    "start": "2026-10-25",
+    "end": "2026-10-25",
+    "label": "International Artist Day",
+    "countries": [],
+    "foreign": [],
+    "brands": [
+     "American Cola"
+    ]
+   },
+   {
+    "id": "e57",
+    "start": "2026-10-31",
+    "end": "2026-10-31",
+    "label": "FESTAC Africa 2026 - Sénégal 🇸🇳",
+    "countries": [
+     "SN"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e58",
+    "start": "2026-11-01",
+    "end": "2026-11-01",
+    "label": "Journée africaine de la jeunesse (Africa Youth Day)",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e59",
+    "start": "2026-11-01",
+    "end": "2026-11-01",
+    "label": "Toussaint",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e60",
+    "start": "2026-11-11",
+    "end": "2026-11-11",
+    "label": "Fête de l'Indépendance - Angola 🇦🇴",
+    "countries": [],
+    "foreign": [
+     "AO"
+    ],
+    "brands": []
+   },
+   {
+    "id": "e61",
+    "start": "2026-11-16",
+    "end": "2026-11-16",
+    "label": "Journée internationale de la tolérance",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e62",
+    "start": "2026-11-17",
+    "end": "2026-11-22",
+    "label": "Entertainment Week Africa - Nigeria 🇳🇬",
+    "countries": [
+     "NG"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e63",
+    "start": "2026-11-20",
+    "end": "2026-11-20",
+    "label": "Journée mondiale de l’enfance",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e64",
+    "start": "2026-12-11",
+    "end": "2026-12-11",
+    "label": "Fête de l'Indépendance - Burkina Faso 🇧🇫",
+    "countries": [
+     "BF"
+    ],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e65",
+    "start": "2026-12-20",
+    "end": "2026-12-20",
+    "label": "Journée internationale de la solidarité humaine",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e66",
+    "start": "2026-12-25",
+    "end": "2026-12-25",
+    "label": "Noël",
+    "countries": [],
+    "foreign": [],
+    "brands": []
+   },
+   {
+    "id": "e67",
+    "start": "2026-12-31",
+    "end": "2026-12-31",
+    "label": "Saint-Sylvestre",
+    "countries": [],
+    "foreign": [],
+    "brands": [
+     "Bubble Up"
+    ]
+   }
+  ],
+  "updatedAt": "2026-11-09T10:02:00.000Z",
+  "source": "import"
+ },
+ "settings/email": {
+  "sender": {
+   "name": "Équipe marketing",
+   "email": "planning@monarch-demo.example"
+  },
+  "signature": ""
+ }
+}
