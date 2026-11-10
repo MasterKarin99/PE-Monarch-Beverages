@@ -240,6 +240,26 @@ input,select,textarea{border-radius:10px}
 .viewer-panel{border-radius:16px}
 .gscard{border:2px dashed #d9d3ca;box-shadow:none}
 @media (prefers-color-scheme: dark){ .gscard{border-color:var(--line)} }
+
+/* Contacts : une carte par pays */
+.ctbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.ctbar input[type=search]{flex:1;min-width:240px;max-width:460px;border:1px solid var(--line);border-radius:999px;padding:9px 16px;background:var(--paper)}
+.ctgrid{display:grid;grid-template-columns:1fr;gap:16px}
+.ccard{display:flex;flex-direction:column;gap:14px;padding:18px 20px;border:0;border-radius:var(--radius);background:var(--paper);box-shadow:var(--shadow);border-top:0}
+.ccard.dirty{box-shadow:var(--shadow),0 0 0 2px var(--brand-sage)}
+.cchead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.cchead h3{font-size:16px;font-weight:700}
+.ccmeta{color:var(--muted);font-size:12.5px;margin-top:2px}
+.cchead .brands{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.ccbody{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ccbody textarea{font-family:var(--font-body);font-size:13px;line-height:1.6;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg);width:100%}
+.ccbody textarea:focus{background:var(--paper)}
+.ccopts{display:grid;grid-template-columns:160px 260px 1fr;gap:12px;padding-top:12px;border-top:1px solid var(--line)}
+.ccopts select,.ccopts input{width:100%;border:1px solid var(--line);border-radius:10px;padding:7px 10px;background:var(--paper)}
+.ccfoot{display:flex;align-items:center;gap:8px}
+.ccdirty{font-size:12.5px;color:var(--accent);font-weight:600}
+.btn.ghost.ccdel{color:var(--err)}
+@media (max-width:760px){ .ctgrid{grid-template-columns:1fr} .ccbody,.ccopts{grid-template-columns:1fr} }
 </style>
 </head>
 <body class="booting">
@@ -359,7 +379,7 @@ input,select,textarea{border-radius:10px}
       <input id="ctIn" type="file" accept=".xlsx" hidden>
       <button class="btn" id="ctAdd">Ajouter un pays</button>
     </div>
-    <div class="card" id="ctList"></div>
+    <div id="ctList"></div>
   </section>
 
   <!-- ============ MODELE ============ -->
@@ -2096,22 +2116,33 @@ input,select,textarea{border-radius:10px}
     }
     const cs = Object.keys(state.contacts).sort((a, b) => (ORDER.indexOf(a) + 1 || 99) - (ORDER.indexOf(b) + 1 || 99));
     if (!cs.length && !state.importPreview) html += `<div class="empty">${state.contactsReady ? 'Aucun contact. Importez le fichier des emails bottlers (.xlsx) ou ajoutez un pays.' : 'Chargement des contacts…'}</div>`;
+    if (cs.length) html += `<div class="ctbar"><input type="search" id="ctSearch" placeholder="Rechercher un pays, un nom ou une adresse…" value="${esc(state.ctQuery || '')}" aria-label="Rechercher dans les contacts"><span class="muted" id="ctCount">${cs.length} pays · ${cs.reduce((n, k) => n + (state.contacts[k].to || []).length + (state.contacts[k].cc || []).length, 0)} contacts</span></div><div class="ctgrid">`;
     for (const code of cs) {
       const c = state.contacts[code];
-      html += `<div class="ccard" data-code="${esc(code)}">
-        <div class="detail" style="gap:8px">
-          <div><b>${esc(c.name)}</b><span class="code">${esc(code)}</span></div>
-          <div class="field"><label for="cl-${code}">Langue</label><select id="cl-${code}" data-f="lang">${['fr', 'en', 'es'].map(l => `<option value="${l}" ${c.lang === l ? 'selected' : ''}>${cap(C.LANG_LABEL[l])}</option>`).join('')}</select></div>
-          <div class="field"><label for="cb-${code}">Marques distribuées</label><input id="cb-${code}" data-f="brands" value="${esc((c.brands || []).join(', '))}"></div>
-          <div class="field"><label for="cm-${code}">Modèle d'email</label><select id="cm-${code}" data-f="template">${C.TEMPLATE_IDS.map(id => `<option value="${id}" ${id === templateIdFor(code) ? 'selected' : ''}>${esc(C.DEFAULT_TEMPLATES[id].label)}</option>`).join('')}</select></div>
+      const nTo = (c.to || []).length, nCc = (c.cc || []).length;
+      const rows = () => Math.max(2, nTo, nCc) + 1;
+      const hay = [c.name, code, ...(c.to || []).concat(c.cc || []).map(x => `${x.name} ${x.email}`)].join(' ').toLowerCase();
+      html += `<article class="ccard" data-code="${esc(code)}" data-hay="${esc(hay)}">
+        <header class="cchead">
+          <div><h3>${esc(c.name)} <span class="code">${esc(code)}</span></h3>
+            <div class="ccmeta">${nTo ? `${nTo} destinataire${nTo > 1 ? 's' : ''}` : '<span style="color:var(--err)">Aucun destinataire</span>'}${nCc ? ` · ${nCc} en copie` : ''} · ${esc(cap(C.LANG_LABEL[c.lang] || c.lang || ''))}</div></div>
+          <div class="brands">${(c.brands || []).map(b => `<span class="bchip">${mark(b)}${esc(b)}</span>`).join('') || '<span class="muted" style="font-size:12.5px">Aucune marque</span>'}</div>
+        </header>
+        <div class="ccbody">
+          <div class="field"><label for="ct-${code}">Destinataires principaux</label><textarea id="ct-${code}" data-f="to" rows="${rows()}" placeholder="Prénom Nom <adresse@exemple.com>">${esc(lineList(c.to))}</textarea></div>
+          <div class="field"><label for="cc-${code}">En copie</label><textarea id="cc-${code}" data-f="cc" rows="${rows()}" placeholder="Une personne par ligne">${esc(lineList(c.cc))}</textarea></div>
         </div>
-        <div class="field"><label for="ct-${code}">Destinataires principaux</label><textarea id="ct-${code}" data-f="to" class="mono" rows="5">${esc(lineList(c.to))}</textarea></div>
-        <div class="field"><label for="cc-${code}">En copie</label><textarea id="cc-${code}" data-f="cc" class="mono" rows="5">${esc(lineList(c.cc))}</textarea>
-          <div class="row" style="justify-content:flex-end;margin-top:4px">${state.access ? '<button class="btn small" data-links>Liens d\'accès</button>' : ''}<button class="btn small ghost" data-del>Supprimer</button><button class="btn small primary" data-save>Enregistrer</button></div></div>
-        ${state.accessLinks[code] ? `<div class="note" style="grid-column:1/-1"><b>Liens d'accès à l'Espace pays (valables 7 jours, utilisables une fois)</b> : transmettez à chaque personne son propre lien. Sa connexion reste ouverte 30 jours.${window.PE_SMTP ? ' Ensuite, elle se reconnecte seule depuis la page de connexion.' : ' Ensuite, générez-lui un nouveau lien (aucun service d\'envoi d\'emails n\'est configuré pour qu\'elle le demande elle-même).'}
-          <div class="detail" style="gap:6px;margin-top:8px">${state.accessLinks[code].map(l => `<div class="row" style="gap:8px"><span style="min-width:220px">${esc(l.email)}</span>${l.url ? `<input class="mono" readonly value="${esc(l.url)}" style="flex:1;min-width:200px;border:1px solid var(--line);border-radius:5px;padding:4px 6px;background:var(--paper)"><button class="btn small" data-copylink="${esc(l.url)}">Copier</button>` : `<span style="color:var(--err)">${esc(l.error || 'Lien impossible')}</span>`}</div>`).join('')}</div></div>` : ''}
-      </div>`;
+        <div class="ccopts">
+          <div class="field"><label for="cl-${code}">Langue</label><select id="cl-${code}" data-f="lang">${['fr', 'en', 'es'].map(l => `<option value="${l}" ${c.lang === l ? 'selected' : ''}>${cap(C.LANG_LABEL[l])}</option>`).join('')}</select></div>
+          <div class="field"><label for="cm-${code}">Modèle d'email</label><select id="cm-${code}" data-f="template">${C.TEMPLATE_IDS.map(id => `<option value="${id}" ${id === templateIdFor(code) ? 'selected' : ''}>${esc(C.DEFAULT_TEMPLATES[id].label)}</option>`).join('')}</select></div>
+          <div class="field ccbrands"><label for="cb-${code}">Marques distribuées <span class="muted">(séparées par des virgules)</span></label><input id="cb-${code}" data-f="brands" value="${esc((c.brands || []).join(', '))}"></div>
+        </div>
+        <footer class="ccfoot"><span class="ccdirty" hidden>Modifications non enregistrées</span><span class="spacer"></span>${state.access ? '<button class="btn small" data-links>Liens d\'accès</button>' : ''}<button class="btn small ghost ccdel" data-del>Supprimer</button><button class="btn small primary" data-save>Enregistrer</button></footer>
+        ${state.accessLinks[code] ? `<div class="note"><b>Liens d'accès à l'Espace pays (valables 7 jours, utilisables une fois)</b> : transmettez à chaque personne son propre lien. Sa connexion reste ouverte 30 jours.${window.PE_SMTP ? ' Ensuite, elle se reconnecte seule depuis la page de connexion.' : ' Ensuite, générez-lui un nouveau lien (aucun service d\'envoi d\'emails n\'est configuré pour qu\'elle le demande elle-même).'}
+          <div class="detail" style="gap:6px;margin-top:8px">${state.accessLinks[code].map(l => `<div class="row" style="gap:8px"><span style="min-width:200px">${esc(l.email)}</span>${l.url ? `<input class="mono" readonly value="${esc(l.url)}" style="flex:1;min-width:180px"><button class="btn small" data-copylink="${esc(l.url)}">Copier</button>` : `<span style="color:var(--err)">${esc(l.error || 'Lien impossible')}</span>`}</div>`).join('')}</div></div>` : ''}
+      </article>`;
     }
+    if (cs.length) html += `</div><div class="empty" id="ctNone" hidden>Aucun contact ne correspond à la recherche.</div>`;
     const missing = ORDER.filter(c => !state.contacts[c]);
     html += `<div class="row" id="addRow" hidden style="margin-top:12px"><select id="addSel" class="btn">${missing.map(c => `<option value="${c}">${esc(C.COUNTRIES[c].name)} (${c})</option>`).join('')}</select><button class="btn primary small" id="addOk">Ajouter</button></div>`;
     box.innerHTML = html;
@@ -2124,6 +2155,7 @@ input,select,textarea{border-radius:10px}
         writeContact(code, doc);
       });
       card.querySelector('[data-del]').addEventListener('click', () => deleteContact(code));
+      card.querySelectorAll('[data-f]').forEach(f => f.addEventListener('input', () => { card.classList.add('dirty'); card.querySelector('.ccdirty').hidden = false; }));
       const lk = card.querySelector('[data-links]');
       if (lk) lk.addEventListener('click', () => busy(lk, async () => {
         const c = state.contacts[code]; const out = [];
@@ -2137,6 +2169,9 @@ input,select,textarea{border-radius:10px}
       else state.importPreview = null;
       renderContacts();
     }));
+    const sq = box.querySelector('#ctSearch');
+    const filt = () => { const q = (state.ctQuery || '').trim().toLowerCase(); let n = 0; box.querySelectorAll('.ccard').forEach(cd => { const ok = !q || cd.dataset.hay.includes(q); cd.hidden = !ok; if (ok) n++; }); const none = box.querySelector('#ctNone'); if (none) none.hidden = n > 0; };
+    if (sq) { sq.addEventListener('input', () => { state.ctQuery = sq.value; filt(); }); filt(); }
     const addOk = box.querySelector('#addOk');
     if (addOk) addOk.addEventListener('click', () => { const code = box.querySelector('#addSel').value; if (!code) return; const cc = C.COUNTRIES[code]; writeContact(code, { code, name: cc.name, lang: cc.lang, brands: [], to: [], cc: [] }); });
   }
