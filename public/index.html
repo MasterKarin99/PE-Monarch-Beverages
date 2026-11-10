@@ -197,9 +197,10 @@ select[multiple]{padding:4px}
   --font-display:"Plus Jakarta Sans","Segoe UI",Arial,sans-serif; --font-body:"Plus Jakarta Sans","Segoe UI",Arial,sans-serif;
   --ink:#262a2c; --muted:#62676a; --line:#e7e3dd; --bg:#f6f4f1; --paper:#ffffff;
   --accent:#3f6e52; --accent-soft:#e7efe9; --radius:14px;
-  --shadow:0 1px 2px rgba(38,42,44,.05),0 6px 20px rgba(38,42,44,.05);
+  --shadow:0 1px 2px rgba(38,42,44,.05),0 6px 20px rgba(38,42,44,.05); --hover:#faf8f5; --dash:#d9d3ca;
 }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --line:#33393c; --bg:#161a1b; --paper:#1f2426; --shadow:none; } }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --line:#33393c; --bg:#161a1b; --paper:#1f2426; --shadow:none; --hover:#2a3033; --dash:#3d4448; } }
+:root[data-theme="dark"]{ --line:#33393c; --bg:#161a1b; --paper:#1f2426; --shadow:none; --hover:#2a3033; --dash:#3d4448; }
 body{font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased}
 h1{font-size:24px;font-weight:800;letter-spacing:-.02em} h2{font-size:18px;font-weight:700;letter-spacing:-.01em}
 .wrap{gap:20px;padding-top:24px}
@@ -218,13 +219,13 @@ nav.tabs a[aria-current="page"]{background:var(--accent-soft);color:var(--accent
 .card{border:0;box-shadow:var(--shadow);border-radius:var(--radius);padding:18px 20px}
 .tablewrap{border:0;box-shadow:var(--shadow);border-radius:var(--radius)}
 th{text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:600;color:var(--muted);background:var(--paper)}
-tbody tr:hover{background:#faf8f5}
+tbody tr:hover{background:var(--hover)}
 tbody tr.sel{background:var(--accent-soft)}
 .btn{border-radius:999px;padding:8px 16px;border-color:var(--line)}
 .btn.small{padding:5px 12px}
 .btn.primary{box-shadow:0 1px 2px rgba(63,110,82,.25)}
 .btn.ghost{padding-left:8px;padding-right:8px}
-.drop{border-radius:var(--radius);border-color:#d9d3ca;background:var(--paper)}
+.drop{border-radius:var(--radius);border-color:var(--dash);background:var(--paper)}
 .drop .glyph{border-radius:12px;font-family:var(--font-body)}
 .stat{border:0;border-left:0;box-shadow:var(--shadow);border-radius:var(--radius);padding:14px 18px;position:relative}
 .stat::before{content:"";position:absolute;left:18px;top:16px;width:8px;height:8px;border-radius:50%;background:var(--line)}
@@ -238,7 +239,7 @@ tbody tr.sel{background:var(--accent-soft)}
 .code{font-family:var(--font-body);font-weight:600;letter-spacing:.02em}
 input,select,textarea{border-radius:10px}
 .viewer-panel{border-radius:16px}
-.gscard{border:2px dashed #d9d3ca;box-shadow:none}
+.gscard{border:2px dashed var(--dash);box-shadow:none}
 @media (prefers-color-scheme: dark){ .gscard{border-color:var(--line)} }
 
 /* Contacts : une carte par pays */
