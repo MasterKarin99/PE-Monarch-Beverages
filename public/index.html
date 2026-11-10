@@ -189,6 +189,8 @@ select[multiple]{padding:4px}
 .valcom{font-size:12.5px;color:var(--ink);margin-top:4px;white-space:pre-wrap;max-width:320px}
 .valask{display:flex;flex-direction:column;gap:6px;min-width:240px;flex:1}
 .valask textarea{border:1px solid var(--line);border-radius:6px;padding:7px 9px;background:var(--paper);width:100%;resize:vertical;font-family:var(--font-body)}
+.post.emptyday{display:flex;gap:14px;align-items:baseline;padding-top:6px;padding-bottom:6px;opacity:.75}
+.post.emptyday .d{min-width:180px}
 </style>
 </head>
 <body class="booting">
@@ -457,7 +459,7 @@ select[multiple]{padding:4px}
     const L = L10N[lang], m = MONTHS[lang][d.getUTCMonth()];
     if (lang === 'en') return `${L.week} ${m} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
     if (lang === 'es') return `${L.week} ${d.getUTCDate()} de ${m} de ${d.getUTCFullYear()}`;
-    return `${L.week} ${d.getUTCDate()} ${m} ${d.getUTCFullYear()}`;
+    return `${L.week} ${d.getUTCDate() === 1 && lang === "fr" ? "1er" : d.getUTCDate()} ${m} ${d.getUTCFullYear()}`;
   }
   function monthLabel(month, lang) { // month = {y, m}
     if (!month) return '';
@@ -1163,7 +1165,9 @@ select[multiple]{padding:4px}
           lastWeek = wk;
           ws.mergeCells(`A${r}:${lastCol}${r}`);
           const c = ws.getCell(`A${r}`);
-          c.value = it.date ? weekLabel(weekStart(it.date), lang) : '—';
+          let ws0 = it.date ? weekStart(it.date) : null;
+          if (ws0 && opts.fullCalendar && month) { const m0 = new Date(Date.UTC(month.y, month.m, 1)); if (ws0 < m0 && it.date >= m0) ws0 = m0; }
+          c.value = ws0 ? weekLabel(ws0, lang) : '—';
           c.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF' + darkHex(b.color) } };
           c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + tint } };
           c.alignment = { vertical: 'middle', indent: 1 };
@@ -1223,14 +1227,14 @@ select[multiple]{padding:4px}
     const dated = posts.filter(p => p.date).sort((a, b) => a.date - b.date || a.row - b.row);
     const undated = posts.filter(p => !p.date);
     if (!full) return [...dated.map(p => ({ date: p.date, post: p })), ...undated.map(p => ({ date: null, post: p }))];
-    // Calendrier complet : tous les jours de la (des) semaine(s) couvrant le mois + publications
+    // Calendrier complet : tous les jours du mois, du 1er au dernier (plus les publications datées hors du mois)
     let start, end;
-    if (month) { start = weekStart(new Date(Date.UTC(month.y, month.m, 1))); end = new Date(Date.UTC(month.y, month.m + 1, 0)); }
-    else if (dated.length) { start = weekStart(dated[0].date); end = dated[dated.length - 1].date; }
+    if (month) { start = new Date(Date.UTC(month.y, month.m, 1)); end = new Date(Date.UTC(month.y, month.m + 1, 0)); }
+    else if (dated.length) { start = dated[0].date; end = dated[dated.length - 1].date; }
     else return undated.map(p => ({ date: null, post: p }));
-    if (dated.length && dated[0].date < start) start = weekStart(dated[0].date);
+    if (dated.length && dated[0].date < start) start = dated[0].date;
     if (dated.length && dated[dated.length - 1].date > end) end = dated[dated.length - 1].date;
-    const e2 = new Date(end); e2.setUTCDate(e2.getUTCDate() + (7 - ((e2.getUTCDay() + 6) % 7) - 1));
+    const e2 = new Date(end);
     const out = [];
     for (let d = new Date(start); d <= e2; d.setUTCDate(d.getUTCDate() + 1)) {
       const day = new Date(d); const ps = dated.filter(p => ymd(p.date) === ymd(day));
@@ -1357,7 +1361,7 @@ select[multiple]{padding:4px}
     return out;
   }
 
-  const api = { LOGOS, parseSlides, googleSlidesId, findDate, TEMPLATE_IDS, defaultTemplateFor, brandList, pourMarques, renderMessage, adaptForCountry, postCountries, b64FromU8, parseCalendarWorkbook, eventsForCountry, eventCoverage, eventCountries, FLAG_TO_CODE, COUNTRIES, BRANDS, L10N, DEFAULT_TEMPLATES, MONTHS_FR, LANG_LABEL, cleanText, detectCountry, detectMonth, parsePlanning, checkCountry, fingerprint, buildWorkbook,
+  const api = { buildRows, LOGOS, parseSlides, googleSlidesId, findDate, TEMPLATE_IDS, defaultTemplateFor, brandList, pourMarques, renderMessage, adaptForCountry, postCountries, b64FromU8, parseCalendarWorkbook, eventsForCountry, eventCoverage, eventCountries, FLAG_TO_CODE, COUNTRIES, BRANDS, L10N, DEFAULT_TEMPLATES, MONTHS_FR, LANG_LABEL, cleanText, detectCountry, detectMonth, parsePlanning, checkCountry, fingerprint, buildWorkbook,
     parseContactsWorkbook, parseContactCell, splitBrands, fillTemplate, buildEml, monthLabel, countryLabel, fmtDateLong, imageSize, brandKey, ymd, detectLang };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PECore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1443,6 +1447,7 @@ select[multiple]{padding:4px}
       state.contacts = c; if (!snap.metadata.fromCache) { clearTimeout(timer); state.dbSlow = false; }
       state.contactsReady = true; refresh(); schedulePortalSync();
     }, () => { clearTimeout(timer); state.contactsReady = true; renderAll(); });
+    db.doc('settings/options').onSnapshot(d => { const o = d.exists ? d.data() : {}; applyOptions(o); }, () => { });
     db.doc('settings/email').onSnapshot(d => { state.settings = d.exists ? d.data() : null; renderTemplates(); if (state.sel) renderDetail(); }, () => { });
     CL().use('assets').then(as => { state.assets = as; renderLibrary(); if (as) { refreshUsage(); archivePending(); } }).catch(() => { });
     db.collection('library').onSnapshot(snap => { const l = {}; snap.docs.forEach(d => l[d.id] = d.data()); state.library = l; renderLibrary(); renderTable(); schedulePortalSync(); }, () => { });
@@ -1765,9 +1770,11 @@ select[multiple]{padding:4px}
     return e.sheets.map(s => {
       const b = C.BRANDS[s.brandKey] || { color: s.sourceColor || '555555', text: 'FFFFFF' };
       const posts = s.posts.slice().sort((a, b2) => (a.date || 0) - (b2.date || 0));
+      const full = $('#optCal').checked;
+      const items = full ? C.buildRows(s.posts, state.period, true) : posts.map(p => ({ date: p.date, post: p }));
       const lg = C.LOGOS[s.brandKey];
       return `<section class="brandsec"><header style="background:#${b.color};color:#${b.text || 'FFFFFF'}">${lg ? `<span class="hlogo"><img src="data:image/png;base64,${lg.b64}" alt="${esc(s.brand)}" height="26"></span>` : ''}${esc(s.brand)}<span style="font-weight:500;opacity:.85">${s.posts.length} publication(s)</span></header>
-        <div class="posts">${posts.map(p => `<div class="post"><div><div class="d">${p.date ? esc(C.fmtDateLong(p.date, 'fr')) : 'Sans date'}</div><div class="t">${esc(p.theme)}</div></div>
+        <div class="posts">${items.map(it => !it.post ? `<div class="post emptyday"><div class="d">${esc(C.fmtDateLong(it.date, 'fr'))}</div><div class="muted">Pas de publication</div></div>` : it.post).map(p => typeof p === 'string' ? p : `<div class="post"><div><div class="d">${p.date ? esc(C.fmtDateLong(p.date, 'fr')) : 'Sans date'}</div><div class="t">${esc(p.theme)}</div></div>
           <div class="txt">${esc(p.text) || '<span class="muted">Pas de texte</span>'}</div>
           <div class="thumbs">${p.images.length ? p.images.map(thumb).join('') : '<div class="noimg">Pas de visuel intégré</div>'}</div></div>`).join('') || '<div class="empty">Aucune publication</div>'}</div></section>`;
     }).join('');
@@ -1956,7 +1963,23 @@ select[multiple]{padding:4px}
       if (!list.length) { toast('Tous les plannings reçus sont déjà marqués comme envoyés.'); return; }
       const z = await packZip(list, true); await save(`Pack envoi PE ${monthUpper()} ${state.period.y}.zip`, z);
     }));
-    ['#optCal', '#optImg'].forEach(s => $(s).addEventListener('change', () => { state.entries.forEach(e => e.built = null); renderDetail(); }));
+    ['#optCal', '#optImg'].forEach(s => $(s).addEventListener('change', () => {
+      optionsChanged(true);
+      if (state.db && state.mode !== 'portal') state.db.doc('settings/options').set({ fullCalendar: $('#optCal').checked, lightImages: $('#optImg').checked }).catch(() => { });
+    }));
+  }
+  // Options de mise en forme (partagées par l'équipe) : tout ce qui est généré les suit
+  function applyOptions(o) {
+    let changed = false;
+    if (typeof o.fullCalendar === 'boolean' && $('#optCal').checked !== o.fullCalendar) { $('#optCal').checked = o.fullCalendar; changed = true; }
+    if (typeof o.lightImages === 'boolean' && $('#optImg').checked !== o.lightImages) { $('#optImg').checked = o.lightImages; changed = true; }
+    if (changed) optionsChanged(false);
+  }
+  function optionsChanged(byUser) {
+    state.entries.forEach(e => { e.built = null; e.buildP = null; });
+    renderDetail();
+    if (state.mode !== 'portal') archivePending();
+    if (byUser && state.entries.length) toast($('#optCal').checked ? 'Calendrier complet : les plannings enregistrés sont régénérés' : 'Calendrier des publications seules : les plannings enregistrés sont régénérés');
   }
 
   // ---------- Envoi direct (version hébergée) ----------
@@ -2540,7 +2563,7 @@ select[multiple]{padding:4px}
     for (const code of f.countries) {
       const ad = mefAdapted(f, code); if (!ad.sheets.length) continue;
       const lang = langFor(code);
-      const wb = await C.buildWorkbook(window.ExcelJS, ad, { lang, month: f.month, countryName: C.countryLabel(code, lang), translationColumn: f.translationColumn, transformImage: $('#optImg').checked ? lighten : null });
+      const wb = await C.buildWorkbook(window.ExcelJS, ad, { lang, month: f.month, countryName: C.countryLabel(code, lang), translationColumn: f.translationColumn, fullCalendar: $('#optCal').checked, transformImage: $('#optImg').checked ? lighten : null });
       zip.file(`${code} - PE ${brand} ${monthUp(f.month.m)} ${f.month.y}.xlsx`, new Uint8Array(await wb.xlsx.writeBuffer()));
     }
     await save(`PE ${brand} ${monthUp(f.month.m)} ${f.month.y} - par pays.zip`, await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 3 } }));
