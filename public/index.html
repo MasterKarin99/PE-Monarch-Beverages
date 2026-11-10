@@ -238,6 +238,8 @@ tbody tr.sel{background:var(--accent-soft)}
 .code{font-family:var(--font-body);font-weight:600;letter-spacing:.02em}
 input,select,textarea{border-radius:10px}
 .viewer-panel{border-radius:16px}
+.gscard{border:2px dashed #d9d3ca;box-shadow:none}
+@media (prefers-color-scheme: dark){ .gscard{border-color:var(--line)} }
 </style>
 </head>
 <body class="booting">
@@ -306,7 +308,7 @@ input,select,textarea{border-radius:10px}
       <span class="btn primary">Choisir des fichiers</span>
       <input id="mefIn" type="file" accept=".xlsx,.pptx" multiple hidden>
     </label>
-    <div class="card detail" style="gap:8px">
+    <div class="card detail gscard" style="gap:8px">
       <label for="gsUrl" style="font-weight:600">Depuis un lien Google Slides</label>
       <div class="row" style="flex-wrap:nowrap"><input id="gsUrl" type="url" placeholder="https://docs.google.com/presentation/d/…" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--paper)"><button class="btn primary" id="gsGo">Importer la présentation</button></div>
       <div class="note" id="gsHelp" hidden></div>
