@@ -323,6 +323,12 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
 .ccopts{grid-template-columns:150px 190px 240px 1fr}
 @media (max-width:900px){ .ccopts{grid-template-columns:1fr 1fr} } @media (max-width:600px){ .ccopts{grid-template-columns:1fr} }
 .flag{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:1.1em}
+.ccell{white-space:nowrap;min-width:190px}
+.cname{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.cname .flag{width:1.4em;text-align:center;flex:none}
+.cname .code{margin-left:0}
+.ccell .acttag,.ccell .lsub{margin-left:calc(1.4em + 7px)}
+.ccell .acttag{margin-top:6px}
 .sitebar{display:flex;gap:12px 20px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 16px;font-size:13px;color:var(--muted)}
 .sitebar b{color:var(--ink)}
 #siteReset{color:var(--err)}
@@ -1892,7 +1898,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
       const ctrl = e ? `<div class="counts" style="flex-wrap:wrap">${ce ? `<span style="color:var(--err)"><i class="dot" style="background:var(--err)"></i>${errs1.length === 1 && errs1[0].short ? hl(errs1[0].short, errs1[0].hl) : `${ce} erreurs : ${errs1.map(x => hl(x.short || x.msg, x.hl)).join(' · ')}`}</span>` : '<span style="color:var(--ok)">OK</span>'}${ci ? `<span class="muted">· ${ci} remarque${ci > 1 ? 's' : ''}</span>` : ''}</div>` : '<span class="muted">—</span>';
       const rc = ct ? `<div class="addr">${(ct.to || []).map(c => `<div>${esc(c.email)}</div>`).join('')}${(ct.cc || []).length ? `<div class="muted">cc ${(ct.cc || []).map(c => esc(c.email)).join(', ')}</div>` : ''}</div>` : '<span style="color:var(--err)">aucun contact</span>';
       html += `<tr data-code="${esc(code)}" class="${state.sel === code ? 'sel' : ''}" tabindex="0">
-        <td><span class="flag" aria-hidden="true">${flag(code)}</span> <b>${esc(nameFor(code))}</b><span class="code">${esc(code)}</span>${window.PE_SITE ? '' : `<div class="acttag a-${actionFor(code)}">${actionFor(code) === 'validation' ? 'À valider par le bottler' : 'Pour information'}</div>`}</td>
+        <td class="ccell"><div class="cname"><span class="flag" aria-hidden="true">${flag(code)}</span><b>${esc(nameFor(code))}</b><span class="code">${esc(code)}</span></div>${window.PE_SITE ? '' : `<div class="acttag a-${actionFor(code)}">${actionFor(code) === 'validation' ? 'À valider par le bottler' : 'Pour information'}</div>`}</td>
         <td class="stcell">${statusCell(st)}</td>
         <td><div class="brands">${chips || '<span class="muted">—</span>'}</div></td>
         <td style="font-variant-numeric:tabular-nums">${e ? `${n}<div><button class="btn small" data-rview="${esc(code)}" style="margin-top:6px">Visualiser</button></div>` : '<span class="muted">—</span>'}</td>
@@ -2299,7 +2305,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
     if (!rows.length) { tb.innerHTML = `<tr><td colspan="7" class="empty">Aucun envoi enregistré pour le moment.</td></tr>`; return; }
     tb.innerHTML = rows.map(([id, s]) => {
       const [y, mm] = String(s.period).split('-');
-      return `<tr><td>${fmtDate(s.sentAt)}</td><td>${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</td><td><span class="flag" aria-hidden="true">${flag(s.code)}</span> <b>${esc(s.pays)}</b><span class="code">${esc(s.code)}</span></td><td>${esc((s.brands || []).join(', '))}</td><td>${esc(s.posts)}</td>
+      return `<tr><td>${fmtDate(s.sentAt)}</td><td>${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</td><td class="ccell"><div class="cname"><span class="flag" aria-hidden="true">${flag(s.code)}</span><b>${esc(s.pays)}</b><span class="code">${esc(s.code)}</span></div></td><td>${esc((s.brands || []).join(', '))}</td><td>${esc(s.posts)}</td>
       <td class="muted" style="font-size:12.5px">${esc((s.to || []).join(', '))}${(s.cc || []).length ? `<br>cc ${esc(s.cc.join(', '))}` : ''}</td><td><button class="btn small ghost" data-unsend="${esc(id)}">Annuler</button></td></tr>`;
     }).join('');
     tb.querySelectorAll('[data-unsend]').forEach(b => b.addEventListener('click', () => unmark(b.dataset.unsend)));
@@ -2611,7 +2617,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
       html += rows.map(([id, d]) => {
         const [y, mm] = String(d.period).split('-'); const sent = state.envois[id];
         return `<tr><td><input type="checkbox" data-lsel="${esc(id)}" aria-label="Sélectionner ${esc(d.pays)}" ${state.libSel.has(id) ? 'checked' : ''}></td>
-          <td><span class="flag" aria-hidden="true">${flag(d.code)}</span> <b>${esc(d.pays)}</b><span class="code">${esc(d.code)}</span><div class="muted lsub">${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</div></td>
+          <td class="ccell"><div class="cname"><span class="flag" aria-hidden="true">${flag(d.code)}</span><b>${esc(d.pays)}</b><span class="code">${esc(d.code)}</span></div><div class="muted lsub">${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</div></td>
           <td><div class="brands">${(d.brands || []).map(b => `<span class="bchip">${mark(b)}${esc(b)}</span>`).join('')}</div></td>
           <td>${esc(d.posts)} publication${d.posts > 1 ? 's' : ''}<div class="muted lsub">${fmtSize(d.size || 0)} · enregistré le ${fmtDate(d.savedAt)}</div></td>
           <td><div class="lsuivi">${sent ? `<span class="pill p-sent">Envoyé le ${fmtDate(sent.sentAt)}</span>` : '<span class="pill p-wait">Non envoyé</span>'}${window.PE_SITE ? '' : valPill(id, { who: true })}</div></td>
