@@ -1,4 +1,4 @@
-# Plannings éditoriaux pays
+# Plannings éditoriaux
 
 Outil de **Monarch Beverages** pour mettre en forme, contrôler et préparer l'envoi des plannings éditoriaux des agences aux bottlers, pays par pays.
 
