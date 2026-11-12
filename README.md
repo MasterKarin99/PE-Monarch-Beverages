@@ -1,10 +1,13 @@
 # Plannings éditoriaux pays
 
+> **Branche `version-serveur`** : version hébergée (Docker, serveur Node.js) avec connexion par lien email, Espaces pays et validation en ligne par les bottlers. La branche `main` contient la version site (GitHub Pages), sans serveur.
+
+
 Plateforme interne de **Monarch Beverages** pour recevoir les plannings éditoriaux des agences, les contrôler pays par pays, les mettre en forme et les transmettre aux bottlers.
 
 Chaque mois, les agences livrent un fichier Excel par pays (Côte d'Ivoire, Cameroun, Nigeria, Ghana…). La plateforme remplace le travail manuel de vérification, de mise en page et d'envoi.
 
-![Contrôle d'un pays](docs/captures/controle-pays.png)
+
 
 ---
 
@@ -43,7 +46,7 @@ Seules les **marques distribuées dans le pays** sont incluses dans le fichier e
 ### 3. Marronniers
 Le calendrier marketing de l'année (import du fichier Excel) indique, pour chaque marronnier, les pays et les marques concernés. La plateforme vérifie que chaque pays traite ses marronniers. Elle signale aussi ceux qui apparaissent dans un planning sans figurer au calendrier.
 
-![Marronniers](docs/captures/marronniers.png)
+
 
 ### 4. Mise en forme des plannings agences
 L'espace **Mise en forme** accepte aussi les plannings « compilés » des agences, qui regroupent plusieurs pays et plusieurs mois. On y voit le texte FR, la traduction EN, les visuels, les commentaires de production, les retours MB et le budget. Pour chaque pays destinataire, la plateforme ne garde que :
@@ -54,7 +57,7 @@ L'espace **Mise en forme** accepte aussi les plannings « compilés » des agenc
 
 Les pays anglophones reçoivent le texte anglais. Les posts refusés dans les retours MB sont écartés, et chaque publication peut être cochée ou décochée. Les colonnes **Commentaires, Retours et Budget ne sont jamais transmises**. Le résultat se télécharge (un fichier par pays) ou s'ajoute directement aux envois des pays.
 
-![Mise en forme d'un planning agence](docs/captures/mise-en-forme.png)
+
 
 Dans les deux cas, chaque pays reçoit un fichier Excel propre :
 
@@ -79,13 +82,13 @@ La plateforme fournit un **brouillon Outlook (.eml)** prêt à envoyer depuis pr
 ### 6. Téléchargements et Espace pays
 Tous les plannings mis en forme sont conservés, mois par mois. Le bouton **Visualiser** les ouvre dans la plateforme, marque par marque, avec les textes et les visuels, sans téléchargement. On peut aussi les télécharger à tout moment.
 
-![Téléchargements](docs/captures/telechargements.png)
+
 
 Les **bottlers** se connectent à leur **Espace pays**. Ils n'y voient que les plannings et l'historique de leur pays, qu'ils peuvent visualiser ou télécharger.
 
 Depuis leur Espace pays, ils peuvent aussi **valider le planning** ou **demander des modifications** (avec un commentaire). Leur réponse apparaît dans la colonne « Validation bottler » de l'onglet Téléchargements et sous le statut du pays dans « Pays et envois ». Chaque bottler ne peut répondre que pour les plannings de son pays.
 
-![Espace pays d'un bottler](docs/captures/espace-pays.png)
+
 
 ---
 
@@ -99,7 +102,6 @@ Depuis leur Espace pays, ils peuvent aussi **valider le planning** ou **demander
 
 La connexion se fait **par lien envoyé par email**, sans mot de passe. L'équipe peut aussi générer des liens d'accès pour les bottlers depuis l'onglet Contacts. Les droits sont vérifiés par le serveur.
 
-<img src="docs/captures/connexion.png" alt="Page de connexion" width="420">
 
 ---
 

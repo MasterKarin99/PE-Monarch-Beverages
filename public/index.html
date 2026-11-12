@@ -1656,6 +1656,7 @@ input,select,textarea{border-radius:10px}
     if (v && v.status === 'valide') return { k: 'sent', sub: 'valide', label: 'Validé par le bottler', cls: 'p-done', step: 5, detail: `Le ${fmtDate(v.at)}${v.email ? ' · ' + v.email : ''}` };
     if (v && v.status === 'modifs' && sent && String(sent.sentAt) > String(v.at)) return { k: 'sent', sub: 'attente', label: 'Renvoyé · attente de validation', cls: 'p-sent', step: 4, detail: `Renvoyé le ${fmtDate(sent.sentAt)} après la demande de modifications du ${fmtDate(v.at)}` };
     if (v && v.status === 'modifs') return { k: 'sent', sub: 'modifs', label: 'Modifications demandées', cls: 'p-err', step: 4, detail: `Par le bottler le ${fmtDate(v.at)}${v.comment ? ' : « ' + (v.comment.length > 70 ? v.comment.slice(0, 70) + '…' : v.comment) + ' »' : ''}` };
+    if (sent && window.PE_SITE) return { k: 'sent', sub: 'attente', label: 'Envoyé', cls: 'p-done', step: 5, detail: `Envoyé le ${fmtDate(sent.sentAt)}` };
     if (sent) return { k: 'sent', sub: 'attente', label: 'Envoyé · attente de validation', cls: 'p-sent', step: 4, detail: `Envoyé le ${fmtDate(sent.sentAt)}${inPortal ? ' · disponible dans l\'Espace pays' : ''}` };
     if (!e) return { k: 'wait', label: 'En attente du planning agence', cls: 'p-wait', step: 0, detail: `Aucun planning reçu pour ${mois}` };
     const st = stageOf(code);
@@ -1710,9 +1711,9 @@ input,select,textarea{border-radius:10px}
       <div class="stat s-wait"><b>${c.wait}</b><span>en attente du planning agence</span></div>
       <div class="stat s-check"><b>${c.rev + c.check}</b><span>en révision ou à corriger</span></div>
       <div class="stat s-ready"><b>${c.ready}</b><span>prêts à envoyer</span></div>
-      <div class="stat s-sent"><b>${c.sent}</b><span>envoyés, en attente de validation</span></div>
-      <div class="stat s-modif"><b>${c.modifs}</b><span>modifications demandées</span></div>
-      <div class="stat s-done"><b>${c.valide}</b><span>validés par les bottlers</span></div>`;
+      <div class="stat s-sent"><b>${c.sent}</b><span>${window.PE_SITE ? 'envoyés' : 'envoyés, en attente de validation'}</span></div>
+      ${window.PE_SITE ? '' : `<div class="stat s-modif"><b>${c.modifs}</b><span>modifications demandées</span></div>
+      <div class="stat s-done"><b>${c.valide}</b><span>validés par les bottlers</span></div>`}`;
     const any = state.entries.some(e => e.country);
     $('#zipFiles').disabled = !any; $('#zipPack').disabled = !any;
     const sa = $('#sendAll'); if (sa) { sa.hidden = !(state.mailCfg && state.mailCfg.enabled); if (!sa.dataset.busy) sa.disabled = !codes().some(c => statusOf(c).k === 'ready'); }
@@ -2399,7 +2400,7 @@ input,select,textarea{border-radius:10px}
     const rows = libRows();
     const monthTxt = `${cap(C.MONTHS_FR[state.period.m])} ${state.period.y}`;
     const pvCodes = [...new Set(Object.values(state.library).map(d => d.code))];
-    html += `<div class="note row"><span style="flex:1">Les personnes externes (bottlers) ${window.PE_ACCESS_LINKS ? 'dont l\'adresse figure dans les Contacts' : window.PE_HOSTED ? 'invitées dans Microsoft 365' : 'avec qui vous partagez la plateforme'} ne voient qu'un <b>Espace pays</b> : les plannings et l'historique de leur pays, à télécharger et à valider (ou à renvoyer avec une demande de modifications). ${window.PE_HOSTED ? '' : 'Pour valider en ligne, partagez la plateforme avec elles en tant que <b>Contributeur</b> ; vos collègues de l\'équipe doivent être <b>Éditeurs</b>. '}${window.PE_ACCESS_LINKS ? 'Elles se connectent avec un lien reçu par email (bouton « Liens d\'accès » dans l\'onglet Contacts).' : 'Elles sont reconnues par leur adresse email, qui doit figurer dans l\'onglet Contacts.'}</span>
+    if (!window.PE_SITE) html += `<div class="note row"><span style="flex:1">Les personnes externes (bottlers) ${window.PE_ACCESS_LINKS ? 'dont l\'adresse figure dans les Contacts' : window.PE_HOSTED ? 'invitées dans Microsoft 365' : 'avec qui vous partagez la plateforme'} ne voient qu'un <b>Espace pays</b> : les plannings et l'historique de leur pays, à télécharger et à valider (ou à renvoyer avec une demande de modifications). ${window.PE_HOSTED ? '' : 'Pour valider en ligne, partagez la plateforme avec elles en tant que <b>Contributeur</b> ; vos collègues de l\'équipe doivent être <b>Éditeurs</b>. '}${window.PE_ACCESS_LINKS ? 'Elles se connectent avec un lien reçu par email (bouton « Liens d\'accès » dans l\'onglet Contacts).' : 'Elles sont reconnues par leur adresse email, qui doit figurer dans l\'onglet Contacts.'}</span>
       <select id="pvSel" class="btn small" aria-label="Pays à prévisualiser">${pvCodes.map(c => `<option value="${esc(c)}">${esc(nameFor(c))}</option>`).join('')}</select><button class="btn small" id="pvGo" ${pvCodes.length ? '' : 'disabled'}>Voir l'espace de ce pays</button></div>`;
     html += `<div class="row"><h2 style="flex:1">${state.libAll ? 'Tous les plannings enregistrés' : `Plannings de ${monthTxt}`} · ${rows.length}</h2>
       <label class="opts"><label><input type="checkbox" id="libAll" ${state.libAll ? 'checked' : ''}> Tous les mois</label></label>
@@ -2407,7 +2408,7 @@ input,select,textarea{border-radius:10px}
       <button class="btn primary" id="libZip" ${state.libSel.size ? '' : 'disabled'}>Télécharger la sélection (${state.libSel.size}) en .zip</button></div>`;
     if (!rows.length) html += `<div class="card empty">Aucun planning enregistré${state.libAll ? '' : ` pour ${monthTxt}`}. Déposez les plannings des agences dans « Pays et envois » : ils sont mis en forme et enregistrés ici automatiquement.</div>`;
     else {
-      html += `<div class="tablewrap"><table><thead><tr><th style="width:36px"></th><th>Pays</th><th>Mois</th><th>Marques</th><th>Publications</th><th>Taille</th><th>Enregistré le</th><th>Envoi</th><th>Validation bottler</th><th></th></tr></thead><tbody class="plain">`;
+      html += `<div class="tablewrap"><table><thead><tr><th style="width:36px"></th><th>Pays</th><th>Mois</th><th>Marques</th><th>Publications</th><th>Taille</th><th>Enregistré le</th><th>Envoi</th>${window.PE_SITE ? '' : '<th>Validation bottler</th>'}<th></th></tr></thead><tbody class="plain">`;
       html += rows.map(([id, d]) => {
         const [y, mm] = String(d.period).split('-'); const sent = state.envois[id];
         return `<tr><td><input type="checkbox" data-lsel="${esc(id)}" aria-label="Sélectionner ${esc(d.pays)}" ${state.libSel.has(id) ? 'checked' : ''}></td>
@@ -2415,7 +2416,7 @@ input,select,textarea{border-radius:10px}
           <td><div class="brands">${(d.brands || []).map(b => `<span class="bchip">${mark(b)}${esc(b)}</span>`).join('')}</div></td>
           <td>${esc(d.posts)}</td><td class="mono">${fmtSize(d.size || 0)}</td><td>${fmtDate(d.savedAt)}</td>
           <td>${sent ? `<span class="pill p-sent">Envoyé le ${fmtDate(sent.sentAt)}</span>` : '<span class="pill p-wait">Non envoyé</span>'}</td>
-          <td style="max-width:240px">${valPill(id, { who: true })}</td>
+          ${window.PE_SITE ? '' : `<td style="max-width:240px">${valPill(id, { who: true })}</td>`}
           <td style="white-space:nowrap"><button class="btn small" data-lview="${esc(id)}">Visualiser</button> <button class="btn small primary" data-ldl="${esc(id)}">Télécharger</button> ${state.assets ? `<button class="btn small ghost" data-ldel="${esc(id)}">Supprimer</button>` : ''}</td></tr>`;
       }).join('');
       html += `</tbody></table></div>`;
