@@ -1967,7 +1967,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
     const code = state.sel, e = entryFor(code), st = statusOf(code), ct = contactFor(code);
     const nIss = e ? e.issues.filter(i => i.level === 'error').length : 0;
     const tabs = [['controle', `Contrôle${e ? ` (${nIss})` : ''}`], ['apercu', 'Aperçu'], ['email', 'Email et envoi']];
-    let html = `<div class="detail-head"><h2>${esc(nameFor(code))}</h2><span class="code">${esc(code)}</span><span class="pill ${st.cls}">${esc(st.label)}</span><span class="muted" style="font-size:12.5px">${esc(st.detail || '')}</span><span class="spacer"></span>
+    let html = `<div class="detail-head"><h2><span class="flag" aria-hidden="true">${flag(code)}</span> ${esc(nameFor(code))}</h2><span class="code">${esc(code)}</span><span class="pill ${st.cls}">${esc(st.label)}</span><span class="muted" style="font-size:12.5px">${esc(st.detail || '')}</span><span class="spacer"></span>
       ${e && st.k === 'revision' ? `<button class="btn primary" data-act="toEnvoi">Valider : passer à l'envoi</button>` : ''}
       ${e && st.k !== 'revision' && st.k !== 'sent' ? `<button class="btn" data-act="toRevision">Mettre en révision</button>` : ''}
       ${e ? `<button class="btn" data-act="view">Visualiser</button><button class="btn" data-act="xlsx">Télécharger le planning mis en forme</button>` : ''}
@@ -2006,7 +2006,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
       <div class="note">Fichier reçu : <b>${esc(e.filename)}</b> (${fmtSize(e.size)}) · ${e.sheets.length} onglet(s) : ${e.sheets.map(s => esc(s.sheetName)).join(', ')} · langue attendue : ${C.LANG_LABEL[lang]}.
       La mise en forme régénère les semaines à partir des dates, nettoie les textes (caractères invisibles, sauts de ligne), aligne chaque visuel sur sa publication et ne reprend ni commentaires, ni retours, ni budget.</div>
       <div class="row"><label class="field" style="flex-direction:row;align-items:center;gap:8px"><span class="muted" style="font-size:12px">Ce fichier concerne</span>
-      <select data-act="reassign" class="btn small">${ORDER.concat(Object.keys(state.contacts).filter(c => !ORDER.includes(c))).map(c => `<option value="${c}" ${c === e.country ? 'selected' : ''}>${esc(nameFor(c))} (${c})</option>`).join('')}</select></label>
+      <select data-act="reassign" class="btn small">${ORDER.concat(Object.keys(state.contacts).filter(c => !ORDER.includes(c))).map(c => `<option value="${c}" ${c === e.country ? 'selected' : ''}>${flag(c)} ${esc(nameFor(c))} (${c})</option>`).join('')}</select></label>
       <button class="btn small ghost" data-act="remove">Retirer ce fichier</button></div>`;
   }
 
@@ -2096,7 +2096,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
     if (!e) { box.hidden = true; return; }
     box.innerHTML = `<div class="detail-head"><h2>${esc(e.filename)}</h2><span class="pill p-err">Pays non reconnu</span></div>
       <div class="note">Le nom du fichier ne contient pas de code pays reconnu. Indiquez le pays concerné :</div>
-      <div class="row"><select data-act="reassign" class="btn"><option value="">Choisir…</option>${ORDER.concat(Object.keys(state.contacts).filter(c => !ORDER.includes(c))).map(c => `<option value="${c}">${esc(nameFor(c))} (${c})</option>`).join('')}</select>
+      <div class="row"><select data-act="reassign" class="btn"><option value="">Choisir…</option>${ORDER.concat(Object.keys(state.contacts).filter(c => !ORDER.includes(c))).map(c => `<option value="${c}">${flag(c)} ${esc(nameFor(c))} (${c})</option>`).join('')}</select>
       <button class="btn ghost" data-act="remove">Retirer ce fichier</button></div>`;
     bindDetail(box, null, e);
   }
@@ -2299,7 +2299,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
     if (!rows.length) { tb.innerHTML = `<tr><td colspan="7" class="empty">Aucun envoi enregistré pour le moment.</td></tr>`; return; }
     tb.innerHTML = rows.map(([id, s]) => {
       const [y, mm] = String(s.period).split('-');
-      return `<tr><td>${fmtDate(s.sentAt)}</td><td>${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</td><td><b>${esc(s.pays)}</b><span class="code">${esc(s.code)}</span></td><td>${esc((s.brands || []).join(', '))}</td><td>${esc(s.posts)}</td>
+      return `<tr><td>${fmtDate(s.sentAt)}</td><td>${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</td><td><span class="flag" aria-hidden="true">${flag(s.code)}</span> <b>${esc(s.pays)}</b><span class="code">${esc(s.code)}</span></td><td>${esc((s.brands || []).join(', '))}</td><td>${esc(s.posts)}</td>
       <td class="muted" style="font-size:12.5px">${esc((s.to || []).join(', '))}${(s.cc || []).length ? `<br>cc ${esc(s.cc.join(', '))}` : ''}</td><td><button class="btn small ghost" data-unsend="${esc(id)}">Annuler</button></td></tr>`;
     }).join('');
     tb.querySelectorAll('[data-unsend]').forEach(b => b.addEventListener('click', () => unmark(b.dataset.unsend)));
@@ -2345,7 +2345,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
     }
     if (cs.length) html += `</div><div class="empty" id="ctNone" hidden>Aucun contact ne correspond à la recherche.</div>`;
     const missing = ORDER.filter(c => !state.contacts[c]);
-    html += `<div class="row" id="addRow" hidden style="margin-top:12px"><select id="addSel" class="btn">${missing.map(c => `<option value="${c}">${esc(C.COUNTRIES[c].name)} (${c})</option>`).join('')}</select><button class="btn primary small" id="addOk">Ajouter</button></div>`;
+    html += `<div class="row" id="addRow" hidden style="margin-top:12px"><select id="addSel" class="btn">${missing.map(c => `<option value="${c}">${flag(c)} ${esc(C.COUNTRIES[c].name)} (${c})</option>`).join('')}</select><button class="btn primary small" id="addOk">Ajouter</button></div>`;
     box.innerHTML = html;
     box.querySelectorAll('.ccard').forEach(card => {
       const code = card.dataset.code;
@@ -2480,11 +2480,11 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
         <label class="opts"><label><input type="checkbox" id="calAll" ${state.calAll ? 'checked' : ''}> Toute l'année</label></label></div>`;
       html += `<div class="tablewrap"><table><thead><tr><th>Date</th><th>Marronnier</th><th>Pays</th><th>Marques</th><th>Plannings reçus</th><th>Communication</th><th></th></tr></thead><tbody class="plain">`;
       html += list.map(ev => {
-        const scope = ev.countries.length ? ev.countries.map(c => `<span class="bchip">${esc(nameFor(c))}</span>`).join(' ') : (ev.foreign && ev.foreign.length ? '<span class="muted">Hors périmètre</span>' : '<span class="muted">Tous pays</span>');
+        const scope = ev.countries.length ? ev.countries.map(c => `<span class="bchip"><span class="flag" aria-hidden="true">${flag(c)}</span> ${esc(nameFor(c))}</span>`).join(' ') : (ev.foreign && ev.foreign.length ? '<span class="muted">Hors périmètre</span>' : '<span class="muted">Tous pays</span>');
         let cov = '<span class="muted">—</span>';
         const concerned = received.filter(e => C.eventsForCountry([ev], e.country, { y: +ev.start.slice(0, 4), m: +ev.start.slice(5, 7) - 1 }, e.sheets.map(s => s.brand)).length);
         if (ev.noComm) cov = '<span class="muted">Pas de communication prévue</span>';
-        else if (concerned.length && !state.calAll) cov = `<div class="brands">${concerned.map(e => { const ok = C.eventCoverage(e, ev).length > 0; return `<span class="bchip" title="${ok ? 'Traité' : 'Non traité'}"><i class="dot" style="background:var(${ok ? '--ok' : (ev.countries.length ? '--warn' : '--line')})"></i>${esc(e.country)}</span>`; }).join('')}</div>`;
+        else if (concerned.length && !state.calAll) cov = `<div class="brands">${concerned.map(e => { const ok = C.eventCoverage(e, ev).length > 0; return `<span class="bchip" title="${ok ? 'Traité' : 'Non traité'}"><i class="dot" style="background:var(${ok ? '--ok' : (ev.countries.length ? '--warn' : '--line')})"></i><span class="flag" aria-hidden="true">${flag(e.country)}</span> ${esc(e.country)}</span>`; }).join('')}</div>`;
         const when = ev.start === ev.end ? fmtDM(ev.start) : `${fmtDM(ev.start)} → ${fmtDM(ev.end)}`;
         return `<tr><td class="mono">${when}</td><td>${esc(ev.label)}</td><td>${scope}</td><td>${ev.brands.length ? esc(ev.brands.join(', ')) : '<span class="muted">Toutes</span>'}</td><td>${cov}</td><td><label class="nocomm"><input type="checkbox" data-nocomm="${esc(ev.id)}" ${ev.noComm ? 'checked' : ''}> Pas de communication</label></td><td><button class="btn small ghost" data-del-ev="${esc(ev.id)}" aria-label="Supprimer ${esc(ev.label)}">Supprimer</button></td></tr>`;
       }).join('') || `<tr><td colspan="7" class="empty">Aucun marronnier ce mois-ci.</td></tr>`;
@@ -2494,7 +2494,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
           <div class="field"><label for="evStart">Date</label><input id="evStart" type="date" value="${from}"></div>
           <div class="field"><label for="evEnd">Fin (facultatif)</label><input id="evEnd" type="date"></div>
           <div class="field" style="grid-column:span 2"><label for="evLabel">Marronnier</label><input id="evLabel" placeholder="Ex. Proclamation de la République"></div>
-          <div class="field" style="grid-column:span 2"><label for="evCountries">Pays (vide = tous)</label><select id="evCountries" multiple size="4">${SCOPE_CODES().map(c => `<option value="${c}">${esc(nameFor(c))} (${c})</option>`).join('')}</select></div>
+          <div class="field" style="grid-column:span 2"><label for="evCountries">Pays (vide = tous)</label><select id="evCountries" multiple size="4">${SCOPE_CODES().map(c => `<option value="${c}">${flag(c)} ${esc(nameFor(c))} (${c})</option>`).join('')}</select></div>
           <div class="field" style="grid-column:span 2"><label for="evBrands">Marques (vide = toutes)</label><input id="evBrands" placeholder="Ex. Planet, Bubble Up"></div>
           <label class="nocomm" style="grid-column:span 4"><input type="checkbox" id="evNoComm"> Pas de communication prévue pour ce marronnier (il n'est pas signalé comme « non traité » au contrôle)</label>
         </div>
@@ -2600,7 +2600,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
     const monthTxt = `${cap(C.MONTHS_FR[state.period.m])} ${state.period.y}`;
     const pvCodes = [...new Set(Object.values(state.library).map(d => d.code))];
     if (!window.PE_SITE) html += `<div class="note row"><span style="flex:1">Les personnes externes (bottlers) ${window.PE_ACCESS_LINKS ? 'dont l\'adresse figure dans les Contacts' : window.PE_HOSTED ? 'invitées dans Microsoft 365' : 'avec qui vous partagez la plateforme'} ne voient qu'un <b>Espace pays</b> : les plannings et l'historique de leur pays, à télécharger et à valider (ou à renvoyer avec une demande de modifications). ${window.PE_HOSTED ? '' : 'Pour valider en ligne, partagez la plateforme avec elles en tant que <b>Contributeur</b> ; vos collègues de l\'équipe doivent être <b>Éditeurs</b>. '}${window.PE_ACCESS_LINKS ? 'Elles se connectent avec un lien reçu par email (bouton « Liens d\'accès » dans l\'onglet Contacts).' : 'Elles sont reconnues par leur adresse email, qui doit figurer dans l\'onglet Contacts.'}</span>
-      <select id="pvSel" class="btn small" aria-label="Pays à prévisualiser">${pvCodes.map(c => `<option value="${esc(c)}">${esc(nameFor(c))}</option>`).join('')}</select><button class="btn small" id="pvGo" ${pvCodes.length ? '' : 'disabled'}>Voir l'espace de ce pays</button></div>`;
+      <select id="pvSel" class="btn small" aria-label="Pays à prévisualiser">${pvCodes.map(c => `<option value="${esc(c)}">${flag(c)} ${esc(nameFor(c))}</option>`).join('')}</select><button class="btn small" id="pvGo" ${pvCodes.length ? '' : 'disabled'}>Voir l'espace de ce pays</button></div>`;
     html += `<div class="row"><h2 style="flex:1">${state.libAll ? 'Tous les plannings enregistrés' : `Plannings de ${monthTxt}`} · ${rows.length}</h2>
       <label class="opts"><label><input type="checkbox" id="libAll" ${state.libAll ? 'checked' : ''}> Tous les mois</label></label>
       <button class="btn" id="libSelAll" ${rows.length ? '' : 'disabled'}>${rows.length && rows.every(([id]) => state.libSel.has(id)) ? 'Tout désélectionner' : 'Tout sélectionner'}</button>
@@ -2611,7 +2611,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
       html += rows.map(([id, d]) => {
         const [y, mm] = String(d.period).split('-'); const sent = state.envois[id];
         return `<tr><td><input type="checkbox" data-lsel="${esc(id)}" aria-label="Sélectionner ${esc(d.pays)}" ${state.libSel.has(id) ? 'checked' : ''}></td>
-          <td><b>${esc(d.pays)}</b><span class="code">${esc(d.code)}</span><div class="muted lsub">${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</div></td>
+          <td><span class="flag" aria-hidden="true">${flag(d.code)}</span> <b>${esc(d.pays)}</b><span class="code">${esc(d.code)}</span><div class="muted lsub">${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</div></td>
           <td><div class="brands">${(d.brands || []).map(b => `<span class="bchip">${mark(b)}${esc(b)}</span>`).join('')}</div></td>
           <td>${esc(d.posts)} publication${d.posts > 1 ? 's' : ''}<div class="muted lsub">${fmtSize(d.size || 0)} · enregistré le ${fmtDate(d.savedAt)}</div></td>
           <td><div class="lsuivi">${sent ? `<span class="pill p-sent">Envoyé le ${fmtDate(sent.sentAt)}</span>` : '<span class="pill p-wait">Non envoyé</span>'}${window.PE_SITE ? '' : valPill(id, { who: true })}</div></td>
@@ -2688,7 +2688,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
   }
   // ---------- Espace pays : langue (français / anglais) et drapeaux ----------
   const FLAGS = { CM: '🇨🇲', CG: '🇨🇬', CIV: '🇨🇮', GN: '🇬🇳', ML: '🇲🇱', SN: '🇸🇳', TD: '🇹🇩', NG: '🇳🇬', GH: '🇬🇭', BF: '🇧🇫', GD: '🇬🇵', VU: '🇻🇺', AR: '🇦🇷' };
-  const flag = code => FLAGS[code] || '🌍';
+  const flag = code => FLAGS[code] || '';
   const PT = {
     fr: { title: 'Plannings éditoriaux', preview: c => `Aperçu de ce que voit une personne de <b>${c}</b> en ouvrant la plateforme.`, exit: 'Quitter l\'aperçu',
       introInfo: 'Consultez et téléchargez les plannings éditoriaux de votre pays, transmis pour information.', introVal: 'Téléchargez les plannings éditoriaux de votre pays, puis validez-les ou demandez des modifications.',
@@ -2727,26 +2727,26 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
     const codesIn = [...new Set(docs.map(([, d]) => d.code))];
     const cname = c => C.countryLabel(c, L);
     let html = '';
-    if (preview) html += `<div class="banner warn row"><span style="flex:1">👀 ${T.preview(esc(nameFor(state.previewCountry)))}</span><button class="btn small" id="pvExit">${T.exit}</button></div>`;
+    if (preview) html += `<div class="banner warn row"><span style="flex:1">${T.preview(esc(nameFor(state.previewCountry)))}</span><button class="btn small" id="pvExit">${T.exit}</button></div>`;
     const allInfo = docs.length && docs.every(([, d]) => d.action === 'info');
-    html += `<div class="card"><h2>${codesIn.length ? `${codesIn.map(c => `<span class="flag" aria-hidden="true">${flag(c)}</span>`).join(' ')} ${esc(T.title)} · ${esc(codesIn.map(cname).join(', '))}` : `🗓️ ${esc(T.title)}`}</h2>
-      <p class="muted" style="margin:4px 0 0">${allInfo ? 'ℹ️ ' + T.introInfo : '📋 ' + T.introVal} ✉️ ${T.ask(mail)}</p></div>`;
-    if (!preview && !state.myHashes.length) html += `<div class="card empty">🔒 ${T.noId(mail)}</div>`;
-    else if (!preview && !state.portalLoaded) html += `<div class="card empty">⏳ ${state.portalSlow ? T.slow : T.loading}</div>`;
-    else if (!docs.length) html += `<div class="card empty">📭 ${T.none}${preview ? '' : T.noneErr(mail)}</div>`;
+    html += `<div class="card"><h2>${codesIn.length ? `${codesIn.map(c => `<span class="flag" aria-hidden="true">${flag(c)}</span>`).join(' ')} ${esc(T.title)} · ${esc(codesIn.map(cname).join(', '))}` : `${esc(T.title)}`}</h2>
+      <p class="muted" style="margin:4px 0 0">${allInfo ? '' + T.introInfo : '' + T.introVal} ${T.ask(mail)}</p></div>`;
+    if (!preview && !state.myHashes.length) html += `<div class="card empty">${T.noId(mail)}</div>`;
+    else if (!preview && !state.portalLoaded) html += `<div class="card empty">${state.portalSlow ? T.slow : T.loading}</div>`;
+    else if (!docs.length) html += `<div class="card empty">${T.none}${preview ? '' : T.noneErr(mail)}</div>`;
     else {
       const latest = docs[0][1];
-      html += `<div class="card row" style="gap:16px"><div style="flex:1;min-width:220px"><div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em">📅 ${T.latest}</div>
+      html += `<div class="card row" style="gap:16px"><div style="flex:1;min-width:220px"><div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em">${T.latest}</div>
         <h2 style="margin-top:2px">${esc(monthName(+latest.period.split('-')[1] - 1, L))} ${esc(latest.period.split('-')[0])}${codesIn.length > 1 ? ` · ${flag(latest.code)} ${esc(cname(latest.code))}` : ''}</h2>
         <div class="brands" style="margin-top:6px">${(latest.brands || []).map(b => `<span class="bchip">${mark(b)}${esc(b)}</span>`).join('')}</div></div>
-        <button class="btn" data-pview="${esc(docs[0][0])}">👁️ ${T.view}</button><button class="btn primary" data-pdl="${esc(docs[0][0])}">📥 ${T.dlBig}</button>
+        <button class="btn" data-pview="${esc(docs[0][0])}">${T.view}</button><button class="btn primary" data-pdl="${esc(docs[0][0])}">${T.dlBig}</button>
         <div class="valbox">${portalVal(docs[0][0], preview, true)}</div></div>`;
-      html += `<h3>🗂️ ${T.history}</h3><div class="tablewrap"><table><thead><tr><th>${T.month}</th>${codesIn.length > 1 ? `<th>${T.country}</th>` : ''}<th>${T.brands}</th><th>${T.posts}</th><th>${T.avail}</th><th>${T.sent}</th><th>${allInfo ? T.status : T.validation}</th><th></th></tr></thead><tbody class="plain">`;
+      html += `<h3>${T.history}</h3><div class="tablewrap"><table><thead><tr><th>${T.month}</th>${codesIn.length > 1 ? `<th>${T.country}</th>` : ''}<th>${T.brands}</th><th>${T.posts}</th><th>${T.avail}</th><th>${T.sent}</th><th>${allInfo ? T.status : T.validation}</th><th></th></tr></thead><tbody class="plain">`;
       html += docs.map(([id, d]) => { const [y, mm] = String(d.period).split('-'); return `<tr><td><b>${esc(monthName(+mm - 1, L))} ${esc(y)}</b></td>${codesIn.length > 1 ? `<td>${flag(d.code)} ${esc(cname(d.code))}</td>` : ''}
         <td><div class="brands">${(d.brands || []).map(b => `<span class="bchip">${mark(b)}${esc(b)}</span>`).join('')}</div></td><td>${esc(d.posts)}</td>
-        <td>${d.savedAt ? fmtDate(d.savedAt) : '—'}</td><td>${d.sentAt ? '✉️ ' + fmtDate(d.sentAt) : '<span class="muted">—</span>'}</td>
+        <td>${d.savedAt ? fmtDate(d.savedAt) : '—'}</td><td>${d.sentAt ? '' + fmtDate(d.sentAt) : '<span class="muted">—</span>'}</td>
         <td style="min-width:200px">${portalVal(id, preview, false)}</td>
-        <td style="white-space:nowrap"><button class="btn small" data-pview="${esc(id)}">👁️ ${T.view}</button> <button class="btn small" data-pdl="${esc(id)}">📥 ${T.dl}</button> <span class="muted mono" style="font-size:11.5px">${fmtSize(d.size || 0)}</span></td></tr>`; }).join('');
+        <td style="white-space:nowrap"><button class="btn small" data-pview="${esc(id)}">${T.view}</button> <button class="btn small" data-pdl="${esc(id)}">${T.dl}</button> <span class="muted mono" style="font-size:11.5px">${fmtSize(d.size || 0)}</span></td></tr>`; }).join('');
       html += `</tbody></table></div>`;
     }
     box.innerHTML = html;
@@ -2766,19 +2766,19 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
   function portalVal(id, preview, big) {
     const T = PT[uiLang()], mail = esc(senderOf().email);
     const pd = state.portal[id] || {};
-    if (pd.action === 'info') return big ? `<div class="infonote">ℹ️ ${T.infoBig(mail)}</div>` : `<span class="pill p-wait">ℹ️ ${T.info}</span>`;
+    if (pd.action === 'info') return big ? `<div class="infonote">${T.infoBig(mail)}</div>` : `<span class="pill p-wait">${T.info}</span>`;
     const it = state.myVal && state.myVal.items && state.myVal.items[id];
     const dis = preview || !state.uid || !state.db || state.canWrite === false ? 'disabled' : '';
-    if (!preview && state.canWrite === false && !(it && it.status)) return big ? `<span class="muted" style="font-size:12.5px">✉️ ${T.byMail(mail)}</span>` : `<span class="muted">${T.byMailShort}</span>`;
-    if (state.valAsk === id) return `<div class="valask"><label class="muted" style="font-size:12.5px" for="vt-${esc(id)}">✏️ ${T.wanted}</label>
+    if (!preview && state.canWrite === false && !(it && it.status)) return big ? `<span class="muted" style="font-size:12.5px">${T.byMail(mail)}</span>` : `<span class="muted">${T.byMailShort}</span>`;
+    if (state.valAsk === id) return `<div class="valask"><label class="muted" style="font-size:12.5px" for="vt-${esc(id)}">${T.wanted}</label>
       <textarea id="vt-${esc(id)}" data-vtxt="${esc(id)}" rows="3" placeholder="${esc(T.ph)}">${esc(it && it.status === 'modifs' ? it.comment || '' : '')}</textarea>
-      <div class="row" style="gap:6px"><button class="btn small primary" data-vsend="${esc(id)}">📨 ${T.send}</button><button class="btn small ghost" data-vcancel="1">${T.cancel}</button></div></div>`;
+      <div class="row" style="gap:6px"><button class="btn small primary" data-vsend="${esc(id)}">${T.send}</button><button class="btn small ghost" data-vcancel="1">${T.cancel}</button></div></div>`;
     if (it && it.status && state.valEdit !== id) {
-      const pill = it.status === 'valide' ? `<span class="pill p-sent">✅ ${esc(T.validated(fmtDate(it.at)))}</span>` : `<span class="pill p-warn">✏️ ${esc(T.asked(fmtDate(it.at)))}</span>${it.comment ? `<div class="valcom">« ${esc(it.comment)} »</div>` : ''}`;
+      const pill = it.status === 'valide' ? `<span class="pill p-sent">${esc(T.validated(fmtDate(it.at)))}</span>` : `<span class="pill p-warn">${esc(T.asked(fmtDate(it.at)))}</span>${it.comment ? `<div class="valcom">« ${esc(it.comment)} »</div>` : ''}`;
       return `${pill} <button class="btn small ghost" data-vedit="${esc(id)}" ${dis}>${T.change}</button>`;
     }
-    const lead = big ? `<div class="muted" style="font-size:12.5px;flex-basis:100%">🔎 ${T.lead}</div>` : '';
-    return `<div class="row" style="gap:6px">${lead}<button class="btn small primary" data-vok="${esc(id)}" ${dis}>✅ ${T.ok}</button><button class="btn small" data-vask="${esc(id)}" ${dis}>✏️ ${T.askBtn}</button>${state.valEdit === id ? `<button class="btn small ghost" data-vcancel="1">${T.cancel}</button>` : ''}</div>${preview ? `<div class="muted" style="font-size:11.5px;margin-top:3px">${T.previewNote}</div>` : ''}`;
+    const lead = big ? `<div class="muted" style="font-size:12.5px;flex-basis:100%">${T.lead}</div>` : '';
+    return `<div class="row" style="gap:6px">${lead}<button class="btn small primary" data-vok="${esc(id)}" ${dis}>${T.ok}</button><button class="btn small" data-vask="${esc(id)}" ${dis}>${T.askBtn}</button>${state.valEdit === id ? `<button class="btn small ghost" data-vcancel="1">${T.cancel}</button>` : ''}</div>${preview ? `<div class="muted" style="font-size:11.5px;margin-top:3px">${T.previewNote}</div>` : ''}`;
   }
   async function setMyValidation(id, status, comment) {
     const d = state.portal[id]; if (!d || !state.uid) return;
@@ -2787,7 +2787,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
     try {
       await state.db.doc('validations/' + state.uid).set({ email: (state.me && state.me.email) || '', name: (state.me && state.me.name) || '', hash: state.myHashes[0] || '', items });
       state.myVal = { email: (state.me && state.me.email) || '', items }; state.valAsk = null; state.valEdit = null; renderPortal();
-      toast(status === 'valide' ? '✅ ' + tt('toastOk') : '📨 ' + tt('toastAsk'));
+      toast(status === 'valide' ? '' + tt('toastOk') : '' + tt('toastAsk'));
     } catch (err) { toast(tt('saveErr') + (err.code || err.message)); }
   }
   function openPreview(code) { state.previewCountry = code; document.body.classList.add('portal-mode'); VIEWS.forEach(x => { $('#v-' + x).hidden = true; }); $('#v-portail').hidden = false; renderPortal(); window.scrollTo(0, 0); }
@@ -2873,7 +2873,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
       const countries = SCOPE_CODES().filter(c => state.contacts[c] || C.COUNTRIES[c]);
       const rows = inMonth.sort((x, y) => x.p.date - y.p.date || x.p.row - y.p.row).map(({ s, si, p }) => {
         const k = si + ':' + p.row, inc = !f.exclude.has(k);
-        const tgt = p.countries.length ? p.countries.map(c => `<span class="bchip">${esc(c)}</span>`).join(' ') : '<span class="muted">Tous</span>';
+        const tgt = p.countries.length ? p.countries.map(c => `<span class="bchip" title="${esc(nameFor(c))}"><span class="flag" aria-hidden="true">${flag(c)}</span> ${esc(c)}</span>`).join(' ') : '<span class="muted">Tous</span>';
         const txt = (p.text || p.translation || '').split('\n')[0];
         return `<tr class="${inc ? '' : 'off'}"><td><input type="checkbox" data-mpost="${esc(f.id)}|${esc(k)}" ${inc ? 'checked' : ''} aria-label="Inclure la publication du ${esc(C.fmtDateLong(p.date, 'fr'))}"></td>
           <td class="mono" style="white-space:nowrap">${esc(fmtDM(C.ymd(p.date)))}</td><td><b>${esc(p.theme)}</b>${p.rejected ? ` <span class="pill p-err" title="${esc(p.feedback)}">Refusé</span>` : ''}${f.parsed.sheets.length > 1 ? `<div class="muted" style="font-size:12px">${esc(s.brand)}</div>` : ''}</td>
@@ -2881,7 +2881,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
           <td>${tgt}</td><td>${p.images.length ? `${p.images.length} visuel${p.images.length > 1 ? 's' : ''}` : '<span class="muted">—</span>'}</td></tr>`;
       }).join('');
       const sel = [...f.countries].filter(c => countries.includes(c));
-      const summary = sel.map(c => { const n = mefCountFor(f, c); return `<span class="bchip" title="${esc(nameFor(c))}">${esc(c)} <b>${n}</b>${langFor(c) !== 'fr' ? ` <span class="muted">${langFor(c).toUpperCase()}</span>` : ''}</span>`; }).join('');
+      const summary = sel.map(c => { const n = mefCountFor(f, c); return `<span class="bchip" title="${esc(nameFor(c))}"><span class="flag" aria-hidden="true">${flag(c)}</span> ${esc(c)} <b>${n}</b>${langFor(c) !== 'fr' ? ` <span class="muted">${langFor(c).toUpperCase()}</span>` : ''}</span>`; }).join('');
       return `<section class="card detail" data-mef="${esc(f.id)}">
         <div class="row"><div style="flex:1;min-width:240px"><h2>${esc(f.filename)}</h2>
           <div class="brands" style="margin-top:6px">${f.parsed.sheets.map((s, si) => `<label class="bchip" title="Marque de cet onglet">${mark(s.brand)}<select data-mefbrand="${si}" aria-label="Marque" style="border:0;background:transparent;font:inherit">${Object.entries(C.BRANDS).map(([k, b]) => `<option value="${k}" ${k === s.brandKey ? 'selected' : ''}>${esc(b.label)}</option>`).join('')}${C.BRANDS[s.brandKey] ? '' : '<option value="" selected>Marque ?</option>'}</select></label>`).join('')}<span class="muted" style="font-size:12.5px">${all.length} publication(s)${f.parsed.source === 'slides' ? ` · ${f.parsed.slideCount} diapositives` : ''}${f.parsed.country ? ` · fichier ${esc(nameFor(f.parsed.country))}` : ''} · ${fmtSize(f.size)}</span></div></div>
@@ -2894,7 +2894,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
           <div class="field"><label for="mm-${esc(f.id)}">Mois à envoyer</label><select id="mm-${esc(f.id)}" data-mefmonth>${months.map(m => `<option value="${mKey(m)}" ${mKey(m) === mKey(f.month) ? 'selected' : ''}>${esc(cap(C.MONTHS_FR[m.m]))} ${m.y} (${m.n} publication${m.n > 1 ? 's' : ''})</option>`).join('')}</select></div>
           ${cols.translation ? `<label class="opts"><label><input type="checkbox" data-meftr ${f.translationColumn ? 'checked' : ''}> Ajouter aussi la traduction EN en colonne pour les pays francophones</label></label>` : ''}
         </div>
-        <div class="field"><label>Pays destinataires</label><div class="brands">${countries.map(c => `<label class="bchip" style="cursor:pointer"><input type="checkbox" data-mefc="${esc(c)}" ${f.countries.has(c) ? 'checked' : ''}> ${esc(nameFor(c))}</label>`).join('')}</div></div>
+        <div class="field"><label>Pays destinataires</label><div class="brands">${countries.map(c => `<label class="bchip" style="cursor:pointer"><input type="checkbox" data-mefc="${esc(c)}" ${f.countries.has(c) ? 'checked' : ''}> <span class="flag" aria-hidden="true">${flag(c)}</span> ${esc(nameFor(c))}</label>`).join('')}</div></div>
         <div class="tablewrap"><table class="mef"><thead><tr><th></th><th>Date</th><th>Thématique</th><th>Texte</th><th>Pays ciblés</th><th>Visuels</th></tr></thead><tbody class="plain">${rows || '<tr><td colspan="6" class="empty">Aucune publication ce mois-ci.</td></tr>'}</tbody></table></div>
         ${outside ? `<p class="muted" style="margin:0;font-size:12.5px">${outside} publication(s) d'autres mois ignorée(s).</p>` : ''}
         <div class="row"><span class="muted" style="font-size:12.5px">Publications par pays :</span><div class="brands">${summary || '<span class="muted">aucun pays choisi</span>'}</div><span class="spacer"></span>
@@ -2907,7 +2907,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
             <button class="btn" data-mefrev ${sel.length ? '' : 'disabled'}>Mettre en révision</button>
             <button class="btn primary" data-mefsend ${sel.length ? '' : 'disabled'}>Prêt pour l'envoi</button>
           </div>
-          ${f.placed && Object.keys(f.placed).length ? `<div class="row"><span class="muted" style="font-size:12.5px">Positionnés :</span><div class="brands">${Object.keys(f.placed).map(c => { const s = statusOf(c); return `<span class="pill ${s.cls}" title="${esc(nameFor(c))}">${esc(c)} · ${esc(s.label)}</span>`; }).join('')}</div><a class="btn small ghost" href="#pays">Voir l'étape 2 · Pays et envois</a></div>` : ''}
+          ${f.placed && Object.keys(f.placed).length ? `<div class="row"><span class="muted" style="font-size:12.5px">Positionnés :</span><div class="brands">${Object.keys(f.placed).map(c => { const s = statusOf(c); return `<span class="pill ${s.cls}" title="${esc(nameFor(c))}"><span class="flag" aria-hidden="true">${flag(c)}</span> ${esc(c)} · ${esc(s.label)}</span>`; }).join('')}</div><a class="btn small ghost" href="#pays">Voir l'étape 2 · Pays et envois</a></div>` : ''}
         </div>
       </section>`;
     }).join('');
@@ -2991,7 +2991,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
     const [y, mm] = String(d.period).split('-');
     $('#viewerTitle').textContent = `${flag(d.code)} ${uiLang() === 'en' ? C.countryLabel(d.code, 'en') : d.pays} · ${monthName(+mm - 1, uiLang())} ${y}`;
     $('#viewerMeta').textContent = `${(d.brands || []).join(', ')} · ${d.posts || 0} ${tt('postsN')} · ${d.filename}`;
-    $('#viewerDl').textContent = '📥 ' + tt('dl'); $('#viewerClose').textContent = tt('close');
+    $('#viewerDl').textContent = '' + tt('dl'); $('#viewerClose').textContent = tt('close');
     body.innerHTML = `<div class="empty">${tt('opening')}</div>`;
     v.hidden = false; document.body.classList.add('noscroll');
     $('#viewerClose').focus();
