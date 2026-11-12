@@ -1,4 +1,4 @@
-# Plannings éditoriaux pays
+# Plannings éditoriaux
 
 > **Branche `version-serveur`** : version hébergée (Docker, serveur Node.js) avec connexion par lien email, Espaces pays et validation en ligne par les bottlers. La branche `main` contient la version site (GitHub Pages), sans serveur.
 
