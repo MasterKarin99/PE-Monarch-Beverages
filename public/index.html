@@ -288,6 +288,34 @@ input,select,textarea{border-radius:10px}
 .lacts{display:flex;flex-wrap:nowrap;gap:6px;justify-content:flex-end}
 @media (max-width:900px){ .libtable thead{display:none} .libtable tr{display:grid;grid-template-columns:36px 1fr;gap:4px 10px;padding:10px 0;border-bottom:1px solid var(--line)} .libtable td{border:0;padding:2px 8px} .libtable td:nth-child(n+3){grid-column:2} .lacts{justify-content:flex-start} }
 .nocomm{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);white-space:nowrap;cursor:pointer}
+
+/* Modèle d'email */
+.tplsender h3{margin:0 0 12px}
+.tplsender-grid{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:14px}
+.tplsender-grid input,.tplsender-grid textarea,.tpledit input,.tpledit textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 11px;background:var(--paper);font:inherit}
+.tplsender-grid textarea{resize:vertical;min-height:42px}
+.tpltabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.tpltab{flex:1;min-width:220px;text-align:left;background:var(--paper);border:2px solid transparent;border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 16px;cursor:pointer;font:inherit;color:var(--ink)}
+.tpltab:hover{border-color:var(--line)}
+.tpltab[aria-selected="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.tpltab b{display:flex;align-items:center;gap:8px;font-size:14.5px}
+.tpltab .lang{font-size:11px;font-weight:700;letter-spacing:.04em;background:var(--brand-slate);color:#fff;border-radius:6px;padding:2px 6px}
+.tpltab .who{display:block;font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.4}
+.tplgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.tpledit{display:flex;flex-direction:column;gap:12px}
+.tpledit textarea{min-height:340px;line-height:1.6;resize:vertical}
+.tplvars{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tplvars button{font-family:var(--font-mono);font-size:12px;border:1px dashed var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:3px 10px;cursor:pointer}
+.tplvars button:hover{background:var(--paper)}
+.mailmock{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;position:sticky;top:16px}
+.mailmock .mhead{background:var(--bg);padding:12px 16px;border-bottom:1px solid var(--line);font-size:12.5px;display:grid;grid-template-columns:62px 1fr;gap:4px 8px}
+.mailmock .mhead span:nth-child(odd){color:var(--muted)}
+.mailmock .msubj{font-weight:700;font-size:15px;padding:14px 16px 0}
+.mailmock .mbody{padding:12px 16px 18px;font-size:13.5px;line-height:1.6}
+.mailmock .mbody a{color:var(--accent);font-weight:600}
+.mailmock .mtag{display:inline-block;font-size:11px;color:var(--muted);padding:0 16px 12px}
+@media (max-width:900px){ .tplsender-grid,.tplgrid{grid-template-columns:1fr} .mailmock{position:static} }
+nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--line)}
 </style>
 </head>
 <body class="booting">
@@ -309,11 +337,12 @@ input,select,textarea{border-radius:10px}
   <nav class="tabs" aria-label="Sections">
     <a href="#miseenforme" data-view="miseenforme">1 · Mise en forme</a>
     <a href="#pays" data-view="pays">2 · Pays et envois</a>
+    <a href="#marronniers" data-view="marronniers">Marronniers</a>
     <a href="#telechargements" data-view="telechargements">Téléchargements</a>
+    <a href="#historique" data-view="historique">Historique</a>
+    <span class="tabsep" aria-hidden="true"></span>
     <a href="#contacts" data-view="contacts">Contacts</a>
     <a href="#modele" data-view="modele">Modèle d'email</a>
-    <a href="#marronniers" data-view="marronniers">Marronniers</a>
-    <a href="#historique" data-view="historique">Historique</a>
   </nav>
 
   <!-- ============ PAYS ============ -->
@@ -425,17 +454,22 @@ input,select,textarea{border-radius:10px}
 
   <!-- ============ MODELE ============ -->
   <section id="v-modele" class="detail" hidden>
-    <div class="card detail">
-      <h2>Modèle d'email</h2>
-      <p class="muted" style="margin:0">Trois modèles, choisis pour chaque pays dans l'onglet Contacts. Variables : <span class="mono">{mois} {marques} {pour_marques} {pays} {nb} {signature}</span>. Le lien de téléchargement s'écrit <span class="mono">[texte]({lien})</span> : il devient cliquable dans l'email.</p>
-      <div class="grid2">
-        <div class="field"><label for="fromEmail">Expéditeur : adresse Outlook qui envoie les emails</label><input id="fromEmail" type="email" autocomplete="off"><span id="fromHint" class="muted" style="font-size:12px" hidden>Définie sur le serveur par votre équipe informatique (MAIL_SENDER).</span></div>
-        <div class="field"><label for="fromName">Nom affiché</label><input id="fromName" autocomplete="off"></div>
+    <div class="card row">
+      <div style="flex:1;min-width:260px">
+        <h2>Modèle d'email</h2>
+        <p class="muted" style="margin:4px 0 0">Trois modèles, attribués à chaque pays dans l'onglet Contacts. L'aperçu à droite montre l'email tel que le bottler le recevra.</p>
       </div>
-      <div class="field" style="max-width:420px"><label for="sig">Signature</label><textarea id="sig" style="min-height:60px"></textarea></div>
-      <div id="tplList" class="detail"></div>
-      <div class="row"><button class="btn primary" id="tplSave">Enregistrer le modèle</button><button class="btn" id="tplReset">Rétablir le modèle par défaut</button></div>
+      <div class="row" style="gap:8px"><button class="btn" id="tplReset">Rétablir le modèle par défaut</button><button class="btn primary" id="tplSave">Enregistrer</button></div>
     </div>
+    <div class="tplsender card">
+      <h3>Expéditeur et signature</h3>
+      <div class="tplsender-grid">
+        <div class="field"><label for="fromEmail">Adresse Outlook qui envoie les emails</label><input id="fromEmail" type="email" autocomplete="off"><span id="fromHint" class="muted" style="font-size:12px" hidden>Adresse fixée par l'hébergement de la plateforme.</span></div>
+        <div class="field"><label for="fromName">Nom affiché</label><input id="fromName" autocomplete="off"></div>
+        <div class="field tplsig"><label for="sig">Signature <span class="muted">(remplace {signature})</span></label><textarea id="sig" rows="3" placeholder="Prénom Nom&#10;Fonction · Monarch Beverages"></textarea></div>
+      </div>
+    </div>
+    <div id="tplList"></div>
   </section>
 
   <!-- ============ HISTORIQUE ============ -->
@@ -1713,7 +1747,7 @@ input,select,textarea{border-radius:10px}
 
   // ---------- Rendu principal ----------
   function refresh() { recompute(); renderAll(); }
-  function renderAll() { renderStats(); renderRestore(); renderTable(); renderDetail(); renderContacts(); renderHistory(); renderCalendar(); renderLibrary(); renderMef(); }
+  function renderAll() { if ($('#v-modele').hidden) renderTemplates(); renderStats(); renderRestore(); renderTable(); renderDetail(); renderContacts(); renderHistory(); renderCalendar(); renderLibrary(); renderMef(); }
 
   function renderStats() {
     const cs = codes(); const c = { wait: 0, rev: 0, check: 0, ready: 0, sent: 0, modifs: 0, valide: 0 };
@@ -2252,28 +2286,69 @@ input,select,textarea{border-radius:10px}
   }
 
   // ---------- Modèle ----------
-  function renderTemplates() {
+  const TPL_VARS = ['{mois}', '{marques}', '{pour_marques}', '{pays}', '{nb}', '{signature}', '[texte]({lien})'];
+  function tplSample(id) {
+    const users = codes().filter(c => templateIdFor(c) === id), code = users[0] || (id === 'en' ? 'NG' : 'CIV');
+    const lang = C.DEFAULT_TEMPLATES[id].lang || 'fr', ct = contactFor(code) || {};
+    const brands = (ct.brands && ct.brands.length ? ct.brands : ['Planet', 'American Cola']);
+    const monthTxt = C.monthLabel(state.period, lang);
+    return { code, ct, vars: { pays: C.countryLabel(code, lang), mois: lang === 'en' ? monthTxt : monthTxt.toLowerCase(), marques: C.brandList(brands, lang), pour_marques: C.pourMarques(brands, lang), nb: 18, signature: $('#sig').value || '' } };
+  }
+  function renderTplPreview(id) {
+    const box = $('#tplPrev'); if (!box) return;
+    const smp = tplSample(id), subj = $('#ts-' + id).value, body = $('#tb-' + id).value;
+    const r = C.renderMessage(C.fillTemplate(body, smp.vars).replace(/\n+$/, ''), 'https://www.swisstransfer.com/d/exemple');
+    const to = (smp.ct.to || []).map(c => c.name || c.email).join(', ') || '—';
+    const from = $('#fromName').value || $('#fromEmail').value || '—';
+    box.innerHTML = `<div class="mhead"><span>De</span><span>${esc(from)}</span><span>À</span><span>${esc(to)}</span>${(smp.ct.cc || []).length ? `<span>Cc</span><span>${esc(smp.ct.cc.map(c => c.name || c.email).join(', '))}</span>` : ''}</div>
+      <div class="msubj">${esc(C.fillTemplate(subj, smp.vars))}</div><div class="mbody">${r.html}</div>
+      <span class="mtag">Aperçu avec l'exemple ${esc(nameFor(smp.code))} · ${esc(smp.vars.mois)} · lien de téléchargement fictif</span>`;
+  }
+  function renderTemplates(opts) {
+    if (state.tplDirty && !(opts && opts.fresh) && $('#tb-' + C.TEMPLATE_IDS[0])) keepTplDraft();
     $('#sig').value = (state.settings && state.settings.signature) || '';
     $('#fromName').value = senderOf().name || ''; $('#fromEmail').value = senderOf().email || '';
     $('#fromEmail').readOnly = !!(state.mailCfg && state.mailCfg.sender);
     $('#fromHint').hidden = !(state.mailCfg && state.mailCfg.sender);
-    $('#tplList').innerHTML = C.TEMPLATE_IDS.map(id => { const t = templateOf(id); const users = codes().filter(c => templateIdFor(c) === id);
-      return `<div class="detail" style="gap:8px"><h3>${esc(C.DEFAULT_TEMPLATES[id].label)} <span class="muted" style="font-weight:500">· ${users.length ? esc(users.map(nameFor).join(', ')) : 'aucun pays'}</span></h3>
-      <div class="field"><label for="ts-${id}">Objet</label><input id="ts-${id}" value="${esc(t.subject)}"></div>
-      <div class="field"><label for="tb-${id}">Message</label><textarea id="tb-${id}" style="min-height:220px">${esc(t.body)}</textarea></div></div>`; }).join('');
+    const cur = C.TEMPLATE_IDS.includes(state.tplTab) ? state.tplTab : C.TEMPLATE_IDS[0];
+    const langTag = { fr: 'FR', en: 'EN', es: 'ES' };
+    const tabs = C.TEMPLATE_IDS.map(id => { const users = codes().filter(c => templateIdFor(c) === id); const d = C.DEFAULT_TEMPLATES[id];
+      return `<button class="tpltab" role="tab" aria-selected="${id === cur}" data-tpltab="${id}"><b><span class="lang">${langTag[d.lang] || 'FR'}</span>${esc(d.label)}</b><span class="who">${users.length ? `${users.length} pays · ${esc(users.map(nameFor).join(', '))}` : 'Aucun pays'}</span></button>`; }).join('');
+    const panels = C.TEMPLATE_IDS.map(id => { const t = templateOf(id);
+      return `<div class="tplgrid" data-tplpanel="${id}" ${id === cur ? '' : 'hidden'}>
+        <div class="card tpledit">
+          <div class="field"><label for="ts-${id}">Objet</label><input id="ts-${id}" value="${esc(t.subject)}"></div>
+          <div class="field"><label for="tb-${id}">Message</label><textarea id="tb-${id}">${esc(t.body)}</textarea></div>
+          <div class="tplvars"><span class="muted" style="font-size:12.5px">Insérer :</span>${TPL_VARS.map(v => `<button type="button" data-tplvar="${esc(v)}" title="Insérer ${esc(v)} dans le message">${esc(v)}</button>`).join('')}</div>
+        </div>
+        ${id === cur ? '<div class="mailmock" id="tplPrev" aria-live="polite"></div>' : ''}
+      </div>`; }).join('');
+    $('#tplList').innerHTML = `<div class="tpltabs" role="tablist">${tabs}</div>${panels}`;
+    $('#tplList').querySelectorAll('[data-tpltab]').forEach(b => b.addEventListener('click', () => { keepTplDraft(); state.tplTab = b.dataset.tpltab; renderTemplates(); }));
+    $('#tplList').querySelectorAll('[data-tplvar]').forEach(b => b.addEventListener('click', () => {
+      const ta = $('#tb-' + cur), v = b.dataset.tplvar, i = ta.selectionStart ?? ta.value.length, j = ta.selectionEnd ?? i;
+      ta.value = ta.value.slice(0, i) + v + ta.value.slice(j); state.tplDirty = true; ta.focus(); ta.selectionStart = ta.selectionEnd = i + v.length; renderTplPreview(cur);
+    }));
+    ['#ts-' + cur, '#tb-' + cur].forEach(sel => $(sel).addEventListener('input', () => { state.tplDirty = true; renderTplPreview(cur); }));
+    if (state.tplDirty && state.tplDraft) C.TEMPLATE_IDS.forEach(id => { const dr = state.tplDraft[id]; if (dr) { $('#ts-' + id).value = dr.subject; $('#tb-' + id).value = dr.body; } });
+    renderTplPreview(cur);
   }
+  // garde les modifications non enregistrées quand on change d'onglet de modèle
+  function keepTplDraft() { state.tplDraft = state.tplDraft || {}; C.TEMPLATE_IDS.forEach(id => { const s1 = $('#ts-' + id), b1 = $('#tb-' + id); if (s1 && b1) state.tplDraft[id] = { subject: s1.value, body: b1.value }; }); }
   function initTemplates() {
     renderTemplates();
     $('#tplSave').addEventListener('click', async () => {
       const fe = $('#fromEmail').value.trim();
       if (fe && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(fe)) { toast("L'adresse de l'expéditeur n'est pas valide."); return; }
       const doc = { signature: $('#sig').value, sender: { name: $('#fromName').value.trim(), email: fe || DEFAULT_SENDER.email }, templates: {} };
-      C.TEMPLATE_IDS.forEach(id => doc.templates[id] = { subject: $('#ts-' + id).value, body: $('#tb-' + id).value, lang: C.DEFAULT_TEMPLATES[id].lang });
+      keepTplDraft(); C.TEMPLATE_IDS.forEach(id => doc.templates[id] = { subject: state.tplDraft[id].subject, body: state.tplDraft[id].body, lang: C.DEFAULT_TEMPLATES[id].lang });
+      state.tplDraft = null; state.tplDirty = false;
       state.overrides = {};
       if (state.db) { try { await state.db.doc('settings/email').set(doc); toast('Modèle enregistré'); } catch (err) { toast('Enregistrement impossible : ' + (err.code || err.message)); } }
       else { state.settings = doc; toast('Modèle appliqué pour cette session'); renderDetail(); }
     });
-    $('#tplReset').addEventListener('click', () => { state.settings = Object.assign({}, state.settings || {}, { templates: {} }); renderTemplates(); toast('Modèle par défaut rétabli : cliquez sur Enregistrer pour le conserver.'); });
+    ['#sig', '#fromName', '#fromEmail'].forEach(sel => $(sel).addEventListener('input', () => renderTplPreview(C.TEMPLATE_IDS.includes(state.tplTab) ? state.tplTab : C.TEMPLATE_IDS[0])));
+    $('#tplReset').addEventListener('click', () => { state.tplDraft = null; state.tplDirty = false; state.settings = Object.assign({}, state.settings || {}, { templates: {} }); renderTemplates({ fresh: true }); toast('Modèle par défaut rétabli : cliquez sur Enregistrer pour le conserver.'); });
   }
 
 
@@ -2827,12 +2902,13 @@ input,select,textarea{border-radius:10px}
   }
 
   // ---------- Navigation ----------
-  const VIEWS = ['miseenforme', 'pays', 'telechargements', 'contacts', 'modele', 'marronniers', 'historique'];
+  const VIEWS = ['miseenforme', 'pays', 'marronniers', 'telechargements', 'historique', 'contacts', 'modele'];
   function route() {
     if (state.mode === 'portal' || state.previewCountry) return;
     const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'miseenforme';
     VIEWS.forEach(x => { $('#v-' + x).hidden = x !== v; });
     document.querySelectorAll('nav.tabs a').forEach(a => { if (a.dataset.view === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    if (v === 'modele') renderTemplates();
   }
 
   function initTable() {
