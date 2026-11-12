@@ -277,6 +277,16 @@ input,select,textarea{border-radius:10px}
 .legend summary{cursor:pointer;font-weight:600;font-size:13.5px}
 .legend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px 18px;margin-top:12px}
 .legend-grid p{margin:5px 0 0;font-size:12.5px;color:var(--muted);line-height:1.45}
+
+/* Téléchargements : tableau sans défilement horizontal */
+.libwrap{overflow-x:visible}
+.libtable{width:100%;table-layout:auto}
+.libtable td{white-space:normal;vertical-align:middle}
+.libtable th.r{text-align:right}
+.lsub{font-size:12px;margin-top:3px}
+.lsuivi{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+.lacts{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+@media (max-width:900px){ .libtable thead{display:none} .libtable tr{display:grid;grid-template-columns:36px 1fr;gap:4px 10px;padding:10px 0;border-bottom:1px solid var(--line)} .libtable td{border:0;padding:2px 8px} .libtable td:nth-child(n+3){grid-column:2} .lacts{justify-content:flex-start} }
 .sitebar{display:flex;gap:12px 20px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 16px;font-size:13px;color:var(--muted)}
 .sitebar b{color:var(--ink)}
 #siteReset{color:var(--err)}
@@ -1839,13 +1849,14 @@ input,select,textarea{border-radius:10px}
         <td><b>${esc(nameFor(code))}</b><span class="code">${esc(code)}</span></td>
         <td class="stcell">${statusCell(st)}</td>
         <td><div class="brands">${chips || '<span class="muted">—</span>'}</div></td>
-        <td style="font-variant-numeric:tabular-nums">${e ? n : '<span class="muted">—</span>'}</td>
+        <td style="font-variant-numeric:tabular-nums">${e ? `${n}<div><button class="btn small" data-rview="${esc(code)}" style="margin-top:6px">Visualiser</button></div>` : '<span class="muted">—</span>'}</td>
         <td>${ctrl}</td><td>${rc}</td></tr>`;
     }
     for (const e of unknown) {
       html += `<tr data-entry="${e.id}" class="${state.sel === 'id:' + e.id ? 'sel' : ''}" tabindex="0"><td><b>${esc(e.filename)}</b></td><td><span class="pill p-err">Pays non reconnu</span></td><td colspan="4" class="muted">Ouvrez la ligne pour choisir le pays.</td></tr>`;
     }
     tb.innerHTML = html;
+    tb.querySelectorAll('[data-rview]').forEach(b => b.addEventListener('click', ev => { ev.stopPropagation(); viewEntry(b.dataset.rview, b); }));
   }
 
   function select(key) { state.sel = key; state.subtab = state.subtab || 'controle'; renderTable(); renderDetail(); const d = $('#detail'); if (!d.hidden) d.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); }
@@ -1911,7 +1922,7 @@ input,select,textarea{border-radius:10px}
     let html = `<div class="detail-head"><h2>${esc(nameFor(code))}</h2><span class="code">${esc(code)}</span><span class="pill ${st.cls}">${esc(st.label)}</span><span class="muted" style="font-size:12.5px">${esc(st.detail || '')}</span><span class="spacer"></span>
       ${e && st.k === 'revision' ? `<button class="btn primary" data-act="toEnvoi">Valider : passer à l'envoi</button>` : ''}
       ${e && st.k !== 'revision' && st.k !== 'sent' ? `<button class="btn" data-act="toRevision">Mettre en révision</button>` : ''}
-      ${e ? `<button class="btn" data-act="xlsx">Télécharger le planning mis en forme</button>` : ''}
+      ${e ? `<button class="btn" data-act="view">Visualiser</button><button class="btn" data-act="xlsx">Télécharger le planning mis en forme</button>` : ''}
       </div>
       ${e && st.k === 'revision' ? `<div class="banner warn">Planning en révision${stageOf(code).note ? ` : ${esc(stageOf(code).note)}` : ''}. Il ne peut pas être envoyé tant qu'il n'est pas validé.</div>` : ''}
       <div class="row" id="revBox" hidden><input id="revNote" placeholder="Motif de la révision (facultatif) : ex. en attente des vidéos, retours MB à intégrer…" style="flex:1;min-width:240px;border:1px solid var(--line);border-radius:6px;padding:7px 9px;background:var(--paper)"><button class="btn primary small" data-act="revOk">Mettre en révision</button></div>`;
@@ -2087,6 +2098,7 @@ input,select,textarea{border-radius:10px}
         else if (act === 'revOk') { await setStage(code, 'revision', box.querySelector('#revNote').value.trim()); toast(`${nameFor(code)} : en révision`); refresh(); }
         else if (act === 'validate') { e.validated = true; refresh(); toast('Contrôle validé'); }
         else if (act === 'remove') { state.entries.splice(state.entries.indexOf(e), 1); state.sel = null; refresh(); }
+        else if (act === 'view') { await viewEntry(code, el); }
         else if (act === 'xlsx') { await busy(el, async () => { const b = await build(e); await save(b.filename, b.blob); renderDetail(); }); }
         else if (act === 'outlook') {
           const m = emailFor(code);
@@ -2502,16 +2514,15 @@ input,select,textarea{border-radius:10px}
       <button class="btn primary" id="libZip" ${state.libSel.size ? '' : 'disabled'}>Télécharger la sélection (${state.libSel.size}) en .zip</button></div>`;
     if (!rows.length) html += `<div class="card empty">Aucun planning enregistré${state.libAll ? '' : ` pour ${monthTxt}`}. Déposez les plannings des agences dans « Pays et envois » : ils sont mis en forme et enregistrés ici automatiquement.</div>`;
     else {
-      html += `<div class="tablewrap"><table><thead><tr><th style="width:36px"></th><th>Pays</th><th>Mois</th><th>Marques</th><th>Publications</th><th>Taille</th><th>Enregistré le</th><th>Envoi</th>${window.PE_SITE ? '' : '<th>Validation bottler</th>'}<th></th></tr></thead><tbody class="plain">`;
+      html += `<div class="tablewrap libwrap"><table class="libtable"><thead><tr><th style="width:36px"></th><th>Pays</th><th>Marques</th><th>Contenu</th><th>Suivi</th><th class="r">Actions</th></tr></thead><tbody class="plain">`;
       html += rows.map(([id, d]) => {
         const [y, mm] = String(d.period).split('-'); const sent = state.envois[id];
         return `<tr><td><input type="checkbox" data-lsel="${esc(id)}" aria-label="Sélectionner ${esc(d.pays)}" ${state.libSel.has(id) ? 'checked' : ''}></td>
-          <td><b>${esc(d.pays)}</b><span class="code">${esc(d.code)}</span></td><td>${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</td>
+          <td><b>${esc(d.pays)}</b><span class="code">${esc(d.code)}</span><div class="muted lsub">${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</div></td>
           <td><div class="brands">${(d.brands || []).map(b => `<span class="bchip">${mark(b)}${esc(b)}</span>`).join('')}</div></td>
-          <td>${esc(d.posts)}</td><td class="mono">${fmtSize(d.size || 0)}</td><td>${fmtDate(d.savedAt)}</td>
-          <td>${sent ? `<span class="pill p-sent">Envoyé le ${fmtDate(sent.sentAt)}</span>` : '<span class="pill p-wait">Non envoyé</span>'}</td>
-          ${window.PE_SITE ? '' : `<td style="max-width:240px">${valPill(id, { who: true })}</td>`}
-          <td style="white-space:nowrap"><button class="btn small" data-lview="${esc(id)}">Visualiser</button> <button class="btn small primary" data-ldl="${esc(id)}">Télécharger</button> ${state.assets ? `<button class="btn small ghost" data-ldel="${esc(id)}">Supprimer</button>` : ''}</td></tr>`;
+          <td>${esc(d.posts)} publication${d.posts > 1 ? 's' : ''}<div class="muted lsub">${fmtSize(d.size || 0)} · enregistré le ${fmtDate(d.savedAt)}</div></td>
+          <td><div class="lsuivi">${sent ? `<span class="pill p-sent">Envoyé le ${fmtDate(sent.sentAt)}</span>` : '<span class="pill p-wait">Non envoyé</span>'}${window.PE_SITE ? '' : valPill(id, { who: true })}</div></td>
+          <td><div class="lacts"><button class="btn small" data-lview="${esc(id)}">Visualiser</button><button class="btn small primary" data-ldl="${esc(id)}">Télécharger</button>${state.assets ? `<button class="btn small ghost" data-ldel="${esc(id)}">Supprimer</button>` : ''}</div></td></tr>`;
       }).join('');
       html += `</tbody></table></div>`;
     }
@@ -2834,6 +2845,15 @@ input,select,textarea{border-radius:10px}
   // ---------- Visualisation d'un planning enregistré ----------
   const viewerCache = new Map();
   let viewerReturn = null, viewerDoc = null;
+  // Visualiser le planning mis en forme d'un pays (onglet Pays et envois), sans l'enregistrer
+  async function viewEntry(code, opener) {
+    const e = entryFor(code); if (!e) return;
+    await busy(opener, async () => {
+      const b = await build(e);
+      const brands = (e.sheets || []).map(s => s.brand), posts = (e.sheets || []).reduce((a, s) => a + s.posts.length, 0);
+      await openViewer({ pays: nameFor(code), code, period: periodKey(), brands, posts, filename: b.filename, _blob: b.blob }, opener);
+    });
+  }
   async function openViewer(d, opener) {
     if (!d) return;
     viewerReturn = opener || null; viewerDoc = d;
@@ -2845,11 +2865,11 @@ input,select,textarea{border-radius:10px}
     v.hidden = false; document.body.classList.add('noscroll');
     $('#viewerClose').focus();
     try {
-      let entry = viewerCache.get(d.assetId);
+      let entry = d._blob ? null : viewerCache.get(d.assetId);
       if (!entry) {
-        const u8 = await fetchLib(d);
+        const u8 = d._blob ? new Uint8Array(await d._blob.arrayBuffer()) : await fetchLib(d);
         entry = await C.parsePlanning(window.ExcelJS, u8.buffer, d.filename);
-        viewerCache.set(d.assetId, entry);
+        if (!d._blob) viewerCache.set(d.assetId, entry);
       }
       if (viewerDoc !== d) return;
       const tabs = entry.sheets.map((s, i) => `<button role="tab" aria-selected="${i === 0}" data-vtab="${i}">${mark(s.brandKey)} ${esc(s.brand)} <span class="muted">${s.posts.length}</span></button>`).join('');
@@ -2869,7 +2889,7 @@ input,select,textarea{border-radius:10px}
     $('#viewerClose').addEventListener('click', closeViewer);
     $('#viewer').addEventListener('click', e => { if (e.target.id === 'viewer') closeViewer(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#viewer').hidden) closeViewer(); });
-    $('#viewerDl').addEventListener('click', e => busy(e.currentTarget, async () => { const d = viewerDoc; if (!d) return; const u8 = await fetchLib(d); await save(d.filename, new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); }));
+    $('#viewerDl').addEventListener('click', e => busy(e.currentTarget, async () => { const d = viewerDoc; if (!d) return; if (d._blob) { await save(d.filename, d._blob); return; } const u8 = await fetchLib(d); await save(d.filename, new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); }));
   }
 
 
