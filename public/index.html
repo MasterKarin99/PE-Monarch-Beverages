@@ -316,6 +316,11 @@ input,select,textarea{border-radius:10px}
 .mailmock .mtag{display:inline-block;font-size:11px;color:var(--muted);padding:0 16px 12px}
 @media (max-width:900px){ .tplsender-grid,.tplgrid{grid-template-columns:1fr} .mailmock{position:static} }
 nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--line)}
+.acttag{display:inline-block;margin-top:4px;font-size:11.5px;font-weight:600;border-radius:999px;padding:1px 8px}
+.acttag.a-validation{background:var(--accent-soft);color:var(--accent)}
+.acttag.a-info{background:var(--info-soft);color:var(--info)}
+.infonote{background:var(--info-soft);color:var(--ink);border-radius:10px;padding:10px 14px;font-size:13px;line-height:1.5;flex-basis:100%}
+.ccopts{grid-template-columns:150px 190px 240px 1fr}
 </style>
 </head>
 <body class="booting">
@@ -362,6 +367,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
         <div><span class="pill p-sent">Envoyé · attente de validation</span><p>L'email est parti, le planning est dans l'Espace pays. Le bottler n'a pas encore répondu.</p></div>
         <div><span class="pill p-err">Modifications demandées</span><p>Le bottler demande des changements depuis son Espace pays : son commentaire s'affiche sous le statut.</p></div>
         <div><span class="pill p-done">Validé par le bottler</span><p>Le bottler a validé le planning depuis son Espace pays. Dossier terminé.</p></div>
+        <div><span class="pill p-done">Envoyé pour information</span><p>Pays simplement notifié (réglage « Action du bottler » dans Contacts) : aucune validation n'est attendue, le dossier est terminé à l'envoi.</p></div>
       </div>
       <p class="muted" style="margin:10px 0 0;font-size:12.5px">La barre sous chaque statut montre l'avancement : Reçu · Contrôlé · Prêt · Envoyé · Validé.</p>
     </details>
@@ -1701,6 +1707,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
     if (v && v.status === 'valide') return { k: 'sent', sub: 'valide', label: 'Validé par le bottler', cls: 'p-done', step: 5, detail: `Le ${fmtDate(v.at)}${v.email ? ' · ' + v.email : ''}` };
     if (v && v.status === 'modifs' && sent && String(sent.sentAt) > String(v.at)) return { k: 'sent', sub: 'attente', label: 'Renvoyé · attente de validation', cls: 'p-sent', step: 4, detail: `Renvoyé le ${fmtDate(sent.sentAt)} après la demande de modifications du ${fmtDate(v.at)}` };
     if (v && v.status === 'modifs') return { k: 'sent', sub: 'modifs', label: 'Modifications demandées', cls: 'p-err', step: 4, detail: `Par le bottler le ${fmtDate(v.at)}${v.comment ? ' : « ' + (v.comment.length > 70 ? v.comment.slice(0, 70) + '…' : v.comment) + ' »' : ''}` };
+    if (sent && actionFor(code) === 'info' && !v) return { k: 'sent', sub: 'info', label: 'Envoyé pour information', cls: 'p-done', step: 5, detail: `Envoyé le ${fmtDate(sent.sentAt)} · aucune validation demandée` };
     if (sent && window.PE_SITE) return { k: 'sent', sub: 'attente', label: 'Envoyé', cls: 'p-done', step: 5, detail: `Envoyé le ${fmtDate(sent.sentAt)}` };
     if (sent) return { k: 'sent', sub: 'attente', label: 'Envoyé · attente de validation', cls: 'p-sent', step: 4, detail: `Envoyé le ${fmtDate(sent.sentAt)}${inPortal ? ' · disponible dans l\'Espace pays' : ''}` };
     if (!e) return { k: 'wait', label: 'En attente du planning agence', cls: 'p-wait', step: 0, detail: `Aucun planning reçu pour ${mois}` };
@@ -1710,7 +1717,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
     return { k: 'ready', label: 'Prêt à envoyer', cls: 'p-ready', step: 3, detail: nRem ? `Contrôle OK · ${nRem} remarque${nRem > 1 ? 's' : ''} sans gravité` : 'Contrôle OK, aucune remarque' };
   }
   function stepper(st) {
-    return `<div class="steps" role="img" aria-label="Étape ${st.step} sur 5 : ${esc(st.label)}">${STEPS.map((n, i) => `<span class="${i < st.step ? 'on' : ''}${st.sub === 'modifs' && i === 3 ? ' alert' : ''}" title="${n}"></span>`).join('')}</div>`;
+    return `<div class="steps" role="img" aria-label="${st.sub === 'info' ? 'Terminé' : `Étape ${st.step} sur 5`} : ${esc(st.label)}">${STEPS.map((n, i) => `<span class="${i < st.step ? 'on' : ''}${st.sub === 'modifs' && i === 3 ? ' alert' : ''}" title="${n}"></span>`).join('')}</div>`;
   }
   function statusCell(st) {
     return `<span class="pill ${st.cls}">${esc(st.label)}</span>${stepper(st)}<div class="stdetail">${esc(st.detail || '')}</div>`;
@@ -1727,6 +1734,8 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
   }
   function valPill(id, opts) {
     const v = validationOf(id); opts = opts || {};
+    const code0 = String(id).split('_').pop();
+    if (!v && actionFor(code0) === 'info') return '<span class="pill p-wait">Pour information</span>';
     if (!v) return opts.empty === false ? '' : '<span class="pill p-wait">En attente</span>';
     const who = v.email ? ` title="${esc((v.name ? v.name + ' · ' : '') + v.email)}"` : '';
     const warn = v.verified ? '' : ' <span class="muted" style="font-size:11.5px" title="Adresse absente des destinataires de ce pays">(adresse non reconnue)</span>';
@@ -1751,14 +1760,14 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
 
   function renderStats() {
     const cs = codes(); const c = { wait: 0, rev: 0, check: 0, ready: 0, sent: 0, modifs: 0, valide: 0 };
-    cs.forEach(code => { const s1 = statusOf(code), k = s1.k; if (k === 'wait') c.wait++; else if (k === 'revision') c.rev++; else if (k === 'err' || k === 'warn') c.check++; else if (k === 'ready') c.ready++; else if (s1.sub === 'modifs') c.modifs++; else if (s1.sub === 'valide') c.valide++; else c.sent++; });
+    cs.forEach(code => { const s1 = statusOf(code), k = s1.k; if (k === 'wait') c.wait++; else if (k === 'revision') c.rev++; else if (k === 'err' || k === 'warn') c.check++; else if (k === 'ready') c.ready++; else if (s1.sub === 'modifs') c.modifs++; else if (s1.sub === 'valide' || s1.sub === 'info') c.valide++; else c.sent++; });
     $('#stats').innerHTML = `
       <div class="stat s-wait"><b>${c.wait}</b><span>en attente du planning agence</span></div>
       <div class="stat s-check"><b>${c.rev + c.check}</b><span>en révision ou à corriger</span></div>
       <div class="stat s-ready"><b>${c.ready}</b><span>prêts à envoyer</span></div>
       <div class="stat s-sent"><b>${c.sent}</b><span>${window.PE_SITE ? 'envoyés' : 'envoyés, en attente de validation'}</span></div>
       ${window.PE_SITE ? '' : `<div class="stat s-modif"><b>${c.modifs}</b><span>modifications demandées</span></div>
-      <div class="stat s-done"><b>${c.valide}</b><span>validés par les bottlers</span></div>`}`;
+      <div class="stat s-done"><b>${c.valide}</b><span>terminés (validés ou envoyés pour information)</span></div>`}`;
     const any = state.entries.some(e => e.country);
     $('#zipFiles').disabled = !any; $('#zipPack').disabled = !any;
     const sa = $('#sendAll'); if (sa) { sa.hidden = !(state.mailCfg && state.mailCfg.enabled); if (!sa.dataset.busy) sa.disabled = !codes().some(c => statusOf(c).k === 'ready'); }
@@ -1787,7 +1796,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
       const ctrl = e ? `<div class="counts" style="flex-wrap:wrap">${ce ? `<span style="color:var(--err)"><i class="dot" style="background:var(--err)"></i>${errs1.length === 1 && errs1[0].short ? hl(errs1[0].short, errs1[0].hl) : `${ce} erreurs : ${errs1.map(x => hl(x.short || x.msg, x.hl)).join(' · ')}`}</span>` : '<span style="color:var(--ok)">OK</span>'}${ci ? `<span class="muted">· ${ci} remarque${ci > 1 ? 's' : ''}</span>` : ''}</div>` : '<span class="muted">—</span>';
       const rc = ct ? `<div class="addr">${(ct.to || []).map(c => `<div>${esc(c.email)}</div>`).join('')}${(ct.cc || []).length ? `<div class="muted">cc ${(ct.cc || []).map(c => esc(c.email)).join(', ')}</div>` : ''}</div>` : '<span style="color:var(--err)">aucun contact</span>';
       html += `<tr data-code="${esc(code)}" class="${state.sel === code ? 'sel' : ''}" tabindex="0">
-        <td><b>${esc(nameFor(code))}</b><span class="code">${esc(code)}</span></td>
+        <td><b>${esc(nameFor(code))}</b><span class="code">${esc(code)}</span>${window.PE_SITE ? '' : `<div class="acttag a-${actionFor(code)}">${actionFor(code) === 'validation' ? 'À valider par le bottler' : 'Pour information'}</div>`}</td>
         <td class="stcell">${statusCell(st)}</td>
         <td><div class="brands">${chips || '<span class="muted">—</span>'}</div></td>
         <td style="font-variant-numeric:tabular-nums">${e ? `${n}<div><button class="btn small" data-rview="${esc(code)}" style="margin-top:6px">Visualiser</button></div>` : '<span class="muted">—</span>'}</td>
@@ -1803,6 +1812,8 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
   function select(key) { state.sel = key; state.subtab = state.subtab || 'controle'; renderTable(); renderDetail(); const d = $('#detail'); if (!d.hidden) d.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); }
 
   // ---------- Détail pays ----------
+  // Action attendue du bottler : « validation » (il valide le planning) ou « info » (simplement notifié)
+  function actionFor(code) { const ct = contactFor(code); if (ct && (ct.action === 'validation' || ct.action === 'info')) return ct.action; return templateIdFor(code) === 'fr-validation' ? 'validation' : 'info'; }
   function templateIdFor(code) { const ct = contactFor(code); const t = ct && ct.template; return C.TEMPLATE_IDS.includes(t) ? t : C.defaultTemplateFor(code); }
   function templateOf(id) { const t = state.settings && state.settings.templates && state.settings.templates[id]; return Object.assign({}, C.DEFAULT_TEMPLATES[id], t && t.body ? t : {}); }
   const linkKey = code => `${periodKey()}_${code}`;
@@ -2218,7 +2229,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
       html += `<article class="ccard" data-code="${esc(code)}" data-hay="${esc(hay)}">
         <header class="cchead">
           <div><h3>${esc(c.name)} <span class="code">${esc(code)}</span></h3>
-            <div class="ccmeta">${nTo ? `${nTo} destinataire${nTo > 1 ? 's' : ''}` : '<span style="color:var(--err)">Aucun destinataire</span>'}${nCc ? ` · ${nCc} en copie` : ''} · ${esc(cap(C.LANG_LABEL[c.lang] || c.lang || ''))}</div></div>
+            <div class="ccmeta">${nTo ? `${nTo} destinataire${nTo > 1 ? 's' : ''}` : '<span style="color:var(--err)">Aucun destinataire</span>'}${nCc ? ` · ${nCc} en copie` : ''} · ${esc(cap(C.LANG_LABEL[c.lang] || c.lang || ''))} · <span class="acttag a-${actionFor(code)}" style="display:inline-block;margin:0">${actionFor(code) === 'validation' ? 'Valide le planning' : 'Simplement notifié'}</span></div></div>
           <div class="brands">${(c.brands || []).map(b => `<span class="bchip">${mark(b)}${esc(b)}</span>`).join('') || '<span class="muted" style="font-size:12.5px">Aucune marque</span>'}</div>
         </header>
         <div class="ccbody">
@@ -2227,6 +2238,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
         </div>
         <div class="ccopts">
           <div class="field"><label for="cl-${code}">Langue</label><select id="cl-${code}" data-f="lang">${['fr', 'en', 'es'].map(l => `<option value="${l}" ${c.lang === l ? 'selected' : ''}>${cap(C.LANG_LABEL[l])}</option>`).join('')}</select></div>
+          <div class="field"><label for="ca-${code}">Action du bottler</label><select id="ca-${code}" data-f="action"><option value="validation" ${actionFor(code) === 'validation' ? 'selected' : ''}>Valide le planning</option><option value="info" ${actionFor(code) === 'info' ? 'selected' : ''}>Simplement notifié</option></select></div>
           <div class="field"><label for="cm-${code}">Modèle d'email</label><select id="cm-${code}" data-f="template">${C.TEMPLATE_IDS.map(id => `<option value="${id}" ${id === templateIdFor(code) ? 'selected' : ''}>${esc(C.DEFAULT_TEMPLATES[id].label)}</option>`).join('')}</select></div>
           <div class="field ccbrands"><label for="cb-${code}">Marques distribuées <span class="muted">(séparées par des virgules)</span></label><input id="cb-${code}" data-f="brands" value="${esc((c.brands || []).join(', '))}"></div>
         </div>
@@ -2243,7 +2255,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
       const code = card.dataset.code;
       card.querySelector('[data-save]').addEventListener('click', () => {
         const old = state.contacts[code];
-        const doc = { code, name: old.name, lang: card.querySelector('[data-f=lang]').value, template: card.querySelector('[data-f=template]').value, brands: C.splitBrands(card.querySelector('[data-f=brands]').value),
+        const doc = { code, name: old.name, lang: card.querySelector('[data-f=lang]').value, template: card.querySelector('[data-f=template]').value, action: card.querySelector('[data-f=action]').value, brands: C.splitBrands(card.querySelector('[data-f=brands]').value),
           to: C.parseContactCell(card.querySelector('[data-f=to]').value), cc: C.parseContactCell(card.querySelector('[data-f=cc]').value) };
         writeContact(code, doc);
       });
@@ -2551,14 +2563,14 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
       const hashesFor = async code => { if (hashCache[code]) return hashCache[code]; const ct = state.contacts[code]; const list = ct ? [...(ct.to || []), ...(ct.cc || [])].map(c => c.email) : []; const hs = []; for (const e of list) hs.push(await hashEmail(e)); return (hashCache[code] = hs.sort()); };
       for (const [id, d] of Object.entries(state.library)) {
         const sent = state.envois[id];
-        const want = { code: d.code, pays: d.pays, period: d.period, filename: d.filename, assetId: d.assetId, size: d.size || 0, brands: d.brands || [], posts: d.posts || 0, savedAt: d.savedAt || '', sentAt: sent ? sent.sentAt : null, access: await hashesFor(d.code) };
+        const want = { code: d.code, pays: d.pays, period: d.period, filename: d.filename, assetId: d.assetId, size: d.size || 0, brands: d.brands || [], posts: d.posts || 0, savedAt: d.savedAt || '', sentAt: sent ? sent.sentAt : null, action: actionFor(d.code), access: await hashesFor(d.code) };
         const cur = state.portal[id];
         if (!cur || JSON.stringify(normPortal(cur)) !== JSON.stringify(normPortal(want))) await state.db.doc('portal/' + id).set(want);
       }
       for (const id of Object.keys(state.portal)) if (!state.library[id]) await state.db.doc('portal/' + id).delete();
     } catch (e) { console.error(e); } finally { syncing = false; }
   }
-  const normPortal = d => ({ code: d.code, pays: d.pays, period: d.period, filename: d.filename, assetId: d.assetId, size: d.size || 0, brands: d.brands || [], posts: d.posts || 0, savedAt: d.savedAt || '', sentAt: d.sentAt || null, access: (d.access || []).slice().sort() });
+  const normPortal = d => ({ code: d.code, pays: d.pays, period: d.period, filename: d.filename, assetId: d.assetId, size: d.size || 0, brands: d.brands || [], posts: d.posts || 0, savedAt: d.savedAt || '', sentAt: d.sentAt || null, action: d.action || 'validation', access: (d.access || []).slice().sort() });
 
   async function initPortalMode(db) {
     document.body.classList.add('portal-mode');
@@ -2587,7 +2599,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
     let html = '';
     if (preview) html += `<div class="banner warn row"><span style="flex:1">Aperçu de ce que voit une personne de <b>${esc(nameFor(state.previewCountry))}</b> en ouvrant la plateforme.</span><button class="btn small" id="pvExit">Quitter l'aperçu</button></div>`;
     html += `<div class="card"><h2>${countries.length ? `Plannings éditoriaux · ${esc(countries.join(', '))}` : 'Plannings éditoriaux'}</h2>
-      <p class="muted" style="margin:4px 0 0">Téléchargez les plannings éditoriaux de votre pays, puis validez-les ou demandez des modifications. Pour toute question, écrivez à <b>${esc(senderOf().email)}</b>.</p></div>`;
+      <p class="muted" style="margin:4px 0 0">${docs.length && docs.every(([, d]) => d.action === 'info') ? 'Consultez et téléchargez les plannings éditoriaux de votre pays, transmis pour information.' : 'Téléchargez les plannings éditoriaux de votre pays, puis validez-les ou demandez des modifications.'} Pour toute question, écrivez à <b>${esc(senderOf().email)}</b>.</p></div>`;
     if (!preview && !state.myHashes.length) html += `<div class="card empty">Nous n'avons pas pu identifier l'adresse email de votre compte. Contactez ${esc(senderOf().email)} pour obtenir l'accès à vos plannings.</div>`;
     else if (!preview && !state.portalLoaded) html += `<div class="card empty">${state.portalSlow ? 'Les plannings ne sont pas encore accessibles. Réessayez dans un instant.' : 'Chargement de vos plannings…'}</div>`;
     else if (!docs.length) html += `<div class="card empty">Aucun planning n'est disponible pour votre pays pour le moment.${preview ? '' : ` Si vous pensez qu'il s'agit d'une erreur, contactez ${esc(senderOf().email)}.`}</div>`;
@@ -2598,7 +2610,7 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
         <div class="brands" style="margin-top:6px">${(latest.brands || []).map(b => `<span class="bchip">${mark(b)}${esc(b)}</span>`).join('')}</div></div>
         <button class="btn" data-pview="${esc(docs[0][0])}">Visualiser</button><button class="btn primary" data-pdl="${esc(docs[0][0])}">Télécharger le planning</button>
         <div class="valbox">${portalVal(docs[0][0], preview, true)}</div></div>`;
-      html += `<h3>Historique</h3><div class="tablewrap"><table><thead><tr><th>Mois</th>${countries.length > 1 ? '<th>Pays</th>' : ''}<th>Marques</th><th>Publications</th><th>Mis à disposition le</th><th>Envoyé par email le</th><th>Validation</th><th></th></tr></thead><tbody class="plain">`;
+      html += `<h3>Historique</h3><div class="tablewrap"><table><thead><tr><th>Mois</th>${countries.length > 1 ? '<th>Pays</th>' : ''}<th>Marques</th><th>Publications</th><th>Mis à disposition le</th><th>Envoyé par email le</th><th>${docs.every(([, d]) => d.action === 'info') ? 'Statut' : 'Validation'}</th><th></th></tr></thead><tbody class="plain">`;
       html += docs.map(([id, d]) => { const [y, mm] = String(d.period).split('-'); return `<tr><td><b>${esc(cap(C.MONTHS_FR[+mm - 1] || ''))} ${esc(y)}</b></td>${countries.length > 1 ? `<td>${esc(d.pays)}</td>` : ''}
         <td><div class="brands">${(d.brands || []).map(b => `<span class="bchip">${mark(b)}${esc(b)}</span>`).join('')}</div></td><td>${esc(d.posts)}</td>
         <td>${d.savedAt ? fmtDate(d.savedAt) : '—'}</td><td>${d.sentAt ? fmtDate(d.sentAt) : '<span class="muted">—</span>'}</td>
@@ -2621,6 +2633,8 @@ nav.tabs .tabsep{width:1px;align-self:stretch;margin:6px 4px;background:var(--li
     box.querySelectorAll('[data-pdl]').forEach(b => b.addEventListener('click', () => busy(b, async () => { const d = state.portal[b.dataset.pdl]; const u8 = await fetchLib(d); await save(d.filename, new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); })));
   }
   function portalVal(id, preview, big) {
+    const pd = state.portal[id] || {};
+    if (pd.action === 'info') return big ? `<div class="infonote"><b>Pour information</b> · ce planning vous est transmis pour information : aucune validation n'est demandée. Pour toute remarque, écrivez à ${esc(senderOf().email)}.</div>` : '<span class="pill p-wait">Pour information</span>';
     const it = state.myVal && state.myVal.items && state.myVal.items[id];
     const dis = preview || !state.uid || !state.db || state.canWrite === false ? 'disabled' : '';
     if (!preview && state.canWrite === false && !(it && it.status)) return big ? `<span class="muted" style="font-size:12.5px">Pour valider ce planning ou demander des modifications, répondez par email à ${esc(senderOf().email)}.</span>` : '<span class="muted">Par email</span>';
